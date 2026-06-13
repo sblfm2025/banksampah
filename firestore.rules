@@ -1,0 +1,354 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function currentUser() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function hasRole(role) {
+      return signedIn()
+        && currentUser().data.isActive == true
+        && currentUser().data.role == role;
+    }
+
+    function isAdmin() {
+      return hasRole('SUPER_ADMIN');
+    }
+
+    function isOperator() {
+      return hasRole('OPERATOR');
+    }
+
+    function isDriver() {
+      return hasRole('DRIVER');
+    }
+
+    function isBackOffice() {
+      return isAdmin() || isOperator();
+    }
+
+    function isAssignedDriver() {
+      return isDriver() && resource.data.assignedDriverId == request.auth.uid;
+    }
+
+    function driverOwnsPickup(pickupRequestId) {
+      return get(
+        /databases/$(database)/documents/pickupRequests/$(pickupRequestId)
+      ).data.assignedDriverId == request.auth.uid;
+    }
+
+    function validStatusTransition(from, to) {
+      return
+        (from == 'NEW' && to in [
+          'NEEDS_INFO',
+          'NEEDS_OPERATOR_REVIEW',
+          'CONFIRMED',
+          'REJECTED',
+          'CANCELLED'
+        ])
+        || (from == 'NEEDS_INFO' && to in [
+          'NEEDS_OPERATOR_REVIEW',
+          'CONFIRMED',
+          'REJECTED',
+          'CANCELLED'
+        ])
+        || (from == 'NEEDS_OPERATOR_REVIEW' && to in [
+          'NEEDS_INFO',
+          'CONFIRMED',
+          'REJECTED',
+          'CANCELLED'
+        ])
+        || (from == 'CONFIRMED' && to in [
+          'SCHEDULED',
+          'REJECTED',
+          'CANCELLED'
+        ])
+        || (from == 'SCHEDULED' && to in ['ASSIGNED', 'CANCELLED'])
+        || (from == 'ASSIGNED' && to in [
+          'IN_PROGRESS',
+          'SCHEDULED',
+          'CANCELLED'
+        ])
+        || (from == 'IN_PROGRESS' && to in [
+          'ASSIGNED',
+          'COMPLETED',
+          'EXTRA_TRIP_REQUIRED',
+          'CANCELLED'
+        ])
+        || (from == 'EXTRA_TRIP_REQUIRED' && to in [
+          'SCHEDULED',
+          'ASSIGNED',
+          'COMPLETED',
+          'CANCELLED'
+        ]);
+    }
+
+    function pickupAuditAfter() {
+      return getAfter(
+        /databases/$(database)/documents/auditLogs/$(request.resource.data.lastAuditId)
+      );
+    }
+
+    function validPickupAudit(ticketId, action) {
+      let audit = pickupAuditAfter().data;
+      return request.resource.data.lastAuditId is string
+        && existsAfter(
+          /databases/$(database)/documents/auditLogs/$(request.resource.data.lastAuditId)
+        )
+        && audit.actorId == request.auth.uid
+        && audit.actorRole == currentUser().data.role
+        && audit.action == action
+        && audit.entityType == 'PICKUP_REQUEST'
+        && audit.entityId == ticketId
+        && audit.before.status == resource.data.status
+        && audit.after.status == request.resource.data.status
+        && audit.createdAt == request.time;
+    }
+
+    function operatorAuditMatches(ticketId) {
+      let changed = request.resource.data.diff(resource.data).affectedKeys();
+      return (
+          changed.hasAny(['scheduledDate', 'scheduledTimeWindow'])
+          && validPickupAudit(ticketId, 'PICKUP_SCHEDULED')
+        )
+        || (
+          changed.hasAny(['assignedDriverId', 'assignedDriverName'])
+          && validPickupAudit(ticketId, 'PICKUP_DRIVER_ASSIGNED')
+        )
+        || (
+          !changed.hasAny([
+            'scheduledDate',
+            'scheduledTimeWindow',
+            'assignedDriverId',
+            'assignedDriverName'
+          ])
+          && validPickupAudit(ticketId, 'PICKUP_STATUS_CHANGED')
+        );
+    }
+
+    function operatorUpdatesOperationalFields(ticketId) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+        'status',
+        'scheduledDate',
+        'scheduledTimeWindow',
+        'assignedDriverId',
+        'assignedDriverName',
+        'operatorNotes',
+        'rejectedReason',
+        'updatedAt',
+        'lastAuditId'
+      ])
+      && validStatusTransition(resource.data.status, request.resource.data.status)
+      && request.resource.data.updatedAt == request.time
+      && operatorAuditMatches(ticketId);
+    }
+
+    function driverStartsPickup(ticketId) {
+      return resource.data.status == 'ASSIGNED'
+        && request.resource.data.status == 'IN_PROGRESS'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'status',
+          'startedAt',
+          'updatedAt',
+          'lastAuditId'
+        ])
+        && request.resource.data.startedAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && validPickupAudit(ticketId, 'PICKUP_STARTED');
+    }
+
+    function driverCompletesPickup(ticketId) {
+      return resource.data.status in ['ASSIGNED', 'IN_PROGRESS']
+        && request.resource.data.status in [
+          'ASSIGNED',
+          'COMPLETED',
+          'EXTRA_TRIP_REQUIRED',
+          'CANCELLED'
+        ]
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'status',
+          'driverNotes',
+          'completedAt',
+          'cancelledAt',
+          'updatedAt',
+          'lastAuditId'
+        ])
+        && request.resource.data.updatedAt == request.time
+        && existsAfter(
+          /databases/$(database)/documents/pickupProofs/$(ticketId)
+        )
+        && getAfter(
+          /databases/$(database)/documents/pickupProofs/$(ticketId)
+        ).data.driverId == request.auth.uid
+        && validPickupAudit(ticketId, 'PICKUP_RESULT_RECORDED');
+    }
+
+    match /users/{userId} {
+      allow read: if (signedIn() && request.auth.uid == userId)
+        || isBackOffice();
+      allow create, update: if isAdmin()
+        && request.resource.data.keys().hasOnly([
+          'name',
+          'email',
+          'phoneNumber',
+          'role',
+          'isActive'
+        ])
+        && request.resource.data.name is string
+        && request.resource.data.email is string
+        && request.resource.data.role in [
+          'SUPER_ADMIN',
+          'OPERATOR',
+          'DRIVER',
+          'CUSTOMER'
+        ]
+        && request.resource.data.isActive is bool;
+      allow delete: if false;
+    }
+
+    match /customers/{customerId} {
+      allow read, create, update: if isBackOffice();
+      allow delete: if false;
+    }
+
+    match /pickupRequests/{ticketId} {
+      allow read: if isBackOffice() || isAssignedDriver();
+      allow create: if isBackOffice();
+      allow update: if (
+          isBackOffice()
+          && operatorUpdatesOperationalFields(ticketId)
+        )
+        || (
+          isAssignedDriver()
+          && request.resource.data.assignedDriverId == request.auth.uid
+          && (
+            driverStartsPickup(ticketId)
+            || driverCompletesPickup(ticketId)
+          )
+        );
+      allow delete: if false;
+    }
+
+    match /pickupSchedules/{scheduleId} {
+      allow read: if isBackOffice()
+        || (isDriver() && resource.data.driverId == request.auth.uid);
+      allow create, update: if isBackOffice();
+      allow delete: if false;
+    }
+
+    match /pickupProofs/{proofId} {
+      allow read: if isBackOffice()
+        || (isDriver() && resource.data.driverId == request.auth.uid);
+      allow create: if isDriver()
+        && proofId == request.resource.data.pickupRequestId
+        && request.resource.data.driverId == request.auth.uid
+        && driverOwnsPickup(request.resource.data.pickupRequestId)
+        && request.resource.data.keys().hasOnly([
+          'pickupRequestId',
+          'driverId',
+          'beforePhotoUrls',
+          'afterPhotoUrls',
+          'actualTripResult',
+          'driverNotes',
+          'createdAt'
+        ])
+        && request.resource.data.beforePhotoUrls is list
+        && request.resource.data.afterPhotoUrls is list
+        && (
+          request.resource.data.beforePhotoUrls.size() > 0
+          || request.resource.data.afterPhotoUrls.size() > 0
+        )
+        && request.resource.data.createdAt == request.time;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    match /pickupProofMedia/{mediaId} {
+      allow read: if isBackOffice()
+        || (isDriver() && resource.data.driverId == request.auth.uid);
+      allow create, update: if isDriver()
+        && request.resource.data.driverId == request.auth.uid
+        && driverOwnsPickup(request.resource.data.pickupRequestId)
+        && request.resource.data.keys().hasOnly([
+          'pickupRequestId',
+          'driverId',
+          'kind',
+          'contentType',
+          'byteSize',
+          'width',
+          'height',
+          'dataUrl',
+          'originalName',
+          'sequence',
+          'createdAt'
+        ])
+        && request.resource.data.kind in ['before', 'after']
+        && request.resource.data.contentType == 'image/jpeg'
+        && request.resource.data.byteSize > 0
+        && request.resource.data.byteSize <= 300000
+        && request.resource.data.dataUrl is string
+        && request.resource.data.dataUrl.size() <= 410000;
+      allow delete: if false;
+    }
+
+    match /whatsappMessages/{messageId} {
+      allow read: if isBackOffice();
+      allow write: if false;
+    }
+
+    match /aiAnalyses/{analysisId} {
+      allow read: if isBackOffice();
+      allow write: if false;
+    }
+
+    match /auditLogs/{logId} {
+      allow read: if isAdmin();
+      allow create: if (isBackOffice() || isDriver())
+        && request.resource.data.keys().hasOnly([
+          'actorId',
+          'actorRole',
+          'action',
+          'entityType',
+          'entityId',
+          'before',
+          'after',
+          'createdAt'
+        ])
+        && request.resource.data.actorId == request.auth.uid
+        && request.resource.data.actorRole == currentUser().data.role
+        && request.resource.data.action in [
+          'PICKUP_STATUS_CHANGED',
+          'PICKUP_SCHEDULED',
+          'PICKUP_DRIVER_ASSIGNED',
+          'PICKUP_STARTED',
+          'PICKUP_RESULT_RECORDED'
+        ]
+        && request.resource.data.entityType == 'PICKUP_REQUEST'
+        && request.resource.data.entityId is string
+        && request.resource.data.before is map
+        && request.resource.data.after is map
+        && request.resource.data.createdAt == request.time
+        && getAfter(
+          /databases/$(database)/documents/pickupRequests/$(request.resource.data.entityId)
+        ).data.lastAuditId == logId;
+      allow update, delete: if false;
+    }
+
+    match /ticketCounters/{counterId} {
+      allow read, write: if false;
+    }
+
+    match /idempotencyKeys/{keyId} {
+      allow read, write: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

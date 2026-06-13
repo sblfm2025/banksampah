@@ -1,0 +1,6 @@
+{
+  "projects": {
+    "default": "sampahta-pinrang-local",
+    "production": "peduli-pinrang"
+  }
+}

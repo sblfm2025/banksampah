@@ -1,0 +1,20 @@
+import { createContext, useContext } from 'react';
+import type { AppUser } from '../../shared/schemas/user.schema';
+
+export interface AuthState {
+  user: AppUser | null;
+  loading: boolean;
+  authenticated: boolean;
+  profileMissing: boolean;
+  authUid: string | null;
+  login(email: string, password: string): Promise<void>;
+  logout(): Promise<void>;
+}
+
+export const AuthContext = createContext<AuthState | null>(null);
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) throw new Error('useAuth harus berada di dalam AuthProvider.');
+  return context;
+}
