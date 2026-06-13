@@ -19,6 +19,7 @@ import {
   ProofStorageUnavailableError,
 } from './driver.repository';
 import { AppDialog } from '../ui/components';
+import { loadCustomerWasteMedia } from '../../client/customer-waste-media';
 
 const resultLabels: Record<
   CompletePickupInput['actualTripResult'],
@@ -132,6 +133,16 @@ export function DriverPickupDetailPage() {
       setFormMessage('Hasil pickup berhasil disimpan.');
     },
   });
+  const currentTicket = pickup.data?.data;
+  const intakePhotos = useQuery({
+    queryKey: [
+      'driver-customer-waste-media',
+      id,
+      currentTicket?.intakePhotoMediaIds,
+    ],
+    queryFn: () => loadCustomerWasteMedia(currentTicket?.intakePhotoMediaIds),
+    enabled: Boolean(currentTicket?.intakePhotoMediaIds?.length),
+  });
 
   if (pickup.isLoading) return <p>Memuat pickup...</p>;
   if (pickup.isError || !pickup.data) {
@@ -195,7 +206,7 @@ export function DriverPickupDetailPage() {
             </span>
           )}
         </p>
-        <div className="mt-4 grid grid-cols-2 gap-3">
+        <div className="mt-4 grid grid-cols-3 gap-3">
           <a
             className="rounded-xl bg-[#159fb3] px-3 py-3 text-center font-bold text-white"
             href={mapsUrl(ticket)}
@@ -211,6 +222,12 @@ export function DriverPickupDetailPage() {
             target="_blank"
           >
             Chat WA
+          </a>
+          <a
+            className="rounded-xl border border-[#159fb3] px-3 py-3 text-center font-bold text-[#087f8c]"
+            href={`tel:+${ticket.customerPhoneNumber}`}
+          >
+            Telepon
           </a>
         </div>
       </section>
@@ -235,10 +252,19 @@ export function DriverPickupDetailPage() {
         </dl>
       </section>
 
-      {ticket.photoUrls.length > 0 && (
+      {((intakePhotos.data?.length ?? 0) > 0 || ticket.photoUrls.length > 0) && (
         <section className="rounded-2xl bg-white p-5 shadow-sm">
           <h2 className="font-bold">Foto Sampah dari Customer</h2>
           <div className="mt-4 grid grid-cols-2 gap-3">
+            {intakePhotos.data?.map((url, index) => (
+              <img
+                alt={`Foto sampah warga ${index + 1}`}
+                className="aspect-square w-full rounded-xl object-cover"
+                key={`intake-${index}`}
+                loading="lazy"
+                src={url}
+              />
+            ))}
             {ticket.photoUrls.map((url, index) => (
               <a href={url} key={url} rel="noreferrer" target="_blank">
                 <img
@@ -251,6 +277,12 @@ export function DriverPickupDetailPage() {
             ))}
           </div>
         </section>
+      )}
+      {intakePhotos.isError && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+          Foto sampah warga belum dapat dimuat. Lanjutkan dengan alamat dan
+          catatan operator.
+        </div>
       )}
 
       {ticket.status === 'ASSIGNED' && (

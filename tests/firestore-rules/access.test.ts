@@ -261,6 +261,58 @@ describe('Firestore role access', () => {
     await assertSucceeds(getDoc(doc(otherDb, 'pickupRequests/other-ticket')));
   });
 
+  it('foto intake warga hanya terbaca backoffice, pemilik, dan driver yang ditugaskan', async () => {
+    const ownerDb = environment
+      .authenticatedContext('customer-google', {
+        email: 'andi@example.com',
+      })
+      .firestore();
+    const assignedDriverDb = environment
+      .authenticatedContext('driver-1')
+      .firestore();
+    const otherDriverDb = environment
+      .authenticatedContext('driver-2')
+      .firestore();
+    const operatorDb = environment
+      .authenticatedContext('operator-1')
+      .firestore();
+
+    await environment.withSecurityRulesDisabled(async (context) => {
+      const db = context.firestore();
+      await Promise.all([
+        setDoc(doc(db, 'users/customer-google'), {
+          ...customerProfile,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        }),
+        setDoc(doc(db, 'pickupRequests/ticket-public'), {
+          ...officialPickup,
+          assignedDriverId: 'driver-1',
+          status: 'ASSIGNED',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        }),
+        setDoc(doc(db, 'customerWasteMedia/ticket-public_intake'), {
+          ...intakeMedia,
+          createdAt: new Date(),
+        }),
+      ]);
+    });
+
+    await assertSucceeds(
+      getDoc(doc(ownerDb, 'customerWasteMedia/ticket-public_intake')),
+    );
+    await assertSucceeds(
+      getDoc(doc(operatorDb, 'customerWasteMedia/ticket-public_intake')),
+    );
+    await assertSucceeds(
+      getDoc(doc(assignedDriverDb, 'customerWasteMedia/ticket-public_intake')),
+    );
+    await assertFails(
+      getDoc(doc(otherDriverDb, 'customerWasteMedia/ticket-public_intake')),
+    );
+  });
+
   it('operator dapat membaca tiket dan customer', async () => {
     const db = environment
       .authenticatedContext('operator-1')

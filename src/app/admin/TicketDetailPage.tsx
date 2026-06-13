@@ -7,9 +7,9 @@ import type { PickupRequest } from '../../shared/schemas/pickup.schema';
 import { operatorRepository } from './operator.repository';
 import { StatusBadge } from './StatusBadge';
 import {
-  loadCustomerWasteMedia,
   loadPickupProof,
 } from './pickup-proof-media';
+import { loadCustomerWasteMedia } from '../../client/customer-waste-media';
 import { getVillage } from '../../shared/regions/service-areas';
 import { AppDialog } from '../ui/components';
 

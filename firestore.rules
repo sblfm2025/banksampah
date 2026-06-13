@@ -542,6 +542,10 @@ service cloud.firestore {
         || (
           signedIn()
           && resource.data.ownerUid == request.auth.uid
+        )
+        || (
+          isDriver()
+          && driverOwnsPickup(resource.data.pickupRequestId)
         );
       allow create: if isCompleteCustomer()
         && request.resource.data.ownerUid == request.auth.uid
