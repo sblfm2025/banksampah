@@ -4,15 +4,22 @@ import { buildOperationalReport } from './reporting';
 
 describe('buildOperationalReport', () => {
   it('menghitung tren dan ringkasan dalam periode inklusif', () => {
+    const createdTicket = {
+      ...structuredClone(DEMO_TICKETS[0]),
+      createdAt: '2026-06-13T01:15:00.000Z',
+      updatedAt: '2026-06-13T01:15:00.000Z',
+    };
     const ticket = {
       ...structuredClone(DEMO_TICKETS[2]),
       status: 'COMPLETED' as const,
+      scheduledDate: '2026-06-13',
+      createdAt: '2026-06-13T00:30:00.000Z',
       completedAt: '2026-06-13T04:00:00.000Z',
       updatedAt: '2026-06-13T04:00:00.000Z',
     };
 
     const report = buildOperationalReport(
-      [DEMO_TICKETS[0], ticket, ticket],
+      [createdTicket, ticket, ticket],
       { startDate: '2026-06-13', endDate: '2026-06-13' },
     );
 
