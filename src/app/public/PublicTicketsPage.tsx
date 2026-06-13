@@ -7,8 +7,8 @@ export function PublicTicketsPage() {
   return (
     <>
       <AppHeader
-        subtitle="Pantau permintaan dari perangkat ini"
-        title="Tiket Jemput"
+        subtitle="Draft pengajuan yang tersimpan di perangkat ini"
+        title="Draft Jemput"
       />
       <main className="app-container py-7">
         {tickets.length === 0 ? (
@@ -21,7 +21,7 @@ export function PublicTicketsPage() {
                 Ajukan Jemput
               </Link>
             }
-            description="Tiket yang dibuat dari perangkat ini akan muncul di sini."
+            description="Draft yang dibuat dari perangkat ini akan muncul di sini."
             illustration={{
               src: '/illustrations/empty-ticket.webp',
               alt: 'Warga menyiapkan pengajuan jemput sampah dari ponsel',
@@ -34,6 +34,7 @@ export function PublicTicketsPage() {
               <TicketCard
                 address={ticket.address}
                 code={ticket.code}
+                draft
                 key={ticket.id}
                 status={ticket.status}
               >

@@ -8,6 +8,8 @@ export interface PublicTicket {
   id: string;
   code: string;
   status: PickupStatus;
+  customerName?: string;
+  customerPhoneNumber?: string;
   address: string;
   district: 'WATANG_SAWITTO' | 'PALETEANG';
   villageId: string;
@@ -24,6 +26,17 @@ export interface PublicTicket {
 
 const STORAGE_KEY = 'sampahta-public-tickets';
 
+export function normalizeIndonesianPhoneNumber(value: string): string {
+  const digits = value.replaceAll(/\D/g, '');
+  if (digits.startsWith('0')) return `62${digits.slice(1)}`;
+  if (digits.startsWith('8')) return `62${digits}`;
+  return digits;
+}
+
+export function isValidIndonesianPhoneNumber(value: string): boolean {
+  return /^628\d{7,12}$/.test(normalizeIndonesianPhoneNumber(value));
+}
+
 export function listPublicTickets(): PublicTicket[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -34,12 +47,22 @@ export function listPublicTickets(): PublicTicket[] {
 }
 
 export function savePublicTicket(
-  ticket: Omit<PublicTicket, 'id' | 'code' | 'createdAt' | 'status'>,
+  ticket: Omit<
+    PublicTicket,
+    'id' | 'code' | 'createdAt' | 'status' | 'customerName' | 'customerPhoneNumber'
+  > & {
+    customerName: string;
+    customerPhoneNumber: string;
+  },
 ): PublicTicket {
   const current = listPublicTickets();
   const createdAt = new Date().toISOString();
   const item: PublicTicket = {
     ...ticket,
+    customerName: ticket.customerName.trim(),
+    customerPhoneNumber: normalizeIndonesianPhoneNumber(
+      ticket.customerPhoneNumber,
+    ),
     id: crypto.randomUUID(),
     code: `DRAFT-${new Intl.DateTimeFormat('en-CA', {
       timeZone: 'Asia/Makassar',

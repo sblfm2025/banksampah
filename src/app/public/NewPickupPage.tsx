@@ -21,7 +21,11 @@ import type {
   LocationSource,
   LocationValidationStatus,
 } from '../../shared/regions/region.types';
-import { savePublicTicket } from './public-data';
+import {
+  isValidIndonesianPhoneNumber,
+  normalizeIndonesianPhoneNumber,
+  savePublicTicket,
+} from './public-data';
 import { reverseGeocode } from '../components/map/reverse-geocoding';
 import { detectServiceArea } from '../../shared/regions/service-area-boundaries';
 import { composeServiceAddress } from '../../shared/regions/location-address';
@@ -64,6 +68,8 @@ export function NewPickupPage() {
   const [photo, setPhoto] = useState<string>();
   const [volume, setVolume] = useState<Volume>('MEDIUM');
   const [notes, setNotes] = useState('');
+  const [customerName, setCustomerName] = useState('');
+  const [customerPhoneNumber, setCustomerPhoneNumber] = useState('');
   const [sheet, setSheet] = useState<'district' | 'volume' | null>(null);
   const [confirm, setConfirm] = useState(false);
 
@@ -78,7 +84,10 @@ export function NewPickupPage() {
         Boolean(villageId)
       : step === 2
         ? Boolean(photo)
-        : true;
+        : step === 4
+          ? customerName.trim().length >= 2 &&
+            isValidIndonesianPhoneNumber(customerPhoneNumber)
+          : true;
 
   function selectPhoto(file?: File) {
     if (!file) return;
@@ -176,6 +185,8 @@ export function NewPickupPage() {
   function finish() {
     if (!district || !villageId) return;
     const ticket = savePublicTicket({
+      customerName,
+      customerPhoneNumber,
       address,
       district,
       villageId,
@@ -385,17 +396,64 @@ export function NewPickupPage() {
 
         {step === 4 && (
           <StepCard
-            description="Tambahkan informasi yang membantu petugas menemukan dan mengangkut sampah."
+            description="Lengkapi kontak yang dapat dihubungi, lalu periksa kembali pengajuan."
             icon="ticket"
-            title="Catatan & Konfirmasi"
+            title="Identitas & Konfirmasi"
           >
+            <label className="block text-sm font-bold">
+              Nama lengkap
+              <input
+                autoComplete="name"
+                className="mt-2 w-full rounded-2xl border border-[#d9e2e7] bg-white p-4 font-normal outline-none focus:border-[#159fb3]"
+                maxLength={120}
+                onChange={(event) => setCustomerName(event.target.value)}
+                placeholder="Nama warga yang mengajukan"
+                required
+                value={customerName}
+              />
+            </label>
+            <label className="mt-4 block text-sm font-bold">
+              Nomor WhatsApp aktif
+              <input
+                autoComplete="tel"
+                className="mt-2 w-full rounded-2xl border border-[#d9e2e7] bg-white p-4 font-normal outline-none focus:border-[#159fb3]"
+                inputMode="tel"
+                onChange={(event) => setCustomerPhoneNumber(event.target.value)}
+                placeholder="Contoh: 0812 3456 7890"
+                required
+                type="tel"
+                value={customerPhoneNumber}
+              />
+              {customerPhoneNumber &&
+                !isValidIndonesianPhoneNumber(customerPhoneNumber) && (
+                  <span className="mt-2 block text-xs font-medium text-red-600">
+                    Masukkan nomor seluler Indonesia yang valid.
+                  </span>
+                )}
+            </label>
+            <label className="mt-4 block text-sm font-bold">
+              Catatan untuk petugas
             <textarea
-              className="min-h-32 w-full rounded-2xl border border-[#d9e2e7] bg-white p-4 outline-none focus:border-[#159fb3]"
+              className="mt-2 min-h-32 w-full rounded-2xl border border-[#d9e2e7] bg-white p-4 font-normal outline-none focus:border-[#159fb3]"
               onChange={(event) => setNotes(event.target.value)}
               placeholder="Contoh: rumah pagar hijau, ada pecahan kaca..."
               value={notes}
             />
+            </label>
+            <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
+              Pengajuan web disimpan sebagai draft di perangkat ini. Operator
+              belum menerima data sampai kanal pengiriman tiket web diaktifkan.
+            </div>
             <Card className="mt-4 p-5 shadow-none">
+              <Summary label="Nama" value={customerName || '-'} />
+              <Summary
+                label="WhatsApp"
+                value={
+                  customerPhoneNumber
+                    ? `+${normalizeIndonesianPhoneNumber(customerPhoneNumber)}`
+                    : '-'
+                }
+              />
               <Summary
                 label="Kecamatan"
                 value={
@@ -445,7 +503,7 @@ export function NewPickupPage() {
               else setConfirm(true);
             }}
           >
-            {step === 4 ? 'Buat Tiket' : 'Lanjut'}
+            {step === 4 ? 'Simpan Draft' : 'Lanjut'}
           </PrimaryButton>
         </div>
       </main>
@@ -504,11 +562,11 @@ export function NewPickupPage() {
       </BottomSheet>
 
       <ConfirmModal
-        description="Periksa kembali alamat dan patokan agar petugas mudah menemukan lokasi."
+        description="Data akan disimpan sebagai draft pada perangkat ini dan belum dikirim ke operator."
         onCancel={() => setConfirm(false)}
         onConfirm={finish}
         open={confirm}
-        title="Apakah lokasi jemput sudah benar?"
+        title="Simpan draft pengajuan?"
       />
       <AppDialog
         confirmLabel="Mengerti"

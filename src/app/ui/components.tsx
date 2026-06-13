@@ -242,12 +242,14 @@ export function TicketCard({
   status,
   address,
   schedule,
+  draft = false,
   children,
 }: {
   code: string;
   status: PickupStatus;
   address: string;
   schedule?: string;
+  draft?: boolean;
   children?: ReactNode;
 }) {
   return (
@@ -257,7 +259,13 @@ export function TicketCard({
           <p className="text-xs font-semibold text-slate-400">Nomor tiket</p>
           <h3 className="mt-1 font-extrabold">{code}</h3>
         </div>
-        <StatusBadge status={status} />
+        {draft ? (
+          <span className="inline-flex rounded-full bg-amber-50 px-3 py-1 text-[11px] font-bold text-amber-700">
+            Draft lokal
+          </span>
+        ) : (
+          <StatusBadge status={status} />
+        )}
       </div>
       <div className="mt-4 space-y-2 text-sm text-slate-600">
         <p className="flex gap-2">

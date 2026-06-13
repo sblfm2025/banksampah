@@ -6,7 +6,6 @@ import {
   Card,
   DistrictBadge,
   EmptyState,
-  StatusBadge,
   VolumeBadge,
 } from '../ui/components';
 import { getPublicTicket } from './public-data';
@@ -40,6 +39,10 @@ export function PublicTicketDetailPage() {
         title="Detail Tiket"
       />
       <main className="app-container space-y-5 py-7">
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
+          Ini adalah draft lokal. Data belum masuk ke dashboard operator dan
+          belum menjadi jadwal penjemputan resmi.
+        </div>
         <Card className="p-6">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -48,7 +51,9 @@ export function PublicTicketDetailPage() {
               </p>
               <h2 className="mt-1 text-xl font-extrabold">{ticket.code}</h2>
             </div>
-            <StatusBadge status={ticket.status} />
+            <span className="inline-flex rounded-full bg-amber-50 px-3 py-1 text-[11px] font-bold text-amber-700">
+              Draft lokal
+            </span>
           </div>
           <div className="mt-5 flex flex-wrap gap-2">
             <DistrictBadge district={DISTRICT_LABELS[ticket.district]} />
@@ -69,6 +74,18 @@ export function PublicTicketDetailPage() {
         <Card className="p-6">
           <h2 className="font-extrabold">Informasi penjemputan</h2>
           <dl className="mt-5 space-y-4 text-sm">
+            <Detail
+              label="Nama pengaju"
+              value={ticket.customerName ?? 'Belum dicatat pada draft lama'}
+            />
+            <Detail
+              label="Nomor WhatsApp"
+              value={
+                ticket.customerPhoneNumber
+                  ? `+${ticket.customerPhoneNumber}`
+                  : 'Belum dicatat pada draft lama'
+              }
+            />
             <Detail label="Lokasi jemput" value={ticket.address} />
             <Detail
               label="Kelurahan"
@@ -91,7 +108,7 @@ export function PublicTicketDetailPage() {
             />
             <Detail
               label="Jadwal"
-              value="Menunggu konfirmasi operator"
+              value="Belum dikirim ke operator"
             />
             <Detail label="Petugas" value="Belum ditugaskan" />
             <Detail label="Catatan" value={ticket.notes || '-'} />

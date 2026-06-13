@@ -13,5 +13,6 @@
 - Menambahkan validasi akun aktif Super Admin, Operator, dan Driver pada production readiness.
 - Menambahkan filter server-side dan composite indexes untuk workflow operator.
 - Menambahkan reason code masalah lapangan dan eskalasi ke review operator.
+- Mewajibkan nama dan nomor WhatsApp pada draft pengajuan web serta memperjelas bahwa draft belum terkirim ke operator.
 - Menstabilkan test laporan lintas tanggal dan alur end-to-end.
 - Menambahkan audit log kesiapan serta checklist pilot lapangan.
