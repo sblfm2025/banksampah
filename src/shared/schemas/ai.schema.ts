@@ -13,6 +13,7 @@ export const wasteAiAnalysisSchema = z
       'OTHER',
     ]),
     detectedDistrict: z.enum(DISTRICTS),
+    detectedVillage: z.string().trim().min(1).optional(),
     addressCompleteness: z.enum(['COMPLETE', 'PARTIAL', 'MISSING']),
     photoQuality: z.enum(['CLEAR', 'PARTIAL', 'BLURRY', 'NO_PHOTO']),
     wasteVisible: z.boolean(),

@@ -9,12 +9,15 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icons/icon.svg'],
+      includeAssets: [
+        'icons/icon.svg',
+        'logo-yayasan-masyarakat-peduli-pinrang.png',
+      ],
       manifest: {
-        name: "SampahTa' Driver",
-        short_name: "SampahTa'",
-        description: 'PWA petugas jemput sampah Pinrang',
-        theme_color: '#166534',
+        name: 'Jemput Sampah Pinrang',
+        short_name: 'Jemput Sampah',
+        description: 'Layanan jemput sampah lokal Pinrang',
+        theme_color: '#159fb3',
         background_color: '#f8fafc',
         display: 'standalone',
         start_url: '/driver/pickups',
@@ -30,7 +33,7 @@ export default defineConfig({
       },
       workbox: {
         navigateFallback: '/index.html',
-        globPatterns: ['**/*.{js,css,html,svg}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,webp,geojson}'],
         cleanupOutdatedCaches: true,
       },
     }),

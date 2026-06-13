@@ -9,6 +9,21 @@ const locationSchema = z.object({
   lng: z.number().min(-180).max(180),
 });
 
+const locationSourceSchema = z.enum([
+  'WHATSAPP_SHARE_LOCATION',
+  'BROWSER_GPS',
+  'MANUAL_PIN',
+  'MANUAL_TEXT',
+  'OPERATOR_INPUT',
+]);
+
+const locationValidationStatusSchema = z.enum([
+  'INSIDE_SERVICE_AREA',
+  'OUTSIDE_SERVICE_AREA',
+  'NEEDS_OPERATOR_REVIEW',
+  'UNKNOWN',
+]);
+
 export const pickupRequestSchema = z.object({
   id: z.string().min(1),
   ticketCode: z.string().regex(/^JSP-\d{8}-\d{4}$/),
@@ -18,8 +33,14 @@ export const pickupRequestSchema = z.object({
   customerName: z.string().trim().min(1).optional(),
   district: z.enum(DISTRICTS),
   village: z.string().trim().min(1).optional(),
+  villageId: z.string().trim().min(1).optional(),
+  neighborhoodId: z.string().trim().min(1).optional(),
+  pickupZoneId: z.string().trim().min(1).optional(),
   addressText: z.string().trim().min(1).optional(),
   location: locationSchema.optional(),
+  locationAccuracyMeters: z.number().min(0).optional(),
+  locationSource: locationSourceSchema.optional(),
+  locationValidationStatus: locationValidationStatusSchema.optional(),
   serviceType: z.enum(SERVICE_TYPES),
   volumeLevel: z.enum([
     'SMALL',

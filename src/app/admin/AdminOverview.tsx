@@ -1,27 +1,18 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { operatorRepository } from './operator.repository';
+import { ErrorState, StatCard } from '../ui/components';
 
 const cards = [
-  { key: 'newToday', label: 'Tiket baru hari ini', tone: 'blue' },
-  { key: 'needsInfo', label: 'Butuh data', tone: 'amber' },
-  { key: 'needsReview', label: 'Perlu dicek', tone: 'orange' },
-  { key: 'scheduledToday', label: 'Terjadwal hari ini', tone: 'violet' },
-  { key: 'completedToday', label: 'Selesai hari ini', tone: 'green' },
-  { key: 'extraTrip', label: 'Butuh extra trip', tone: 'red' },
-  { key: 'watangSawitto', label: 'Watang Sawitto', tone: 'slate' },
-  { key: 'paleteang', label: 'Paleteang', tone: 'slate' },
+  { key: 'newToday', label: 'Tiket baru hari ini', tone: 'primary', icon: 'ticket' },
+  { key: 'needsInfo', label: 'Butuh data', tone: 'amber', icon: 'clock' },
+  { key: 'needsReview', label: 'Perlu dicek', tone: 'amber', icon: 'spark' },
+  { key: 'scheduledToday', label: 'Terjadwal hari ini', tone: 'primary', icon: 'calendar' },
+  { key: 'completedToday', label: 'Selesai hari ini', tone: 'green', icon: 'leaf' },
+  { key: 'extraTrip', label: 'Butuh extra trip', tone: 'amber', icon: 'truck' },
+  { key: 'watangSawitto', label: 'Watang Sawitto', tone: 'green', icon: 'pin' },
+  { key: 'paleteang', label: 'Paleteang', tone: 'green', icon: 'pin' },
 ] as const;
-
-const toneClasses = {
-  blue: 'border-blue-200 bg-blue-50 text-blue-800',
-  amber: 'border-amber-200 bg-amber-50 text-amber-800',
-  orange: 'border-orange-200 bg-orange-50 text-orange-800',
-  violet: 'border-violet-200 bg-violet-50 text-violet-800',
-  green: 'border-green-200 bg-green-50 text-green-800',
-  red: 'border-red-200 bg-red-50 text-red-800',
-  slate: 'border-slate-200 bg-white text-slate-800',
-} as const;
 
 export function AdminOverview() {
   const summary = useQuery({
@@ -37,7 +28,7 @@ export function AdminOverview() {
   return (
     <div className="space-y-8">
       <section>
-        <p className="text-sm font-semibold uppercase tracking-[0.16em] text-green-700">
+        <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#159fb3]">
           Ringkasan Operasional
         </p>
         <h1 className="mt-2 text-3xl font-bold text-slate-950">
@@ -49,24 +40,22 @@ export function AdminOverview() {
       </section>
 
       {summary.isError ? (
-        <ErrorPanel message="Ringkasan gagal dimuat." />
+        <ErrorState message="Ringkasan gagal dimuat." />
       ) : (
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {cards.map((card) => (
-            <article
-              className={`rounded-2xl border p-5 shadow-sm ${toneClasses[card.tone]}`}
+            <StatCard
+              icon={card.icon}
               key={card.key}
-            >
-              <p className="text-sm font-medium opacity-80">{card.label}</p>
-              <p className="mt-3 text-3xl font-bold">
-                {summary.data?.[card.key] ?? '...'}
-              </p>
-            </article>
+              label={card.label}
+              tone={card.tone}
+              value={summary.data?.[card.key] ?? '...'}
+            />
           ))}
         </section>
       )}
 
-      <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <section className="rounded-[1.5rem] border border-slate-200 bg-white shadow-[0_10px_35px_rgb(15_23_42/0.06)]">
         <div className="flex items-center justify-between border-b border-slate-200 px-6 py-5">
           <div>
             <h2 className="text-lg font-bold">Perlu tindakan operator</h2>
@@ -75,7 +64,7 @@ export function AdminOverview() {
             </p>
           </div>
           <Link
-            className="text-sm font-semibold text-green-700 hover:text-green-900"
+            className="text-sm font-semibold text-[#087f8c] hover:text-[#075e68]"
             to="/admin/tickets"
           >
             Lihat semua
@@ -111,14 +100,6 @@ export function AdminOverview() {
           )}
         </div>
       </section>
-    </div>
-  );
-}
-
-function ErrorPanel({ message }: { message: string }) {
-  return (
-    <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-800">
-      {message}
     </div>
   );
 }

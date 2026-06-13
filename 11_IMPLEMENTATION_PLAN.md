@@ -300,7 +300,36 @@ Hasil observability:
 - Error job tetap dilempar agar retry scheduler tetap bekerja.
 - Unit suite dibatasi maksimal empat worker agar stabil pada CI Windows.
 
-## 4. Aturan Scope MVP
+## 4. Penyegaran UI/UX Mobile-First
+
+Status: selesai dan tervalidasi pada build produksi.
+
+- Sistem desain memakai Poppins, warna utama turquoise, kartu membulat, serta
+  komponen loading, error, empty state, badge, modal, dan bottom sheet bersama.
+- Halaman warga tersedia pada `/`, `/sampahku`, `/tickets`, `/tickets/:id`,
+  `/profile`, dan wizard empat langkah `/pickup/new`.
+- Draft pengajuan warga disimpan lokal di browser. Ini bukan tiket produksi;
+  WhatsApp tetap menjadi kanal masuk resmi sampai integrasi API publik tersedia.
+- Dashboard operator, login, dan PWA petugas telah diselaraskan dengan identitas
+  visual baru tanpa mengubah kontrak Firebase maupun aturan bisnis.
+- Logo memakai nama aset stabil
+  `public/logo-yayasan-masyarakat-peduli-pinrang.png`.
+
+## 5. Wilayah Layanan dan Peta OpenStreetMap
+
+Status: fondasi wilayah, input GPS warga, master kelurahan, filter operator,
+dan peta tiket selesai.
+
+- Master 14 kelurahan untuk Watang Sawitto dan Paleteang.
+- Normalisasi alias `Sawito` ke penulisan resmi `Sawitto`.
+- Metadata lokasi baru bersifat opsional agar tiket Firestore lama tetap valid.
+- Wizard warga menyimpan kelurahan, koordinat, akurasi, dan sumber lokasi.
+- Operator dapat melihat tiket berkoordinat pada `/admin/map`.
+- Master wilayah read-only tersedia pada `/admin/regions`.
+- Lingkungan, zona, boundary GeoJSON, dan posisi petugas realtime menunggu data
+  lapangan serta aturan akses Firestore khusus.
+
+## 6. Aturan Scope MVP
 
 Implementasi fase ini tidak boleh menambahkan:
 

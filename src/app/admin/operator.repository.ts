@@ -40,6 +40,9 @@ function filterTickets(
       (ticket) => !filters.district || ticket.district === filters.district,
     )
     .filter(
+      (ticket) => !filters.villageId || ticket.villageId === filters.villageId,
+    )
+    .filter(
       (ticket) =>
         !filters.serviceType || ticket.serviceType === filters.serviceType,
     )
@@ -58,6 +61,8 @@ function filterTickets(
         ticket.ticketCode,
         ticket.customerName,
         ticket.customerPhoneNumber,
+        ticket.addressText,
+        ticket.villageId,
       ]
         .filter(Boolean)
         .some((value) =>

@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
+import { AppLogo, ErrorState, PrimaryButton } from '../ui/components';
 import { useAuth } from './auth-context';
 
 export function LoginPage() {
@@ -35,75 +36,98 @@ export function LoginPage() {
   }
 
   return (
-    <main className="grid min-h-screen place-items-center bg-slate-100 px-4">
-      <div className="w-full max-w-md rounded-2xl bg-white p-7 shadow-lg">
-        <p className="text-sm font-bold uppercase tracking-[0.18em] text-green-700">
-          SampahTa' Pinrang
+    <main className="grid min-h-screen lg:grid-cols-2">
+      <section className="brand-grid hidden p-12 text-white lg:flex lg:flex-col lg:justify-between">
+        <AppLogo inverse />
+        <div className="max-w-lg">
+          <p className="text-sm font-bold uppercase tracking-[0.18em] text-cyan-100">
+            Portal operasional
+          </p>
+          <h1 className="mt-5 text-5xl font-extrabold leading-tight">
+            Jemput sampah lebih tertata untuk Pinrang.
+          </h1>
+          <p className="mt-5 leading-8 text-cyan-50">
+            Verifikasi tiket, atur jadwal, dan bantu petugas menyelesaikan
+            penjemputan dari satu dashboard.
+          </p>
+        </div>
+        <p className="text-xs text-cyan-100">
+          Yayasan Masyarakat Peduli Pinrang
         </p>
-        <h1 className="mt-2 text-3xl font-bold">Masuk</h1>
-        <p className="mt-2 text-sm text-slate-600">
-          Gunakan akun operator atau petugas yang terdaftar.
-        </p>
-
-        {profileMissing && authenticated && (
-          <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-            Login berhasil, tetapi profil dan role akun belum dibuat pada
-            Firestore.
-            {authUid && (
-              <code className="mt-3 block break-all rounded-lg bg-white p-3 text-xs">
-                users/{authUid}
-              </code>
-            )}
-            <button
-              className="mt-3 block font-bold underline"
-              onClick={() => void logout()}
-              type="button"
-            >
-              Keluar dan gunakan akun lain
-            </button>
+      </section>
+      <section className="grid place-items-center bg-[#f8fafc] px-4 py-10">
+        <div className="w-full max-w-md">
+          <div className="mb-8 lg:hidden">
+            <AppLogo />
           </div>
-        )}
-        {error && (
-          <div className="mt-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
-            {error}
-          </div>
-        )}
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#159fb3]">
+            Selamat datang
+          </p>
+          <h1 className="mt-2 text-3xl font-extrabold">Masuk ke akun</h1>
+          <p className="mt-2 text-sm leading-6 text-slate-500">
+            Gunakan akun operator atau petugas yang terdaftar.
+          </p>
 
-        <form
-          className="mt-6 space-y-4"
-          hidden={profileMissing && authenticated}
-          onSubmit={submit}
-        >
-          <label className="block text-sm font-bold">
-            Email
-            <input
-              autoComplete="email"
-              className="mt-2 w-full rounded-xl border border-slate-300 p-3"
-              name="email"
-              required
-              type="email"
-            />
-          </label>
-          <label className="block text-sm font-bold">
-            Password
-            <input
+          {profileMissing && authenticated && (
+            <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+              Login berhasil, tetapi profil dan role akun belum dibuat.
+              {authUid && (
+                <code className="mt-3 block break-all rounded-xl bg-white p-3 text-xs">
+                  users/{authUid}
+                </code>
+              )}
+              <button
+                className="mt-3 font-bold underline"
+                onClick={() => void logout()}
+                type="button"
+              >
+                Keluar dan gunakan akun lain
+              </button>
+            </div>
+          )}
+          {error && <div className="mt-5"><ErrorState message={error} /></div>}
+
+          <form
+            className="mt-7 space-y-4"
+            hidden={profileMissing && authenticated}
+            onSubmit={submit}
+          >
+            <Field autoComplete="email" label="Email" name="email" type="email" />
+            <Field
               autoComplete="current-password"
-              className="mt-2 w-full rounded-xl border border-slate-300 p-3"
-              minLength={6}
+              label="Password"
               name="password"
-              required
               type="password"
             />
-          </label>
-          <button
-            className="w-full rounded-xl bg-green-700 px-4 py-3 font-bold text-white disabled:opacity-50"
-            disabled={loading}
-            type="submit"
+            <PrimaryButton className="mt-2 w-full" disabled={loading} type="submit">
+              {loading ? 'Memeriksa akun...' : 'Masuk'}
+            </PrimaryButton>
+          </form>
+          <Link
+            className="mt-6 block text-center text-sm font-bold text-[#087f8c]"
+            to="/"
           >
-            {loading ? 'Memeriksa akun...' : 'Masuk'}
-          </button>
-        </form>
-      </div>
+            ← Kembali ke halaman warga
+          </Link>
+        </div>
+      </section>
     </main>
+  );
+}
+
+function Field({
+  label,
+  ...props
+}: React.InputHTMLAttributes<HTMLInputElement> & { label: string }) {
+  return (
+    <label className="block text-sm font-bold">
+      {label}
+      <input
+        className="mt-2 w-full rounded-2xl border border-[#d9e2e7] bg-white p-3.5 outline-none focus:border-[#159fb3]"
+        minLength={props.type === 'password' ? 6 : undefined}
+        required
+        {...props}
+      />
+    </label>
   );
 }

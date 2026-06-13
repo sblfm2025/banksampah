@@ -10,12 +10,33 @@ export const createPickupRequestInputSchema = z.object({
   customer: customerInputSchema,
   district: z.enum(DISTRICTS),
   village: z.string().trim().min(1).max(120).optional(),
+  villageId: z.string().trim().min(1).max(120).optional(),
+  neighborhoodId: z.string().trim().min(1).max(120).optional(),
+  pickupZoneId: z.string().trim().min(1).max(120).optional(),
   addressText: z.string().trim().min(1).max(500).optional(),
   location: z
     .object({
       lat: z.number().min(-90).max(90),
       lng: z.number().min(-180).max(180),
     })
+    .optional(),
+  locationAccuracyMeters: z.number().min(0).optional(),
+  locationSource: z
+    .enum([
+      'WHATSAPP_SHARE_LOCATION',
+      'BROWSER_GPS',
+      'MANUAL_PIN',
+      'MANUAL_TEXT',
+      'OPERATOR_INPUT',
+    ])
+    .optional(),
+  locationValidationStatus: z
+    .enum([
+      'INSIDE_SERVICE_AREA',
+      'OUTSIDE_SERVICE_AREA',
+      'NEEDS_OPERATOR_REVIEW',
+      'UNKNOWN',
+    ])
     .optional(),
   serviceType: z.enum(SERVICE_TYPES),
   volumeLevel: z.enum([
@@ -62,12 +83,31 @@ export const updatePickupStatusInputSchema = z.object({
 
 export const updatePickupIntakeInputSchema = z.object({
   district: z.enum(DISTRICTS),
+  villageId: z.string().trim().min(1).max(120).optional(),
   addressText: z.string().trim().min(1).max(500).optional(),
   location: z
     .object({
       lat: z.number().min(-90).max(90),
       lng: z.number().min(-180).max(180),
     })
+    .optional(),
+  locationAccuracyMeters: z.number().min(0).optional(),
+  locationSource: z
+    .enum([
+      'WHATSAPP_SHARE_LOCATION',
+      'BROWSER_GPS',
+      'MANUAL_PIN',
+      'MANUAL_TEXT',
+      'OPERATOR_INPUT',
+    ])
+    .optional(),
+  locationValidationStatus: z
+    .enum([
+      'INSIDE_SERVICE_AREA',
+      'OUTSIDE_SERVICE_AREA',
+      'NEEDS_OPERATOR_REVIEW',
+      'UNKNOWN',
+    ])
     .optional(),
   serviceType: z.enum(SERVICE_TYPES),
   volumeLevel: z.enum([

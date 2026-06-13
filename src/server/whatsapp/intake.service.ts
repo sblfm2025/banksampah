@@ -196,6 +196,7 @@ export class WhatsAppIntakeService {
     if (existing) {
       ticket = await this.tickets.updateIntake(existing.id, {
         district: analysis.detectedDistrict,
+        villageId: analysis.detectedVillage,
         addressText,
         location: conversation.location
           ? {
@@ -203,6 +204,10 @@ export class WhatsAppIntakeService {
               lng: conversation.location.lng,
             }
           : undefined,
+        locationSource: conversation.location
+          ? 'WHATSAPP_SHARE_LOCATION'
+          : 'MANUAL_TEXT',
+        locationValidationStatus: 'NEEDS_OPERATOR_REVIEW',
         serviceType,
         volumeLevel: analysis.volumeLevel,
         tricycleLoadEstimate: analysis.tricycleLoadEstimate,
@@ -229,6 +234,7 @@ export class WhatsAppIntakeService {
           createdFrom: 'WHATSAPP',
         },
         district: analysis.detectedDistrict,
+        villageId: analysis.detectedVillage,
         addressText,
         location: conversation.location
           ? {
@@ -236,6 +242,10 @@ export class WhatsAppIntakeService {
               lng: conversation.location.lng,
             }
           : undefined,
+        locationSource: conversation.location
+          ? 'WHATSAPP_SHARE_LOCATION'
+          : 'MANUAL_TEXT',
+        locationValidationStatus: 'NEEDS_OPERATOR_REVIEW',
         serviceType,
         volumeLevel: analysis.volumeLevel,
         tricycleLoadEstimate: analysis.tricycleLoadEstimate,

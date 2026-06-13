@@ -7,10 +7,21 @@ import type { PickupRequest } from '../../shared/schemas/pickup.schema';
 import { operatorRepository } from './operator.repository';
 import { StatusBadge } from './StatusBadge';
 import { loadPickupProof } from './pickup-proof-media';
+import { getVillage } from '../../shared/regions/service-areas';
+import { AppDialog } from '../ui/components';
+
+type ScheduleInput = Parameters<typeof operatorRepository.schedule>[1];
+type AssignInput = Parameters<typeof operatorRepository.assignDriver>[1];
+type PendingAction =
+  | { kind: 'confirm' }
+  | { kind: 'reject'; reason: string }
+  | { kind: 'schedule'; input: ScheduleInput }
+  | { kind: 'assign'; input: AssignInput };
 
 export function TicketDetailPage() {
   const { id } = useParams();
   const queryClient = useQueryClient();
+  const [pendingAction, setPendingAction] = useState<PendingAction>();
   const ticket = useQuery({
     queryKey: ['ticket', id],
     queryFn: () => operatorRepository.getTicket(id!),
@@ -99,7 +110,15 @@ export function TicketDetailPage() {
                 ['Nama', data.customerName ?? 'Belum diketahui'],
                 ['Nomor WhatsApp', data.customerPhoneNumber],
                 ['Kecamatan', DISTRICT_LABELS[data.district]],
+                [
+                  'Kelurahan',
+                  getVillage(data.villageId)?.name ?? data.village ?? '-',
+                ],
                 ['Alamat', data.addressText ?? 'Belum ada alamat'],
+                [
+                  'Sumber lokasi',
+                  data.locationSource ?? 'Belum tercatat',
+                ],
               ]}
             />
             <div className="mt-4 flex flex-wrap gap-3">
@@ -246,30 +265,17 @@ export function TicketDetailPage() {
             data.status === 'NEEDS_OPERATOR_REVIEW') && (
             <ConfirmActions
               disabled={statusMutation.isPending}
-              onConfirm={() => {
-                if (window.confirm('Konfirmasi tiket ini?')) {
-                  statusMutation.mutate({ status: 'CONFIRMED' });
-                }
-              }}
-              onReject={(reason) => {
-                if (window.confirm('Tolak tiket ini?')) {
-                  statusMutation.mutate({
-                    status: 'REJECTED',
-                    rejectedReason: reason,
-                  });
-                }
-              }}
+              onConfirm={() => setPendingAction({ kind: 'confirm' })}
+              onReject={(reason) => setPendingAction({ kind: 'reject', reason })}
             />
           )}
 
           {data.status === 'CONFIRMED' && (
             <ScheduleForm
               disabled={scheduleMutation.isPending}
-              onSubmit={(input) => {
-                if (window.confirm('Simpan jadwal pickup ini?')) {
-                  scheduleMutation.mutate(input);
-                }
-              }}
+              onSubmit={(input) =>
+                setPendingAction({ kind: 'schedule', input })
+              }
             />
           )}
 
@@ -277,17 +283,88 @@ export function TicketDetailPage() {
             <AssignForm
               disabled={assignMutation.isPending}
               drivers={drivers.data ?? []}
-              onSubmit={(input) => {
-                if (window.confirm('Tugaskan petugas ini?')) {
-                  assignMutation.mutate(input);
-                }
-              }}
+              onSubmit={(input) => setPendingAction({ kind: 'assign', input })}
             />
           )}
         </aside>
       </div>
+      <AppDialog
+        busy={
+          statusMutation.isPending ||
+          scheduleMutation.isPending ||
+          assignMutation.isPending
+        }
+        cancelLabel="Batal"
+        confirmLabel={dialogContent(pendingAction).confirmLabel}
+        description={dialogContent(pendingAction).description}
+        icon={dialogContent(pendingAction).icon}
+        onCancel={() => setPendingAction(undefined)}
+        onConfirm={() => {
+          if (!pendingAction) return;
+          const close = () => setPendingAction(undefined);
+          if (pendingAction.kind === 'confirm') {
+            statusMutation.mutate({ status: 'CONFIRMED' }, { onSettled: close });
+          } else if (pendingAction.kind === 'reject') {
+            statusMutation.mutate(
+              {
+                status: 'REJECTED',
+                rejectedReason: pendingAction.reason,
+              },
+              { onSettled: close },
+            );
+          } else if (pendingAction.kind === 'schedule') {
+            scheduleMutation.mutate(pendingAction.input, { onSettled: close });
+          } else {
+            assignMutation.mutate(pendingAction.input, { onSettled: close });
+          }
+        }}
+        open={Boolean(pendingAction)}
+        title={dialogContent(pendingAction).title}
+        tone={dialogContent(pendingAction).tone}
+      />
     </div>
   );
+}
+
+function dialogContent(action?: PendingAction) {
+  if (action?.kind === 'reject') {
+    return {
+      title: 'Tolak tiket ini?',
+      description:
+        'Tiket akan ditandai ditolak dan alasan penolakan dapat dilihat pada riwayat layanan.',
+      confirmLabel: 'Ya, tolak tiket',
+      tone: 'danger' as const,
+      icon: 'warning' as const,
+    };
+  }
+  if (action?.kind === 'schedule') {
+    return {
+      title: 'Simpan jadwal pickup?',
+      description:
+        'Tanggal dan jam yang dipilih akan menjadi jadwal operasional untuk tiket ini.',
+      confirmLabel: 'Simpan jadwal',
+      tone: 'primary' as const,
+      icon: 'calendar' as const,
+    };
+  }
+  if (action?.kind === 'assign') {
+    return {
+      title: 'Tugaskan petugas?',
+      description:
+        'Petugas terpilih akan menerima tiket ini pada daftar tugas pickup.',
+      confirmLabel: 'Tugaskan',
+      tone: 'primary' as const,
+      icon: 'truck' as const,
+    };
+  }
+  return {
+    title: 'Konfirmasi tiket ini?',
+    description:
+      'Tiket akan lolos verifikasi operator dan dapat dilanjutkan ke penjadwalan pickup.',
+    confirmLabel: 'Konfirmasi tiket',
+    tone: 'success' as const,
+    icon: 'check' as const,
+  };
 }
 
 function ProofGallery({ label, urls }: { label: string; urls: string[] }) {

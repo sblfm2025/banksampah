@@ -11,6 +11,10 @@ import { SERVICE_TYPE_LABELS } from '../../shared/constants/services';
 import { operatorRepository } from './operator.repository';
 import type { TicketFilters } from './operator.types';
 import { StatusBadge } from './StatusBadge';
+import {
+  SERVICE_VILLAGES,
+  getVillage,
+} from '../../shared/regions/service-areas';
 
 export function TicketsPage() {
   const [filters, setFilters] = useState<TicketFilters>({});
@@ -29,13 +33,13 @@ export function TicketsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <p className="text-sm font-semibold uppercase tracking-[0.16em] text-green-700">
+        <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#159fb3]">
           Tiket Masuk
         </p>
         <h1 className="mt-2 text-3xl font-bold">Kelola permintaan pickup</h1>
       </div>
 
-      <section className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-5">
+      <section className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-6">
         <input
           aria-label="Cari tiket"
           className="rounded-xl border border-slate-300 px-3 py-2 text-sm md:col-span-2"
@@ -55,6 +59,24 @@ export function TicketsPage() {
           {PICKUP_STATUSES.map((status) => (
             <option key={status} value={status}>
               {PICKUP_STATUS_LABELS[status]}
+            </option>
+          ))}
+        </select>
+        <select
+          aria-label="Filter kelurahan"
+          className="rounded-xl border border-slate-300 px-3 py-2 text-sm"
+          onChange={(event) =>
+            updateFilter('villageId', event.target.value)
+          }
+          value={filters.villageId ?? ''}
+        >
+          <option value="">Semua kelurahan</option>
+          {SERVICE_VILLAGES.filter(
+            (village) =>
+              !filters.district || village.districtId === filters.district,
+          ).map((village) => (
+            <option key={village.id} value={village.id}>
+              {village.name}
             </option>
           ))}
         </select>
@@ -100,6 +122,7 @@ export function TicketsPage() {
                 <th className="px-4 py-3">Tiket</th>
                 <th className="px-4 py-3">Customer</th>
                 <th className="px-4 py-3">Kecamatan</th>
+                <th className="px-4 py-3">Kelurahan</th>
                 <th className="px-4 py-3">Layanan</th>
                 <th className="px-4 py-3">Volume</th>
                 <th className="px-4 py-3">Status</th>
@@ -122,6 +145,11 @@ export function TicketsPage() {
                     {DISTRICT_LABELS[ticket.district]}
                   </td>
                   <td className="px-4 py-4">
+                    {getVillage(ticket.villageId)?.name ??
+                      ticket.village ??
+                      '-'}
+                  </td>
+                  <td className="px-4 py-4">
                     {SERVICE_TYPE_LABELS[ticket.serviceType]}
                   </td>
                   <td className="px-4 py-4">{ticket.volumeLevel}</td>
@@ -130,7 +158,7 @@ export function TicketsPage() {
                   </td>
                   <td className="px-4 py-4">
                     <Link
-                      className="font-semibold text-green-700 hover:text-green-900"
+                      className="font-semibold text-[#087f8c] hover:text-[#075e68]"
                       to={`/admin/tickets/${ticket.id}`}
                     >
                       Detail

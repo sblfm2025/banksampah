@@ -17,6 +17,9 @@ export const WASTE_ANALYSIS_JSON_SCHEMA = {
       type: 'string',
       enum: ['WATANG_SAWITTO', 'PALETEANG', 'OUT_OF_AREA', 'UNKNOWN'],
     },
+    detectedVillage: {
+      type: 'string',
+    },
     addressCompleteness: {
       type: 'string',
       enum: ['COMPLETE', 'PARTIAL', 'MISSING'],

@@ -32,7 +32,7 @@ export function ReportsPage() {
   return (
     <div className="space-y-8">
       <section>
-        <p className="text-sm font-semibold uppercase tracking-[0.16em] text-green-700">
+        <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#159fb3]">
           Laporan Operasional
         </p>
         <h1 className="mt-2 text-3xl font-bold">Kinerja layanan pickup</h1>
@@ -53,7 +53,7 @@ export function ReportsPage() {
           onChange={setEndDate}
         />
         <button
-          className="rounded-xl bg-green-700 px-5 py-3 font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-xl bg-[#159fb3] px-5 py-3 font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
           disabled={!report.data}
           onClick={() => report.data && downloadOperationalReport(report.data)}
           type="button"

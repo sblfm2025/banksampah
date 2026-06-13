@@ -6,6 +6,7 @@ import {
   type CompletePickupInput,
 } from '../../shared/schemas/pickup-proof.schema';
 import { useAuth } from '../auth/auth-context';
+import { getVillage } from '../../shared/regions/service-areas';
 import { StatusBadge } from '../admin/StatusBadge';
 import {
   cachePickup,
@@ -17,6 +18,7 @@ import {
   proofStorageEnabled,
   ProofStorageUnavailableError,
 } from './driver.repository';
+import { AppDialog } from '../ui/components';
 
 const resultLabels: Record<
   CompletePickupInput['actualTripResult'],
@@ -39,6 +41,11 @@ export function DriverPickupDetailPage() {
   const [beforeFiles, setBeforeFiles] = useState<File[]>([]);
   const [afterFiles, setAfterFiles] = useState<File[]>([]);
   const [formMessage, setFormMessage] = useState('');
+  const [confirmStart, setConfirmStart] = useState(false);
+  const [notice, setNotice] = useState<{
+    title: string;
+    description: string;
+  }>();
   const pickup = useQuery({
     queryKey: ['driver-pickup', id],
     queryFn: async () => {
@@ -146,7 +153,7 @@ export function DriverPickupDetailPage() {
   return (
     <div className="space-y-5">
       <div>
-        <Link className="text-sm font-bold text-green-700" to="/driver/pickups">
+        <Link className="text-sm font-bold text-[#087f8c]" to="/driver/pickups">
           Kembali
         </Link>
         <div className="mt-2 flex items-center justify-between gap-3">
@@ -178,10 +185,15 @@ export function DriverPickupDetailPage() {
         </p>
         <p className="mt-1 text-slate-600">
           {ticket.addressText ?? 'Alamat belum tersedia'}
+          {ticket.villageId && (
+            <span className="mt-1 block text-sm text-slate-500">
+              Kelurahan {getVillage(ticket.villageId)?.name}
+            </span>
+          )}
         </p>
         <div className="mt-4 grid grid-cols-2 gap-3">
           <a
-            className="rounded-xl bg-green-700 px-3 py-3 text-center font-bold text-white"
+            className="rounded-xl bg-[#159fb3] px-3 py-3 text-center font-bold text-white"
             href={mapsUrl(ticket)}
             rel="noreferrer"
             target="_blank"
@@ -189,7 +201,7 @@ export function DriverPickupDetailPage() {
             Buka Maps
           </a>
           <a
-            className="rounded-xl border border-green-700 px-3 py-3 text-center font-bold text-green-800"
+            className="rounded-xl border border-[#159fb3] px-3 py-3 text-center font-bold text-[#087f8c]"
             href={`https://wa.me/${ticket.customerPhoneNumber}`}
             rel="noreferrer"
             target="_blank"
@@ -239,11 +251,9 @@ export function DriverPickupDetailPage() {
 
       {ticket.status === 'ASSIGNED' && (
         <button
-          className="w-full rounded-2xl bg-green-700 px-5 py-4 text-lg font-bold text-white disabled:opacity-50"
+          className="w-full rounded-2xl bg-[#159fb3] px-5 py-4 text-lg font-bold text-white disabled:opacity-50"
           disabled={start.isPending}
-          onClick={() => {
-            if (window.confirm('Mulai penjemputan sekarang?')) start.mutate();
-          }}
+          onClick={() => setConfirmStart(true)}
           type="button"
         >
           Mulai Penjemputan
@@ -271,11 +281,17 @@ export function DriverPickupDetailPage() {
           <PhotoInput
             disabled={!proofStorageEnabled}
             label="Foto sebelum diangkut"
+            onInvalid={(description) =>
+              setNotice({ title: 'Foto belum dapat digunakan', description })
+            }
             onFiles={setBeforeFiles}
           />
           <PhotoInput
             disabled={!proofStorageEnabled}
             label="Foto setelah diangkut"
+            onInvalid={(description) =>
+              setNotice({ title: 'Foto belum dapat digunakan', description })
+            }
             onFiles={setAfterFiles}
           />
           <label className="block text-sm font-bold">
@@ -301,7 +317,7 @@ export function DriverPickupDetailPage() {
             />
           </label>
           <button
-            className="w-full rounded-xl bg-green-700 px-4 py-4 text-lg font-bold text-white disabled:opacity-50"
+            className="w-full rounded-xl bg-[#159fb3] px-4 py-4 text-lg font-bold text-white disabled:opacity-50"
             disabled={complete.isPending || !proofStorageEnabled}
             type="submit"
           >
@@ -309,6 +325,30 @@ export function DriverPickupDetailPage() {
           </button>
         </form>
       )}
+      <AppDialog
+        busy={start.isPending}
+        cancelLabel="Batal"
+        confirmLabel="Mulai sekarang"
+        description="Status tiket akan berubah menjadi sedang dijemput. Pastikan Anda sudah menuju atau berada di lokasi customer."
+        icon="truck"
+        onCancel={() => setConfirmStart(false)}
+        onConfirm={() =>
+          start.mutate(undefined, {
+            onSettled: () => setConfirmStart(false),
+          })
+        }
+        open={confirmStart}
+        title="Mulai penjemputan?"
+      />
+      <AppDialog
+        confirmLabel="Mengerti"
+        description={notice?.description ?? ''}
+        icon="warning"
+        onConfirm={() => setNotice(undefined)}
+        open={Boolean(notice)}
+        title={notice?.title ?? ''}
+        tone="warning"
+      />
     </div>
   );
 }
@@ -316,10 +356,12 @@ export function DriverPickupDetailPage() {
 function PhotoInput({
   label,
   onFiles,
+  onInvalid,
   disabled = false,
 }: {
   label: string;
   onFiles: (files: File[]) => void;
+  onInvalid: (message: string) => void;
   disabled?: boolean;
 }) {
   return (
@@ -336,7 +378,7 @@ function PhotoInput({
           if (files.length > 2) {
             event.target.value = '';
             onFiles([]);
-            window.alert('Maksimal dua foto untuk setiap bagian.');
+            onInvalid('Maksimal dua foto untuk setiap bagian.');
             return;
           }
           const invalid = files.find(
@@ -345,7 +387,7 @@ function PhotoInput({
           if (invalid) {
             event.target.value = '';
             onFiles([]);
-            window.alert(
+            onInvalid(
               'Foto harus JPEG, PNG, atau WebP dan berukuran di bawah 10 MB.',
             );
             return;

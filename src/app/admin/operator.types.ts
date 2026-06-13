@@ -14,6 +14,7 @@ import type {
 export interface TicketFilters {
   status?: PickupStatus;
   district?: District;
+  villageId?: string;
   serviceType?: PickupRequest['serviceType'];
   volumeLevel?: PickupRequest['volumeLevel'];
   query?: string;

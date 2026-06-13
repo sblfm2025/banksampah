@@ -29,7 +29,7 @@ export function SchedulesPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-green-700">
+          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#159fb3]">
             Jadwal Pickup
           </p>
           <h1 className="mt-2 text-3xl font-bold">Rencana operasional harian</h1>
@@ -91,7 +91,7 @@ export function SchedulesPage() {
                   key={ticket.id}
                   to={`/admin/tickets/${ticket.id}`}
                 >
-                  <div className="font-bold text-green-800">
+                  <div className="font-bold text-[#087f8c]">
                     {ticket.scheduledTimeWindow
                       ? `${ticket.scheduledTimeWindow.start}-${ticket.scheduledTimeWindow.end}`
                       : 'Belum ada jam'}

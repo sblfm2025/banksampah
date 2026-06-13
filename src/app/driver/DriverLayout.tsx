@@ -2,6 +2,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { useAuth } from '../auth/auth-context';
+import { AppLogo } from '../ui/components';
 import {
   listPendingCompletions,
   syncPendingCompletions,
@@ -52,25 +53,21 @@ export function DriverLayout() {
   }, [refreshPending, sync]);
 
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-950">
-      <header className="sticky top-0 z-10 bg-green-800 text-white shadow">
+    <div className="min-h-screen bg-[#f8fafc] text-slate-950">
+      <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur">
         <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-4">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-green-200">
-              SampahTa' Driver
-            </p>
-            <p className="mt-1 font-bold">{user?.name}</p>
-          </div>
+          <AppLogo compact />
           <div className="flex items-center gap-3 text-right">
             <div>
             <p
-              className={`text-sm font-bold ${online ? 'text-green-100' : 'text-amber-200'}`}
+              className={`text-sm font-bold ${online ? 'text-green-700' : 'text-amber-600'}`}
             >
               {online ? 'Online' : 'Offline'}
             </p>
+            <p className="text-xs text-slate-500">{user?.name}</p>
             {pending > 0 && (
               <button
-                className="mt-1 text-xs font-semibold text-amber-200 underline"
+                className="mt-1 text-xs font-semibold text-amber-600 underline"
                 disabled={syncing || !online}
                 onClick={() => void sync()}
                 type="button"
@@ -81,7 +78,7 @@ export function DriverLayout() {
             </div>
             {!demoMode && (
               <button
-                className="rounded-lg border border-green-300 px-3 py-2 text-xs font-bold"
+                className="rounded-xl border border-[#159fb3] px-3 py-2 text-xs font-bold text-[#087f8c]"
                 onClick={() => void logout()}
                 type="button"
               >
