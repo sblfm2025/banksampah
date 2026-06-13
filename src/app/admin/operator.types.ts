@@ -19,6 +19,7 @@ export interface TicketFilters {
   volumeLevel?: PickupRequest['volumeLevel'];
   query?: string;
   scheduledDate?: string;
+  assignedDriverId?: string;
 }
 
 export interface DashboardSummary {

@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { useAuth } from '../auth/auth-context';
 import { AppLogo } from '../ui/components';
+import { useDemoData } from '../runtime-config';
 import {
   listPendingCompletions,
   syncPendingCompletions,
@@ -11,7 +12,7 @@ import { driverRepository } from './driver.repository';
 
 export function DriverLayout() {
   const { user, logout } = useAuth();
-  const demoMode = import.meta.env.VITE_USE_DEMO_DATA !== 'false';
+  const demoMode = useDemoData;
   const queryClient = useQueryClient();
   const [online, setOnline] = useState(navigator.onLine);
   const [pending, setPending] = useState(0);
@@ -89,8 +90,8 @@ export function DriverLayout() {
         </div>
       </header>
       {demoMode && (
-        <div className="bg-amber-50 px-4 py-2 text-center text-xs font-semibold text-amber-900">
-          Mode demo driver aktif
+        <div className="bg-red-600 px-4 py-2 text-center text-xs font-bold text-white">
+          MODE DEMO AKTIF - DATA BUKAN OPERASIONAL
         </div>
       )}
       <main className="mx-auto max-w-2xl px-4 py-5">

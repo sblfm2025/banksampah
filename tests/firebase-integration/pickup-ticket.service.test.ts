@@ -412,6 +412,10 @@ describe('PickupTicketService', () => {
 
   it('menghasilkan laporan harian dari tiket yang dibuat dan diselesaikan', async () => {
     const ticket = await createAssignedTicket();
+    await adminDb.collection(COLLECTIONS.pickupRequests).doc(ticket.id).update({
+      createdAt: new Date('2026-06-13T01:10:00.000Z'),
+      updatedAt: new Date('2026-06-13T01:10:00.000Z'),
+    });
     await driverService.complete(
       ticket.id,
       'driver-1',
@@ -532,6 +536,10 @@ describe('PickupTicketService', () => {
 
     const [intakeResult] = await intake.processWebhook(e2eWebhookPayload());
     const ticketId = intakeResult.ticketId!;
+    await adminDb.collection(COLLECTIONS.pickupRequests).doc(ticketId).update({
+      createdAt: new Date('2026-06-13T01:10:00.000Z'),
+      updatedAt: new Date('2026-06-13T01:10:00.000Z'),
+    });
     const actor = { id: 'operator-e2e', role: 'OPERATOR' } as const;
     const reviewed = await service.updateStatus(
       ticketId,

@@ -28,6 +28,10 @@ const resultLabels: Record<
   PARTIAL_PICKUP: 'Sebagian Terangkut',
   EXTRA_TRIP_REQUIRED: 'Butuh Extra Trip',
   CUSTOMER_NOT_AVAILABLE: 'Customer Tidak Ada',
+  WASTE_NOT_READY: 'Sampah Belum Siap',
+  LOCATION_NOT_FOUND: 'Lokasi Tidak Ditemukan',
+  ACCESS_BLOCKED: 'Akses Terhalang',
+  HAZARDOUS_WASTE_FOUND: 'Ditemukan Limbah B3/Berbahaya',
   CANCELLED_ON_SITE: 'Batal di Lokasi',
 };
 
@@ -313,7 +317,7 @@ export function DriverPickupDetailPage() {
             <textarea
               className="mt-2 min-h-28 w-full rounded-xl border border-slate-300 p-3 text-base"
               name="notes"
-              placeholder="Wajib untuk extra trip, customer tidak ada, atau batal"
+              placeholder="Wajib untuk semua hasil selain selesai satu trip"
             />
           </label>
           <button

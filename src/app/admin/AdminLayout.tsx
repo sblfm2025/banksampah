@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../auth/auth-context';
 import { AppIcon, AppLogo } from '../ui/components';
+import { useDemoData } from '../runtime-config';
 
 const navigation = [
   { to: '/admin', label: 'Dashboard', icon: 'chart', end: true },
@@ -19,7 +20,7 @@ const navigation = [
 
 export function AdminLayout() {
   const { user, logout } = useAuth();
-  const demoMode = import.meta.env.VITE_USE_DEMO_DATA !== 'false';
+  const demoMode = useDemoData;
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-950 lg:grid lg:grid-cols-[17rem_1fr]">
@@ -78,8 +79,8 @@ export function AdminLayout() {
           </nav>
         </header>
         {demoMode && (
-          <div className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-center text-sm font-medium text-amber-900">
-            Mode demo aktif. Perubahan hanya tersimpan selama halaman dibuka.
+          <div className="border-b border-red-700 bg-red-600 px-4 py-2 text-center text-sm font-bold text-white">
+            MODE DEMO AKTIF - DATA BUKAN OPERASIONAL
           </div>
         )}
         <main className="mx-auto max-w-[96rem] px-4 py-7 sm:px-6 lg:px-8 lg:py-9">

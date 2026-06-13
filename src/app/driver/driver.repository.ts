@@ -1,5 +1,6 @@
 import {
   completePickupInputSchema,
+  mapActualTripResultToStatus,
   type CompletePickupInput,
 } from '../../shared/schemas/pickup-proof.schema';
 import type { PickupRequest } from '../../shared/schemas/pickup.schema';
@@ -86,14 +87,7 @@ export class DemoDriverRepository implements DriverRepository {
     if (!['ASSIGNED', 'IN_PROGRESS'].includes(ticket.status)) {
       throw new Error('Pickup tidak dapat diselesaikan.');
     }
-    const status =
-      input.actualTripResult === 'COMPLETED_ONE_TRIP'
-        ? 'COMPLETED'
-        : input.actualTripResult === 'CANCELLED_ON_SITE'
-          ? 'CANCELLED'
-          : input.actualTripResult === 'CUSTOMER_NOT_AVAILABLE'
-            ? 'ASSIGNED'
-            : 'EXTRA_TRIP_REQUIRED';
+    const status = mapActualTripResultToStatus(input.actualTripResult);
 
     return this.replace(id, {
       ...ticket,
@@ -285,14 +279,7 @@ export class FirestoreDriverRepository implements DriverRepository {
       import('firebase/firestore'),
       import('../../client/firebase'),
     ]);
-    const status =
-      input.actualTripResult === 'COMPLETED_ONE_TRIP'
-        ? 'COMPLETED'
-        : input.actualTripResult === 'CANCELLED_ON_SITE'
-          ? 'CANCELLED'
-          : input.actualTripResult === 'CUSTOMER_NOT_AVAILABLE'
-            ? 'ASSIGNED'
-            : 'EXTRA_TRIP_REQUIRED';
+    const status = mapActualTripResultToStatus(input.actualTripResult);
     const timestamp = serverTimestamp();
     const batch = writeBatch(db);
     const auditReference = doc(collection(db, 'auditLogs'));

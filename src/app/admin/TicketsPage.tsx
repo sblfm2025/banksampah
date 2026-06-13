@@ -18,6 +18,10 @@ import {
 
 export function TicketsPage() {
   const [filters, setFilters] = useState<TicketFilters>({});
+  const drivers = useQuery({
+    queryKey: ['drivers', 'ticket-filter'],
+    queryFn: () => operatorRepository.listDrivers(),
+  });
   const tickets = useQuery({
     queryKey: ['tickets', filters],
     queryFn: () => operatorRepository.listTickets(filters),
@@ -39,7 +43,7 @@ export function TicketsPage() {
         <h1 className="mt-2 text-3xl font-bold">Kelola permintaan pickup</h1>
       </div>
 
-      <section className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-6">
+      <section className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-4 xl:grid-cols-8">
         <input
           aria-label="Cari tiket"
           className="rounded-xl border border-slate-300 px-3 py-2 text-sm md:col-span-2"
@@ -59,6 +63,50 @@ export function TicketsPage() {
           {PICKUP_STATUSES.map((status) => (
             <option key={status} value={status}>
               {PICKUP_STATUS_LABELS[status]}
+            </option>
+          ))}
+        </select>
+        <input
+          aria-label="Filter tanggal jadwal"
+          className="rounded-xl border border-slate-300 px-3 py-2 text-sm"
+          onChange={(event) =>
+            updateFilter('scheduledDate', event.target.value)
+          }
+          type="date"
+          value={filters.scheduledDate ?? ''}
+        />
+        <select
+          aria-label="Filter driver"
+          className="rounded-xl border border-slate-300 px-3 py-2 text-sm"
+          onChange={(event) =>
+            updateFilter('assignedDriverId', event.target.value)
+          }
+          value={filters.assignedDriverId ?? ''}
+        >
+          <option value="">Semua driver</option>
+          {(drivers.data ?? [])
+            .filter((driver) => driver.isActive)
+            .map((driver) => (
+              <option key={driver.id} value={driver.id}>
+                {driver.name}
+              </option>
+            ))}
+        </select>
+        <select
+          aria-label="Filter layanan"
+          className="rounded-xl border border-slate-300 px-3 py-2 text-sm"
+          onChange={(event) =>
+            updateFilter(
+              'serviceType',
+              event.target.value as TicketFilters['serviceType'],
+            )
+          }
+          value={filters.serviceType ?? ''}
+        >
+          <option value="">Semua layanan</option>
+          {Object.entries(SERVICE_TYPE_LABELS).map(([value, label]) => (
+            <option key={value} value={value}>
+              {label}
             </option>
           ))}
         </select>
@@ -171,6 +219,12 @@ export function TicketsPage() {
         </div>
         {tickets.isLoading && (
           <p className="p-6 text-center text-slate-500">Memuat tiket...</p>
+        )}
+        {tickets.isError && (
+          <p className="p-6 text-center text-red-700">
+            Tiket gagal dimuat. Periksa koneksi atau index Firestore untuk
+            kombinasi filter ini.
+          </p>
         )}
         {tickets.data?.length === 0 && (
           <p className="p-6 text-center text-slate-500">

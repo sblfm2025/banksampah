@@ -6,6 +6,7 @@ import {
 } from 'react';
 import type { AppUser } from '../../shared/schemas/user.schema';
 import { AuthContext, type AuthState } from './auth-context';
+import { useDemoData } from '../runtime-config';
 
 function getDemoUser(): AppUser {
   const role =
@@ -28,7 +29,7 @@ function getDemoUser(): AppUser {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const demoMode = import.meta.env.VITE_USE_DEMO_DATA !== 'false';
+  const demoMode = useDemoData;
   const [state, setState] = useState<AuthState>({
     user: demoMode ? getDemoUser() : null,
     loading: !demoMode,

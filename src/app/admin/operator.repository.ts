@@ -55,6 +55,11 @@ function filterTickets(
         !filters.scheduledDate ||
         ticket.scheduledDate === filters.scheduledDate,
     )
+    .filter(
+      (ticket) =>
+        !filters.assignedDriverId ||
+        ticket.assignedDriverId === filters.assignedDriverId,
+    )
     .filter((ticket) => {
       if (!query) return true;
       return [
@@ -411,18 +416,25 @@ export class FirestoreOperatorRepository implements OperatorRepository {
     ]);
     const tickets = collection(db, 'pickupRequests');
     const constraints = [];
+    if (filters.status) {
+      constraints.push(where('status', '==', filters.status));
+    }
+    if (filters.district) {
+      constraints.push(where('district', '==', filters.district));
+    }
+    if (filters.villageId) {
+      constraints.push(where('villageId', '==', filters.villageId));
+    }
     if (filters.scheduledDate) {
       constraints.push(where('scheduledDate', '==', filters.scheduledDate));
-    } else if (filters.status) {
-      constraints.push(where('status', '==', filters.status));
-      constraints.push(orderBy('createdAt', 'desc'));
-    } else if (filters.district) {
-      constraints.push(where('district', '==', filters.district));
-      constraints.push(orderBy('createdAt', 'desc'));
-    } else {
-      constraints.push(orderBy('createdAt', 'desc'));
     }
-    constraints.push(limit(100));
+    if (filters.assignedDriverId) {
+      constraints.push(
+        where('assignedDriverId', '==', filters.assignedDriverId),
+      );
+    }
+    constraints.push(orderBy('createdAt', 'desc'));
+    constraints.push(limit(250));
     const snapshot = await getDocs(query(tickets, ...constraints));
     return filterTickets(snapshot.docs.map(parsePickupSnapshot), filters);
   }

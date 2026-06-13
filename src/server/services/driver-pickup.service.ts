@@ -1,6 +1,7 @@
 import { Timestamp, type Firestore } from 'firebase-admin/firestore';
 import {
   completePickupInputSchema,
+  mapActualTripResultToStatus,
   type CompletePickupInput,
 } from '../../shared/schemas/pickup-proof.schema';
 import type { PickupRequest } from '../../shared/schemas/pickup.schema';
@@ -123,7 +124,7 @@ export class DriverPickupService {
       const timestamp = Timestamp.fromDate(now);
       const proofReference = this.db.collection(COLLECTIONS.pickupProofs).doc();
       const auditReference = this.db.collection(COLLECTIONS.auditLogs).doc();
-      const nextStatus = this.mapResultToStatus(input.actualTripResult);
+      const nextStatus = mapActualTripResultToStatus(input.actualTripResult);
 
       transaction.set(proofReference, {
         pickupRequestId: id,
@@ -161,21 +162,5 @@ export class DriverPickupService {
     });
 
     return this.getAssigned(id, driverId);
-  }
-
-  private mapResultToStatus(
-    result: CompletePickupInput['actualTripResult'],
-  ): PickupRequest['status'] {
-    switch (result) {
-      case 'COMPLETED_ONE_TRIP':
-        return 'COMPLETED';
-      case 'PARTIAL_PICKUP':
-      case 'EXTRA_TRIP_REQUIRED':
-        return 'EXTRA_TRIP_REQUIRED';
-      case 'CUSTOMER_NOT_AVAILABLE':
-        return 'ASSIGNED';
-      case 'CANCELLED_ON_SITE':
-        return 'CANCELLED';
-    }
   }
 }

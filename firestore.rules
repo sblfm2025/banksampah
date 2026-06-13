@@ -71,11 +71,13 @@ service cloud.firestore {
         || (from == 'SCHEDULED' && to in ['ASSIGNED', 'CANCELLED'])
         || (from == 'ASSIGNED' && to in [
           'IN_PROGRESS',
+          'NEEDS_OPERATOR_REVIEW',
           'SCHEDULED',
           'CANCELLED'
         ])
         || (from == 'IN_PROGRESS' && to in [
           'ASSIGNED',
+          'NEEDS_OPERATOR_REVIEW',
           'COMPLETED',
           'EXTRA_TRIP_REQUIRED',
           'CANCELLED'
@@ -166,6 +168,7 @@ service cloud.firestore {
       return resource.data.status in ['ASSIGNED', 'IN_PROGRESS']
         && request.resource.data.status in [
           'ASSIGNED',
+          'NEEDS_OPERATOR_REVIEW',
           'COMPLETED',
           'EXTRA_TRIP_REQUIRED',
           'CANCELLED'
@@ -258,10 +261,31 @@ service cloud.firestore {
           'createdAt'
         ])
         && request.resource.data.beforePhotoUrls is list
+        && request.resource.data.beforePhotoUrls.size() <= 5
         && request.resource.data.afterPhotoUrls is list
+        && request.resource.data.afterPhotoUrls.size() <= 5
         && (
           request.resource.data.beforePhotoUrls.size() > 0
           || request.resource.data.afterPhotoUrls.size() > 0
+        )
+        && request.resource.data.actualTripResult in [
+          'COMPLETED_ONE_TRIP',
+          'PARTIAL_PICKUP',
+          'EXTRA_TRIP_REQUIRED',
+          'CUSTOMER_NOT_AVAILABLE',
+          'WASTE_NOT_READY',
+          'LOCATION_NOT_FOUND',
+          'ACCESS_BLOCKED',
+          'HAZARDOUS_WASTE_FOUND',
+          'CANCELLED_ON_SITE'
+        ]
+        && (
+          request.resource.data.actualTripResult == 'COMPLETED_ONE_TRIP'
+          || (
+            request.resource.data.driverNotes is string
+            && request.resource.data.driverNotes.size() > 0
+            && request.resource.data.driverNotes.size() <= 1000
+          )
         )
         && request.resource.data.createdAt == request.time;
       allow update: if false;

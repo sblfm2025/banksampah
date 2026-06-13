@@ -280,6 +280,57 @@ describe('Firestore role access', () => {
     );
   });
 
+  it('driver hanya dapat menyimpan reason code resmi dengan catatan wajib', async () => {
+    const db = environment.authenticatedContext('driver-1').firestore();
+    const baseProof = {
+      pickupRequestId: 'ticket-1',
+      driverId: 'driver-1',
+      beforePhotoUrls: ['https://example.com/before.jpg'],
+      afterPhotoUrls: [],
+      createdAt: serverTimestamp(),
+    };
+
+    await assertFails(
+      setDoc(doc(db, 'pickupProofs/ticket-1'), {
+        ...baseProof,
+        actualTripResult: 'UNKNOWN_RESULT',
+        driverNotes: 'Nilai ini tidak resmi.',
+      }),
+    );
+    await assertFails(
+      setDoc(doc(db, 'pickupProofs/ticket-1'), {
+        ...baseProof,
+        actualTripResult: 'HAZARDOUS_WASTE_FOUND',
+        driverNotes: null,
+      }),
+    );
+
+    const batch = writeBatch(db);
+    batch.set(doc(db, 'pickupProofs/ticket-1'), {
+      ...baseProof,
+      actualTripResult: 'HAZARDOUS_WASTE_FOUND',
+      driverNotes: 'Terlihat kemasan bahan kimia, perlu pemeriksaan operator.',
+    });
+    batch.update(doc(db, 'pickupRequests/ticket-1'), {
+      status: 'NEEDS_OPERATOR_REVIEW',
+      driverNotes: 'Terlihat kemasan bahan kimia, perlu pemeriksaan operator.',
+      updatedAt: serverTimestamp(),
+      lastAuditId: 'driver-hazardous-review',
+    });
+    batch.set(
+      doc(db, 'auditLogs/driver-hazardous-review'),
+      pickupAudit(
+        'driver-1',
+        'DRIVER',
+        'PICKUP_RESULT_RECORDED',
+        'ASSIGNED',
+        'NEEDS_OPERATOR_REVIEW',
+      ),
+    );
+
+    await assertSucceeds(batch.commit());
+  });
+
   it('media bukti Firestore hanya dapat diakses pihak berhak', async () => {
     const assignedDb = environment
       .authenticatedContext('driver-1')

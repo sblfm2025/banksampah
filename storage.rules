@@ -2,25 +2,14 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    function signedIn() {
-      return request.auth != null;
-    }
-
-    function validImageUpload() {
-      return request.resource.size < 10 * 1024 * 1024
-        && request.resource.contentType.matches('image/.*');
-    }
-
     match /customer-waste/{allPaths=**} {
       allow read, write: if false;
     }
 
-    match /pickup-proofs/{driverId}/{allPaths=**} {
-      allow read: if signedIn();
-      allow create, update: if signedIn()
-        && request.auth.uid == driverId
-        && validImageUpload();
-      allow delete: if false;
+    // Produksi memakai pickupProofMedia di Firestore. Storage ditutup agar
+    // bukti yang memuat rumah atau warga tidak terbaca semua user login.
+    match /pickup-proofs/{allPaths=**} {
+      allow read, write: if false;
     }
 
     match /{allPaths=**} {

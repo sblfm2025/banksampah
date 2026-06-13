@@ -3,6 +3,10 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "engines": {
+    "node": ">=22.0.0",
+    "npm": ">=10.0.0"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
@@ -19,7 +23,7 @@
     "deploy:hosting": "npm run build && firebase deploy --only hosting --project production",
     "deploy:rules": "firebase deploy --only firestore:rules,firestore:indexes --project production",
     "deploy:storage": "firebase deploy --only storage --project production",
-    "deploy:production": "npm run build && firebase deploy --only hosting,firestore:rules,firestore:indexes --project production"
+    "deploy:production": "npm run build && firebase deploy --only hosting,firestore:rules,firestore:indexes,storage --project production"
   },
   "dependencies": {
     "@google/genai": "^2.8.0",
