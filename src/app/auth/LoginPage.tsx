@@ -47,8 +47,8 @@ export function LoginPage() {
             Jemput sampah lebih tertata untuk Pinrang.
           </h1>
           <p className="mt-5 leading-8 text-cyan-50">
-            Verifikasi tiket, atur jadwal, dan bantu petugas menyelesaikan
-            penjemputan dari satu dashboard.
+            Verifikasi permintaan, atur jadwal, dan bantu petugas
+            menyelesaikan penjemputan dari satu dashboard.
           </p>
         </div>
         <p className="text-xs text-cyan-100">

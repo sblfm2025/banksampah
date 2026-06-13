@@ -62,12 +62,12 @@ export function TicketDetailPage() {
   });
 
   if (ticket.isLoading) {
-    return <p className="text-slate-500">Memuat detail tiket...</p>;
+    return <p className="text-slate-500">Memuat detail permintaan...</p>;
   }
   if (ticket.isError || !ticket.data) {
     return (
       <div className="rounded-xl border border-red-200 bg-red-50 p-5 text-red-800">
-        Tiket tidak dapat dimuat.
+        Permintaan tidak dapat dimuat.
       </div>
     );
   }
@@ -84,7 +84,7 @@ export function TicketDetailPage() {
             className="text-sm font-semibold text-green-700"
             to="/admin/tickets"
           >
-            Kembali ke tiket
+            Kembali ke permintaan
           </Link>
           <h1 className="mt-2 text-3xl font-bold">{data.ticketCode}</h1>
           <div className="mt-3">
@@ -329,10 +329,10 @@ export function TicketDetailPage() {
 function dialogContent(action?: PendingAction) {
   if (action?.kind === 'reject') {
     return {
-      title: 'Tolak tiket ini?',
+      title: 'Tolak permintaan ini?',
       description:
-        'Tiket akan ditandai ditolak dan alasan penolakan dapat dilihat pada riwayat layanan.',
-      confirmLabel: 'Ya, tolak tiket',
+        'Permintaan akan ditandai ditolak dan alasan penolakan dapat dilihat pada riwayat layanan.',
+      confirmLabel: 'Ya, tolak permintaan',
       tone: 'danger' as const,
       icon: 'warning' as const,
     };
@@ -341,7 +341,7 @@ function dialogContent(action?: PendingAction) {
     return {
       title: 'Simpan jadwal pickup?',
       description:
-        'Tanggal dan jam yang dipilih akan menjadi jadwal operasional untuk tiket ini.',
+        'Tanggal dan jam yang dipilih akan menjadi jadwal operasional untuk permintaan ini.',
       confirmLabel: 'Simpan jadwal',
       tone: 'primary' as const,
       icon: 'calendar' as const,
@@ -351,17 +351,17 @@ function dialogContent(action?: PendingAction) {
     return {
       title: 'Tugaskan petugas?',
       description:
-        'Petugas terpilih akan menerima tiket ini pada daftar tugas pickup.',
+        'Petugas terpilih akan menerima permintaan ini pada daftar tugas pickup.',
       confirmLabel: 'Tugaskan',
       tone: 'primary' as const,
       icon: 'truck' as const,
     };
   }
   return {
-    title: 'Konfirmasi tiket ini?',
+    title: 'Konfirmasi permintaan ini?',
     description:
-      'Tiket akan lolos verifikasi operator dan dapat dilanjutkan ke penjadwalan pickup.',
-    confirmLabel: 'Konfirmasi tiket',
+      'Permintaan akan lolos verifikasi operator dan dapat dilanjutkan ke penjadwalan pickup.',
+    confirmLabel: 'Konfirmasi permintaan',
     tone: 'success' as const,
     icon: 'check' as const,
   };
@@ -446,13 +446,13 @@ function ConfirmActions({
         onClick={onConfirm}
         type="button"
       >
-        Konfirmasi Tiket
+        Konfirmasi Permintaan
       </button>
       <textarea
         aria-label="Alasan penolakan"
         className="mt-4 min-h-24 w-full rounded-xl border border-slate-300 p-3 text-sm"
         onChange={(event) => setReason(event.target.value)}
-        placeholder="Alasan wajib jika tiket ditolak"
+        placeholder="Alasan wajib jika permintaan ditolak"
         value={reason}
       />
       <button
@@ -461,7 +461,7 @@ function ConfirmActions({
         onClick={() => onReject(reason)}
         type="button"
       >
-        Tolak Tiket
+        Tolak Permintaan
       </button>
     </section>
   );

@@ -17,11 +17,11 @@ export function PublicTicketDetailPage() {
   if (!ticket) {
     return (
       <>
-        <AppHeader title="Detail Tiket" />
+        <AppHeader title="Detail Permintaan" />
         <main className="app-container py-7">
           <EmptyState
-            description="Tiket tidak ditemukan pada perangkat ini."
-            title="Tiket tidak tersedia"
+            description="Permintaan tidak ditemukan pada perangkat ini."
+            title="Permintaan tidak tersedia"
           />
         </main>
       </>
@@ -36,7 +36,7 @@ export function PublicTicketDetailPage() {
           </Link>
         }
         subtitle={ticket.code}
-        title="Detail Tiket"
+        title="Detail Permintaan"
       />
       <main className="app-container space-y-5 py-7">
         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
@@ -47,7 +47,7 @@ export function PublicTicketDetailPage() {
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-xs font-semibold text-slate-400">
-                Nomor tiket
+                Nomor permintaan
               </p>
               <h2 className="mt-1 text-xl font-extrabold">{ticket.code}</h2>
             </div>

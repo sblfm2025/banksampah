@@ -66,7 +66,7 @@ export function PublicHomePage() {
                   to="/tickets"
                 >
                   <AppIcon name="ticket" />
-                  Cek Tiket
+                  Cek Permintaan
                 </Link>
               </div>
             </div>
@@ -159,8 +159,8 @@ export function PublicHomePage() {
                 Warga tenang, lingkungan lebih bersih
               </h2>
               <p className="mt-3 text-sm leading-6 text-slate-600">
-                Status tiket membantu warga mengikuti proses sampai petugas
-                menyelesaikan penjemputan.
+                Status permintaan membantu warga mengikuti proses sampai
+                petugas menyelesaikan penjemputan.
               </p>
             </div>
           </Card>

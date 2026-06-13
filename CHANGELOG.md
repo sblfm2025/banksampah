@@ -14,5 +14,6 @@
 - Menambahkan filter server-side dan composite indexes untuk workflow operator.
 - Menambahkan reason code masalah lapangan dan eskalasi ke review operator.
 - Mewajibkan nama dan nomor WhatsApp pada draft pengajuan web serta memperjelas bahwa draft belum terkirim ke operator.
+- Mengganti istilah UI "tiket" menjadi "permintaan jemput" agar lebih mudah dipahami warga.
 - Menstabilkan test laporan lintas tanggal dan alur end-to-end.
 - Menambahkan audit log kesiapan serta checklist pilot lapangan.

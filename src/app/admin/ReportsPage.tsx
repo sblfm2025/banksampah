@@ -37,7 +37,7 @@ export function ReportsPage() {
         </p>
         <h1 className="mt-2 text-3xl font-bold">Kinerja layanan pickup</h1>
         <p className="mt-2 text-slate-600">
-          Pantau volume tiket, penyelesaian, dan kebutuhan extra trip.
+          Pantau volume permintaan, penyelesaian, dan kebutuhan extra trip.
         </p>
       </section>
 
@@ -77,7 +77,10 @@ export function ReportsPage() {
       {report.data && (
         <>
           <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
-            <Metric label="Tiket Masuk" value={report.data.totals.created} />
+            <Metric
+              label="Permintaan Masuk"
+              value={report.data.totals.created}
+            />
             <Metric label="Terjadwal" value={report.data.totals.scheduled} />
             <Metric label="Selesai" value={report.data.totals.completed} />
             <Metric label="Extra Trip" value={report.data.totals.extraTrip} />
@@ -90,7 +93,7 @@ export function ReportsPage() {
 
           <section className="grid gap-6 lg:grid-cols-2">
             <Breakdown
-              title="Tiket Masuk per Kecamatan"
+              title="Permintaan Masuk per Kecamatan"
               values={Object.entries(report.data.byDistrict).map(
                 ([key, value]) => ({
                   label:
@@ -100,7 +103,7 @@ export function ReportsPage() {
               )}
             />
             <Breakdown
-              title="Tiket Masuk per Layanan"
+              title="Permintaan Masuk per Layanan"
               values={Object.entries(report.data.byServiceType).map(
                 ([key, value]) => ({
                   label:

@@ -4,7 +4,7 @@ import { operatorRepository } from './operator.repository';
 import { ErrorState, StatCard } from '../ui/components';
 
 const cards = [
-  { key: 'newToday', label: 'Tiket baru hari ini', tone: 'primary', icon: 'ticket' },
+  { key: 'newToday', label: 'Permintaan baru hari ini', tone: 'primary', icon: 'ticket' },
   { key: 'needsInfo', label: 'Butuh data', tone: 'amber', icon: 'clock' },
   { key: 'needsReview', label: 'Perlu dicek', tone: 'amber', icon: 'spark' },
   { key: 'scheduledToday', label: 'Terjadwal hari ini', tone: 'primary', icon: 'calendar' },
@@ -35,7 +35,7 @@ export function AdminOverview() {
           Kondisi layanan hari ini
         </h1>
         <p className="mt-2 text-slate-600">
-          Prioritaskan tiket yang butuh data atau verifikasi operator.
+          Prioritaskan permintaan yang butuh data atau verifikasi operator.
         </p>
       </section>
 
@@ -60,7 +60,7 @@ export function AdminOverview() {
           <div>
             <h2 className="text-lg font-bold">Perlu tindakan operator</h2>
             <p className="text-sm text-slate-500">
-              Tiket terbaru yang menunggu verifikasi.
+              Permintaan terbaru yang menunggu verifikasi.
             </p>
           </div>
           <Link
@@ -72,7 +72,9 @@ export function AdminOverview() {
         </div>
         <div className="divide-y divide-slate-100">
           {urgent.isLoading && (
-            <p className="p-6 text-sm text-slate-500">Memuat tiket...</p>
+            <p className="p-6 text-sm text-slate-500">
+              Memuat permintaan...
+            </p>
           )}
           {urgent.data?.slice(0, 5).map((ticket) => (
             <Link
@@ -95,7 +97,7 @@ export function AdminOverview() {
           ))}
           {urgent.data?.length === 0 && (
             <p className="p-6 text-sm text-slate-500">
-              Tidak ada tiket yang menunggu verifikasi.
+              Tidak ada permintaan yang menunggu verifikasi.
             </p>
           )}
         </div>

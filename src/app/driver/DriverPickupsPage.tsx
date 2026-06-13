@@ -159,7 +159,7 @@ export function DriverPickupsPage() {
         busy={start.isPending}
         cancelLabel="Batal"
         confirmLabel="Mulai sekarang"
-        description="Status tiket akan berubah menjadi sedang dijemput dan operator dapat memantau progresnya."
+        description="Status permintaan akan berubah menjadi sedang dijemput dan operator dapat memantau progresnya."
         icon="truck"
         onCancel={() => setPendingStartId(undefined)}
         onConfirm={() => {

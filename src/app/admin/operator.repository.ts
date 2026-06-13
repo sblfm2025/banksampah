@@ -127,7 +127,7 @@ export class DemoOperatorRepository implements OperatorRepository {
 
   async getTicket(id: string) {
     const ticket = this.tickets.find((item) => item.id === id);
-    if (!ticket) throw new Error('Tiket tidak ditemukan.');
+    if (!ticket) throw new Error('Permintaan tidak ditemukan.');
     return structuredClone(ticket);
   }
 
@@ -160,7 +160,7 @@ export class DemoOperatorRepository implements OperatorRepository {
     const input = schedulePickupInputSchema.parse(rawInput);
     const ticket = await this.getTicket(id);
     if (ticket.status !== 'CONFIRMED') {
-      throw new Error('Tiket harus dikonfirmasi sebelum dijadwalkan.');
+      throw new Error('Permintaan harus dikonfirmasi sebelum dijadwalkan.');
     }
 
     return this.replace(id, {
@@ -178,7 +178,9 @@ export class DemoOperatorRepository implements OperatorRepository {
     const input = assignDriverInputSchema.parse(rawInput);
     const ticket = await this.getTicket(id);
     if (ticket.status !== 'SCHEDULED') {
-      throw new Error('Tiket harus dijadwalkan sebelum petugas ditugaskan.');
+      throw new Error(
+        'Permintaan harus dijadwalkan sebelum petugas ditugaskan.',
+      );
     }
 
     return this.replace(id, {
@@ -504,7 +506,7 @@ export class FirestoreOperatorRepository implements OperatorRepository {
     const input = schedulePickupInputSchema.parse(rawInput);
     const current = await this.getTicket(id);
     if (current.status !== 'CONFIRMED') {
-      throw new Error('Tiket harus dikonfirmasi sebelum dijadwalkan.');
+      throw new Error('Permintaan harus dikonfirmasi sebelum dijadwalkan.');
     }
     const [
       { collection, doc, serverTimestamp, writeBatch },
@@ -553,7 +555,9 @@ export class FirestoreOperatorRepository implements OperatorRepository {
     const input = assignDriverInputSchema.parse(rawInput);
     const current = await this.getTicket(id);
     if (current.status !== 'SCHEDULED') {
-      throw new Error('Tiket harus dijadwalkan sebelum petugas ditugaskan.');
+      throw new Error(
+        'Permintaan harus dijadwalkan sebelum petugas ditugaskan.',
+      );
     }
     const [
       { collection, doc, serverTimestamp, writeBatch },

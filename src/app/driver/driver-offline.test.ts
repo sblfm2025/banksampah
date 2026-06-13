@@ -60,7 +60,7 @@ describe('driver offline queue', () => {
     expect(pending.lastError).toBe('offline');
   });
 
-  it('mengganti antrean lama untuk tiket yang sama', async () => {
+  it('mengganti antrean lama untuk permintaan yang sama', async () => {
     await addPending();
     await enqueueCompletion({
       ticketId: 'ticket-offline',

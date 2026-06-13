@@ -26,7 +26,7 @@ export function PublicTicketsPage() {
               src: '/illustrations/empty-ticket.webp',
               alt: 'Warga menyiapkan pengajuan jemput sampah dari ponsel',
             }}
-            title="Belum ada tiket"
+            title="Belum ada permintaan"
           />
         ) : (
           <div className="space-y-4">

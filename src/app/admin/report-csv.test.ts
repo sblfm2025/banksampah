@@ -18,7 +18,7 @@ describe('operationalReportToCsv', () => {
 
     const csv = operationalReportToCsv(report);
 
-    expect(csv).toContain('Kode Tiket');
+    expect(csv).toContain('Kode Permintaan');
     expect(csv).toContain('JSP-20260613-0001');
     expect(csv).not.toContain('Ibu Sari');
     expect(csv).not.toContain('628123456789');

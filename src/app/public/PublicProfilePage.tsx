@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { AppHeader, AppIcon, Card } from '../ui/components';
 
 const rows = [
-  ['Nomor WhatsApp', 'Hubungkan saat membuat tiket'],
+  ['Nomor WhatsApp', 'Hubungkan saat membuat permintaan'],
   ['Alamat utama', 'Belum diatur'],
   ['Kecamatan', 'Watang Sawitto / Paleteang'],
   ['Bantuan', 'Panduan layanan'],

@@ -10,7 +10,7 @@ import {
 describe('public ticket draft', () => {
   beforeEach(() => localStorage.clear());
 
-  it('menyimpan draft tiket warga tanpa data kilogram atau harga', () => {
+  it('menyimpan draft permintaan warga tanpa data kilogram atau harga', () => {
     const ticket = savePublicTicket({
       customerName: 'Andi',
       customerPhoneNumber: '0812-3456-7890',

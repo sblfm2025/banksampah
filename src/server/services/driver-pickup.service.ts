@@ -39,7 +39,7 @@ export class DriverPickupService {
     if (ticket.assignedDriverId !== driverId) {
       throw new ServiceError(
         'VALIDATION_ERROR',
-        'Tiket bukan tugas petugas ini.',
+        'Permintaan bukan tugas petugas ini.',
       );
     }
     return ticket;
@@ -55,12 +55,12 @@ export class DriverPickupService {
     await this.db.runTransaction(async (transaction) => {
       const snapshot = await transaction.get(reference);
       if (!snapshot.exists) {
-        throw new ServiceError('NOT_FOUND', 'Tiket tidak ditemukan.');
+        throw new ServiceError('NOT_FOUND', 'Permintaan tidak ditemukan.');
       }
       if (snapshot.get('assignedDriverId') !== driverId) {
         throw new ServiceError(
           'VALIDATION_ERROR',
-          'Tiket bukan tugas petugas ini.',
+          'Permintaan bukan tugas petugas ini.',
         );
       }
       if (snapshot.get('status') !== 'ASSIGNED') {
@@ -104,12 +104,12 @@ export class DriverPickupService {
     await this.db.runTransaction(async (transaction) => {
       const snapshot = await transaction.get(reference);
       if (!snapshot.exists) {
-        throw new ServiceError('NOT_FOUND', 'Tiket tidak ditemukan.');
+        throw new ServiceError('NOT_FOUND', 'Permintaan tidak ditemukan.');
       }
       if (snapshot.get('assignedDriverId') !== driverId) {
         throw new ServiceError(
           'VALIDATION_ERROR',
-          'Tiket bukan tugas petugas ini.',
+          'Permintaan bukan tugas petugas ini.',
         );
       }
 

@@ -55,7 +55,7 @@ export class PickupTicketService {
     if (!isActiveDistrict(input.district)) {
       throw new ServiceError(
         'VALIDATION_ERROR',
-        'Tiket aktif hanya dapat dibuat untuk kecamatan pilot.',
+        'Permintaan aktif hanya dapat dibuat untuk kecamatan pilot.',
       );
     }
 
@@ -197,7 +197,7 @@ export class PickupTicketService {
     const pickup = snapshot.data();
 
     if (!pickup) {
-      throw new ServiceError('NOT_FOUND', 'Tiket tidak ditemukan.');
+      throw new ServiceError('NOT_FOUND', 'Permintaan tidak ditemukan.');
     }
 
     return pickup;
@@ -291,14 +291,14 @@ export class PickupTicketService {
     await this.db.runTransaction(async (transaction) => {
       const snapshot = await transaction.get(reference);
       if (!snapshot.exists) {
-        throw new ServiceError('NOT_FOUND', 'Tiket tidak ditemukan.');
+        throw new ServiceError('NOT_FOUND', 'Permintaan tidak ditemukan.');
       }
 
       const currentStatus = snapshot.get('status') as PickupStatus;
       if (!['NEW', 'NEEDS_INFO', 'NEEDS_OPERATOR_REVIEW'].includes(currentStatus)) {
         throw new ServiceError(
           'CONFLICT',
-          'Tiket tidak lagi menerima pembaruan intake.',
+          'Permintaan tidak lagi menerima pembaruan data masuk.',
         );
       }
 
@@ -357,7 +357,7 @@ export class PickupTicketService {
     await this.db.runTransaction(async (transaction) => {
       const snapshot = await transaction.get(ticketReference);
       if (!snapshot.exists) {
-        throw new ServiceError('NOT_FOUND', 'Tiket tidak ditemukan.');
+        throw new ServiceError('NOT_FOUND', 'Permintaan tidak ditemukan.');
       }
 
       const currentStatus = snapshot.get('status') as PickupStatus;
@@ -426,14 +426,14 @@ export class PickupTicketService {
     await this.db.runTransaction(async (transaction) => {
       const snapshot = await transaction.get(reference);
       if (!snapshot.exists) {
-        throw new ServiceError('NOT_FOUND', 'Tiket tidak ditemukan.');
+        throw new ServiceError('NOT_FOUND', 'Permintaan tidak ditemukan.');
       }
 
       const currentStatus = snapshot.get('status') as PickupStatus;
       if (currentStatus !== 'CONFIRMED') {
         throw new ServiceError(
           'INVALID_STATUS_TRANSITION',
-          'Hanya tiket yang sudah dikonfirmasi dapat dijadwalkan.',
+          'Hanya permintaan yang sudah dikonfirmasi dapat dijadwalkan.',
         );
       }
 
@@ -477,14 +477,14 @@ export class PickupTicketService {
     await this.db.runTransaction(async (transaction) => {
       const snapshot = await transaction.get(reference);
       if (!snapshot.exists) {
-        throw new ServiceError('NOT_FOUND', 'Tiket tidak ditemukan.');
+        throw new ServiceError('NOT_FOUND', 'Permintaan tidak ditemukan.');
       }
 
       const currentStatus = snapshot.get('status') as PickupStatus;
       if (currentStatus !== 'SCHEDULED') {
         throw new ServiceError(
           'INVALID_STATUS_TRANSITION',
-          'Hanya tiket terjadwal yang dapat ditugaskan.',
+          'Hanya permintaan terjadwal yang dapat ditugaskan.',
         );
       }
 

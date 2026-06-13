@@ -15,7 +15,7 @@ export const PICKUP_STATUSES = [
 export type PickupStatus = (typeof PICKUP_STATUSES)[number];
 
 export const PICKUP_STATUS_LABELS: Record<PickupStatus, string> = {
-  NEW: 'Tiket Baru',
+  NEW: 'Permintaan Baru',
   NEEDS_INFO: 'Butuh Data',
   NEEDS_OPERATOR_REVIEW: 'Perlu Dicek',
   CONFIRMED: 'Dikonfirmasi',

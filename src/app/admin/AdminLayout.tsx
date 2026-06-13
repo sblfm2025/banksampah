@@ -5,7 +5,7 @@ import { useDemoData } from '../runtime-config';
 
 const navigation = [
   { to: '/admin', label: 'Dashboard', icon: 'chart', end: true },
-  { to: '/admin/tickets', label: 'Tiket Masuk', icon: 'ticket' },
+  { to: '/admin/tickets', label: 'Permintaan Masuk', icon: 'ticket' },
   { to: '/admin/schedules', label: 'Jadwal Jemput', icon: 'calendar' },
   { to: '/admin/map', label: 'Peta', icon: 'pin' },
   { to: '/admin/regions', label: 'Wilayah', icon: 'leaf' },

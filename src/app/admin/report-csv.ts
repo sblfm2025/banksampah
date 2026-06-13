@@ -10,7 +10,7 @@ function csvCell(value: string | number | undefined): string {
 
 export function operationalReportToCsv(report: OperationalReport): string {
   const header = [
-    'Kode Tiket',
+    'Kode Permintaan',
     'Tanggal Masuk',
     'Tanggal Jadwal',
     'Tanggal Selesai',

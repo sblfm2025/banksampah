@@ -442,7 +442,8 @@ export function NewPickupPage() {
             </label>
             <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
               Pengajuan web disimpan sebagai draft di perangkat ini. Operator
-              belum menerima data sampai kanal pengiriman tiket web diaktifkan.
+              belum menerima data sampai kanal pengiriman permintaan web
+              diaktifkan.
             </div>
             <Card className="mt-4 p-5 shadow-none">
               <Summary label="Nama" value={customerName || '-'} />

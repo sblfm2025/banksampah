@@ -333,7 +333,7 @@ export function DriverPickupDetailPage() {
         busy={start.isPending}
         cancelLabel="Batal"
         confirmLabel="Mulai sekarang"
-        description="Status tiket akan berubah menjadi sedang dijemput. Pastikan Anda sudah menuju atau berada di lokasi customer."
+        description="Status permintaan akan berubah menjadi sedang dijemput. Pastikan Anda sudah menuju atau berada di lokasi warga."
         icon="truck"
         onCancel={() => setConfirmStart(false)}
         onConfirm={() =>

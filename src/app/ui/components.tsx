@@ -72,7 +72,7 @@ export function AppHeader({
 const navItems = [
   { to: '/', label: 'Home', icon: 'home' },
   { to: '/sampahku', label: 'Sampahku', icon: 'leaf' },
-  { to: '/tickets', label: 'Tiket', icon: 'ticket' },
+  { to: '/tickets', label: 'Permintaan', icon: 'ticket' },
   { to: '/profile', label: 'Profil', icon: 'user' },
 ] as const;
 
@@ -256,7 +256,9 @@ export function TicketCard({
     <Card className="p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold text-slate-400">Nomor tiket</p>
+          <p className="text-xs font-semibold text-slate-400">
+            Nomor permintaan
+          </p>
           <h3 className="mt-1 font-extrabold">{code}</h3>
         </div>
         {draft ? (

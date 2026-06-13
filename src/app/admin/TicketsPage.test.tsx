@@ -19,18 +19,18 @@ function renderPage() {
 }
 
 describe('TicketsPage', () => {
-  it('mencari tiket berdasarkan nama customer', async () => {
+  it('mencari permintaan berdasarkan nama warga', async () => {
     const user = userEvent.setup();
     renderPage();
 
     expect(await screen.findByText('Ibu Sari')).toBeInTheDocument();
-    await user.type(screen.getByLabelText('Cari tiket'), 'Toko Berkah');
+    await user.type(screen.getByLabelText('Cari permintaan'), 'Toko Berkah');
 
     expect(await screen.findByText('Toko Berkah')).toBeInTheDocument();
     expect(screen.queryByText('Ibu Sari')).not.toBeInTheDocument();
   });
 
-  it('memfilter tiket berdasarkan status', async () => {
+  it('memfilter permintaan berdasarkan status', async () => {
     const user = userEvent.setup();
     renderPage();
 

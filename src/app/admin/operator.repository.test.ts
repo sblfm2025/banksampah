@@ -7,7 +7,7 @@ import {
 } from './operator.repository';
 
 describe('operator repository', () => {
-  it('memfilter tiket berdasarkan query dan kecamatan', () => {
+  it('memfilter permintaan berdasarkan query dan kecamatan', () => {
     const results = filterTickets(DEMO_TICKETS, {
       query: 'ibu sari',
       district: 'PALETEANG',

@@ -22,7 +22,7 @@ export function WasteSummaryPage() {
           />
           <StatCard
             icon="clock"
-            label="Tiket aktif"
+            label="Permintaan aktif"
             tone="amber"
             value={active.length}
           />
