@@ -25,6 +25,16 @@ export interface PublicTicket {
 }
 
 const STORAGE_KEY = 'sampahta-public-tickets';
+const PROFILE_STORAGE_KEY = 'sampahta-public-profile';
+
+export interface PublicProfile {
+  fullName: string;
+  phoneNumber: string;
+  address: string;
+  district?: 'WATANG_SAWITTO' | 'PALETEANG';
+  villageId?: string;
+  updatedAt: string;
+}
 
 export function normalizeIndonesianPhoneNumber(value: string): string {
   const digits = value.replaceAll(/\D/g, '');
@@ -35,6 +45,48 @@ export function normalizeIndonesianPhoneNumber(value: string): string {
 
 export function isValidIndonesianPhoneNumber(value: string): boolean {
   return /^628\d{7,12}$/.test(normalizeIndonesianPhoneNumber(value));
+}
+
+export function getPublicProfile(): PublicProfile | null {
+  try {
+    const raw = localStorage.getItem(PROFILE_STORAGE_KEY);
+    if (!raw) return null;
+    const profile = JSON.parse(raw) as Partial<PublicProfile>;
+    if (
+      typeof profile.fullName !== 'string' ||
+      typeof profile.phoneNumber !== 'string' ||
+      typeof profile.address !== 'string'
+    ) {
+      return null;
+    }
+    return {
+      fullName: profile.fullName,
+      phoneNumber: profile.phoneNumber,
+      address: profile.address,
+      district: profile.district,
+      villageId: profile.villageId,
+      updatedAt:
+        typeof profile.updatedAt === 'string'
+          ? profile.updatedAt
+          : new Date(0).toISOString(),
+    };
+  } catch {
+    return null;
+  }
+}
+
+export function savePublicProfile(
+  profile: Omit<PublicProfile, 'updatedAt'>,
+): PublicProfile {
+  const item: PublicProfile = {
+    ...profile,
+    fullName: profile.fullName.trim(),
+    phoneNumber: normalizeIndonesianPhoneNumber(profile.phoneNumber),
+    address: profile.address.trim(),
+    updatedAt: new Date().toISOString(),
+  };
+  localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(item));
+  return item;
 }
 
 export function listPublicTickets(): PublicTicket[] {
@@ -76,6 +128,13 @@ export function savePublicTicket(
     createdAt,
   };
   localStorage.setItem(STORAGE_KEY, JSON.stringify([item, ...current]));
+  savePublicProfile({
+    fullName: item.customerName ?? '',
+    phoneNumber: item.customerPhoneNumber ?? '',
+    address: item.address,
+    district: item.district,
+    villageId: item.villageId,
+  });
   return item;
 }
 

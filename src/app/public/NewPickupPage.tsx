@@ -22,6 +22,7 @@ import type {
   LocationValidationStatus,
 } from '../../shared/regions/region.types';
 import {
+  getPublicProfile,
   isValidIndonesianPhoneNumber,
   normalizeIndonesianPhoneNumber,
   savePublicTicket,
@@ -45,10 +46,13 @@ const volumeOptions: Array<{
 
 export function NewPickupPage() {
   const navigate = useNavigate();
+  const savedProfile = getPublicProfile();
   const [step, setStep] = useState(1);
-  const [address, setAddress] = useState('');
-  const [district, setDistrict] = useState<ActiveDistrict | ''>('');
-  const [villageId, setVillageId] = useState('');
+  const [address, setAddress] = useState(savedProfile?.address ?? '');
+  const [district, setDistrict] = useState<ActiveDistrict | ''>(
+    savedProfile?.district ?? '',
+  );
+  const [villageId, setVillageId] = useState(savedProfile?.villageId ?? '');
   const [location, setLocation] = useState<{ lat: number; lng: number }>();
   const [locationAccuracyMeters, setLocationAccuracyMeters] =
     useState<number>();
@@ -68,8 +72,12 @@ export function NewPickupPage() {
   const [photo, setPhoto] = useState<string>();
   const [volume, setVolume] = useState<Volume>('MEDIUM');
   const [notes, setNotes] = useState('');
-  const [customerName, setCustomerName] = useState('');
-  const [customerPhoneNumber, setCustomerPhoneNumber] = useState('');
+  const [customerName, setCustomerName] = useState(
+    savedProfile?.fullName ?? '',
+  );
+  const [customerPhoneNumber, setCustomerPhoneNumber] = useState(
+    savedProfile?.phoneNumber ?? '',
+  );
   const [sheet, setSheet] = useState<'district' | 'volume' | null>(null);
   const [confirm, setConfirm] = useState(false);
 

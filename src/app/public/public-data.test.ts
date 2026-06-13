@@ -1,9 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
   getPublicTicket,
+  getPublicProfile,
   isValidIndonesianPhoneNumber,
   listPublicTickets,
   normalizeIndonesianPhoneNumber,
+  savePublicProfile,
   savePublicTicket,
 } from './public-data';
 
@@ -30,6 +32,13 @@ describe('public ticket draft', () => {
     expect(getPublicTicket(ticket.id)?.address).toContain('Pinrang');
     expect(ticket.customerName).toBe('Andi');
     expect(ticket.customerPhoneNumber).toBe('6281234567890');
+    expect(getPublicProfile()).toMatchObject({
+      fullName: 'Andi',
+      phoneNumber: '6281234567890',
+      address: 'Jalan Poros Pinrang dekat masjid',
+      district: 'PALETEANG',
+      villageId: 'mamminasae',
+    });
     expect(ticket).not.toHaveProperty('weightKg');
     expect(ticket).not.toHaveProperty('price');
   });
@@ -40,5 +49,23 @@ describe('public ticket draft', () => {
     );
     expect(isValidIndonesianPhoneNumber('+62 812-3456-7890')).toBe(true);
     expect(isValidIndonesianPhoneNumber('123')).toBe(false);
+  });
+
+  it('menyimpan profil lokal yang dapat dipakai ulang', () => {
+    savePublicProfile({
+      fullName: 'Sitti Aminah',
+      phoneNumber: '0852 1111 2222',
+      address: 'Jalan Melati, Pinrang',
+      district: 'WATANG_SAWITTO',
+      villageId: 'sawitto',
+    });
+
+    expect(getPublicProfile()).toMatchObject({
+      fullName: 'Sitti Aminah',
+      phoneNumber: '6285211112222',
+      address: 'Jalan Melati, Pinrang',
+      district: 'WATANG_SAWITTO',
+      villageId: 'sawitto',
+    });
   });
 });

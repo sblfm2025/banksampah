@@ -15,5 +15,7 @@
 - Menambahkan reason code masalah lapangan dan eskalasi ke review operator.
 - Mewajibkan nama dan nomor WhatsApp pada draft pengajuan web serta memperjelas bahwa draft belum terkirim ke operator.
 - Mengganti istilah UI "tiket" menjadi "permintaan jemput" agar lebih mudah dipahami warga.
+- Mengubah halaman Profil warga dari menu statis menjadi profil lokal yang dapat diedit dan dipakai ulang pada permintaan berikutnya.
+- Mengaktifkan eksekusi test komponen React `*.test.tsx` yang sebelumnya terlewat konfigurasi Vitest.
 - Menstabilkan test laporan lintas tanggal dan alur end-to-end.
 - Menambahkan audit log kesiapan serta checklist pilot lapangan.
