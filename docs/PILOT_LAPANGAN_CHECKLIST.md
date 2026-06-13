@@ -31,7 +31,7 @@ Gunakan checklist ini secara berurutan. Jangan membuka layanan umum sebelum taha
 - [ ] Deploy ke staging lebih dahulu.
 - [ ] Firestore rules terdeploy.
 - [ ] Firestore indexes selesai dibangun.
-- [ ] Storage rules deny-all terdeploy.
+- [ ] Firebase Storage tetap tidak diprovision; jika kelak diaktifkan, deploy `storage.rules` deny-all sebelum digunakan.
 - [ ] Hosting terdeploy dan route SPA dapat direfresh langsung.
 - [ ] Service worker tidak menyajikan build lama.
 - [ ] Rollback Hosting sudah dicatat sebelum pilot.

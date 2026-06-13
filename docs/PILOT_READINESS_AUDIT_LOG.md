@@ -44,7 +44,7 @@ Firebase CLI: `15.18.0`
 5. Menambahkan reason code lapangan dan mapping kasus bermasalah ke `NEEDS_OPERATOR_REVIEW`.
 6. Memperketat Firestore rules untuk foto, reason code, catatan lapangan, transisi status, dan audit.
 7. Menstabilkan fixture tanggal laporan dan alur E2E.
-8. Menyertakan `storage.rules` pada deployment production.
+8. Mempertahankan `storage.rules` deny-all untuk dipakai bila Firebase Storage kelak diaktifkan.
 
 ## Blocker Eksternal Sebelum Pilot
 
@@ -68,3 +68,11 @@ Setelah itu:
 5. Jalankan checklist pilot lapangan.
 
 Status saat audit ditutup: **kode lolos pengujian dan Super Admin tersedia; akun Operator, Driver, serta verifikasi profil produksi belum siap pilot**.
+
+## Deployment 14 Juni 2026
+
+- Hosting: PASS, `https://peduli-pinrang.web.app`.
+- Firestore rules: PASS.
+- Firestore indexes: PASS, index baru sedang diproses oleh Firebase setelah deploy.
+- Firebase Storage: tidak diprovision pada project Spark; deploy rules mengembalikan `defaultBucket 404`.
+- Strategi media aktif tetap `VITE_PROOF_MEDIA_PROVIDER=firestore`, sehingga aplikasi tidak bergantung pada Storage.
