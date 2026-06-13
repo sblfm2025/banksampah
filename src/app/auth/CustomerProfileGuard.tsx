@@ -9,8 +9,10 @@ export function CustomerProfileGuard({ children }: { children: ReactNode }) {
     useAuth();
 
   if (loading) return <LoadingState label="Memeriksa profil..." />;
+  if (!authenticated) {
+    return <Navigate replace to="/login?next=/pickup/new" />;
+  }
   if (
-    authenticated &&
     isGoogleUser &&
     (profileMissing ||
       (user?.role === 'CUSTOMER' && !isCustomerProfileComplete(user)))

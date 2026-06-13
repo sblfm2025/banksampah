@@ -56,6 +56,11 @@ export function PublicProfilePage() {
   const onboarding =
     searchParams.get('onboarding') === '1' ||
     (auth.isGoogleUser && auth.profileMissing);
+  const requestedNext = searchParams.get('next');
+  const next =
+    requestedNext?.startsWith('/') && !requestedNext.startsWith('//')
+      ? requestedNext
+      : '/';
   const localProfile = getPublicProfile();
   const customer = auth.user?.role === 'CUSTOMER' ? auth.user : null;
   const [fullName, setFullName] = useState(
@@ -215,7 +220,7 @@ export function PublicProfilePage() {
         const { saveCustomerAppProfile } = await import('../../client/firebase');
         await saveCustomerAppProfile(profile);
         await auth.refreshProfile();
-        navigate('/', { replace: true });
+        navigate(next, { replace: true });
         return;
       }
       setPhoneNumber(normalizedPhone);

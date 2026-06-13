@@ -311,8 +311,9 @@ Status: selesai dan tervalidasi pada build produksi.
 - Warga dapat mendaftar atau masuk dengan Google. Akun baru wajib melengkapi
   nama, nomor WhatsApp, alamat, serta titik peta terverifikasi sebelum membuat
   permintaan; profil disimpan sebagai role `CUSTOMER` milik UID tersebut.
-- Draft pengajuan warga disimpan lokal di browser. Ini bukan tiket produksi;
-  WhatsApp tetap menjadi kanal masuk resmi sampai integrasi API publik tersedia.
+- Pengajuan warga dari web dikirim sebagai dokumen resmi `pickupRequests`
+  setelah login Google dan profil lengkap. Jika koneksi gagal, data disimpan
+  sebagai antrean lokal dengan label "Menunggu dikirim" dan dapat dicoba ulang.
 - Dashboard operator, login, dan PWA petugas telah diselaraskan dengan identitas
   visual baru tanpa mengubah kontrak Firebase maupun aturan bisnis.
 - Logo memakai nama aset stabil

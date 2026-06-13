@@ -53,7 +53,7 @@ export async function uploadProofMediaToFirestore(
   );
 }
 
-async function compressImage(file: File) {
+export async function compressImage(file: File) {
   if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
     throw new Error('Format foto harus JPEG, PNG, atau WebP.');
   }

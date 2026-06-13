@@ -21,6 +21,9 @@ export interface PublicTicket {
   service: 'REGULAR_HOUSEHOLD_PICKUP' | 'ONE_TRIP_TRICYCLE';
   notes?: string;
   photo?: string;
+  deliveryStatus: 'PENDING_SYNC' | 'SUBMITTED';
+  remoteId?: string;
+  lastSyncError?: string;
   createdAt: string;
 }
 
@@ -109,7 +112,15 @@ export function listPublicTickets(): PublicTicket[] {
 export function savePublicTicket(
   ticket: Omit<
     PublicTicket,
-    'id' | 'code' | 'createdAt' | 'status' | 'customerName' | 'customerPhoneNumber'
+    | 'id'
+    | 'code'
+    | 'createdAt'
+    | 'status'
+    | 'customerName'
+    | 'customerPhoneNumber'
+    | 'deliveryStatus'
+    | 'remoteId'
+    | 'lastSyncError'
   > & {
     customerName: string;
     customerPhoneNumber: string;
@@ -133,6 +144,7 @@ export function savePublicTicket(
       .format(new Date(createdAt))
       .replaceAll('-', '')}-${String(current.length + 1).padStart(3, '0')}`,
     status: 'NEW',
+    deliveryStatus: 'PENDING_SYNC',
     createdAt,
   };
   localStorage.setItem(STORAGE_KEY, JSON.stringify([item, ...current]));
@@ -152,4 +164,21 @@ export function savePublicTicket(
 
 export function getPublicTicket(id: string): PublicTicket | undefined {
   return listPublicTickets().find((ticket) => ticket.id === id);
+}
+
+export function updatePublicTicket(
+  id: string,
+  updates: Partial<PublicTicket>,
+): PublicTicket | undefined {
+  const current = listPublicTickets();
+  const existing = current.find((ticket) => ticket.id === id);
+  if (!existing) return undefined;
+  const updated = { ...existing, ...updates };
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify(
+      current.map((ticket) => (ticket.id === id ? updated : ticket)),
+    ),
+  );
+  return updated;
 }

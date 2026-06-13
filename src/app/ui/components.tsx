@@ -261,10 +261,10 @@ export function TicketCard({
           </p>
           <h3 className="mt-1 font-extrabold">{code}</h3>
         </div>
-        {draft ? (
-          <span className="inline-flex rounded-full bg-amber-50 px-3 py-1 text-[11px] font-bold text-amber-700">
-            Draft lokal
-          </span>
+          {draft ? (
+            <span className="inline-flex rounded-full bg-amber-50 px-3 py-1 text-[11px] font-bold text-amber-700">
+              Menunggu dikirim
+            </span>
         ) : (
           <StatusBadge status={status} />
         )}

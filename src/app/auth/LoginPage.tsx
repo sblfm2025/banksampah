@@ -1,10 +1,16 @@
 import { useState, type FormEvent } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { isCustomerProfileComplete } from '../../shared/schemas/user.schema';
 import { AppLogo, ErrorState, PrimaryButton } from '../ui/components';
 import { useAuth } from './auth-context';
 
 export function LoginPage() {
+  const [searchParams] = useSearchParams();
+  const requestedNext = searchParams.get('next');
+  const customerDestination =
+    requestedNext?.startsWith('/') && !requestedNext.startsWith('//')
+      ? requestedNext
+      : '/';
   const {
     authenticated,
     authUid,
@@ -23,7 +29,11 @@ export function LoginPage() {
       return (
         <Navigate
           replace
-          to={isCustomerProfileComplete(user) ? '/' : '/profile?onboarding=1'}
+          to={
+            isCustomerProfileComplete(user)
+              ? customerDestination
+              : `/profile?onboarding=1&next=${encodeURIComponent(customerDestination)}`
+          }
         />
       );
     }
@@ -35,7 +45,12 @@ export function LoginPage() {
     );
   }
   if (authenticated && profileMissing && isGoogleUser) {
-    return <Navigate replace to="/profile?onboarding=1" />;
+    return (
+      <Navigate
+        replace
+        to={`/profile?onboarding=1&next=${encodeURIComponent(customerDestination)}`}
+      />
+    );
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {

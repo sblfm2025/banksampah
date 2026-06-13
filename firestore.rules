@@ -32,6 +32,16 @@ service cloud.firestore {
       return isAdmin() || isOperator();
     }
 
+    function isCompleteCustomer() {
+      return hasRole('CUSTOMER')
+        && currentUser().data.name is string
+        && currentUser().data.phoneNumber is string
+        && currentUser().data.addressText is string
+        && currentUser().data.location is map
+        && currentUser().data.locationValidationStatus
+          == 'INSIDE_SERVICE_AREA';
+    }
+
     function validCustomerProfile() {
       return request.resource.data.keys().hasOnly([
           'name',
@@ -318,8 +328,117 @@ service cloud.firestore {
     }
 
     match /pickupRequests/{ticketId} {
-      allow read: if isBackOffice() || isAssignedDriver();
-      allow create: if isBackOffice();
+      allow read: if isBackOffice()
+        || isAssignedDriver()
+        || (
+          signedIn()
+          && resource.data.ownerUid == request.auth.uid
+        );
+      allow create: if isBackOffice()
+        || (
+          isCompleteCustomer()
+          && request.resource.data.keys().hasOnly([
+            'ticketCode',
+            'source',
+            'customerId',
+            'ownerUid',
+            'customerPhoneNumber',
+            'customerName',
+            'district',
+            'villageId',
+            'addressText',
+            'location',
+            'locationAccuracyMeters',
+            'locationSource',
+            'locationValidationStatus',
+            'serviceType',
+            'volumeLevel',
+            'tricycleLoadEstimate',
+            'wasteDescription',
+            'photoUrls',
+            'intakePhotoMediaIds',
+            'status',
+            'createdAt',
+            'updatedAt'
+          ])
+          && request.resource.data.keys().hasAll([
+            'ticketCode',
+            'source',
+            'customerId',
+            'ownerUid',
+            'customerPhoneNumber',
+            'customerName',
+            'district',
+            'villageId',
+            'addressText',
+            'location',
+            'locationSource',
+            'locationValidationStatus',
+            'serviceType',
+            'volumeLevel',
+            'tricycleLoadEstimate',
+            'photoUrls',
+            'intakePhotoMediaIds',
+            'status',
+            'createdAt',
+            'updatedAt'
+          ])
+          && request.resource.data.ticketCode.matches(
+            '^JSP-[0-9]{8}-[0-9]{4}$'
+          )
+          && request.resource.data.source == 'PWA'
+          && request.resource.data.customerId == request.auth.uid
+          && request.resource.data.ownerUid == request.auth.uid
+          && request.resource.data.customerPhoneNumber
+            == currentUser().data.phoneNumber
+          && request.resource.data.customerName == currentUser().data.name
+          && request.resource.data.district in [
+            'WATANG_SAWITTO',
+            'PALETEANG'
+          ]
+          && request.resource.data.villageId is string
+          && request.resource.data.villageId.size() > 0
+          && request.resource.data.addressText is string
+          && request.resource.data.addressText.size() >= 8
+          && request.resource.data.addressText.size() <= 500
+          && request.resource.data.location is map
+          && request.resource.data.location.keys().hasOnly(['lat', 'lng'])
+          && request.resource.data.locationSource in [
+            'BROWSER_GPS',
+            'MANUAL_PIN'
+          ]
+          && request.resource.data.locationValidationStatus
+            == 'INSIDE_SERVICE_AREA'
+          && request.resource.data.serviceType in [
+            'REGULAR_HOUSEHOLD_PICKUP',
+            'ONE_TRIP_TRICYCLE'
+          ]
+          && request.resource.data.volumeLevel in [
+            'SMALL',
+            'MEDIUM',
+            'LARGE',
+            'OVERSIZED'
+          ]
+          && request.resource.data.tricycleLoadEstimate in [
+            'QUARTER',
+            'HALF',
+            'FULL',
+            'OVER_CAPACITY'
+          ]
+          && request.resource.data.photoUrls is list
+          && request.resource.data.photoUrls.size() == 0
+          && request.resource.data.intakePhotoMediaIds is list
+          && request.resource.data.intakePhotoMediaIds.size() == 1
+          && existsAfter(
+            /databases/$(database)/documents/customerWasteMedia/$(request.resource.data.intakePhotoMediaIds[0])
+          )
+          && getAfter(
+            /databases/$(database)/documents/customerWasteMedia/$(request.resource.data.intakePhotoMediaIds[0])
+          ).data.ownerUid == request.auth.uid
+          && request.resource.data.status == 'NEW'
+          && request.resource.data.createdAt == request.time
+          && request.resource.data.updatedAt == request.time
+        );
       allow update: if (
           isBackOffice()
           && operatorUpdatesOperationalFields(ticketId)
@@ -416,6 +535,48 @@ service cloud.firestore {
         && request.resource.data.dataUrl is string
         && request.resource.data.dataUrl.size() <= 410000;
       allow delete: if false;
+    }
+
+    match /customerWasteMedia/{mediaId} {
+      allow read: if isBackOffice()
+        || (
+          signedIn()
+          && resource.data.ownerUid == request.auth.uid
+        );
+      allow create: if isCompleteCustomer()
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.keys().hasOnly([
+          'pickupRequestId',
+          'ownerUid',
+          'contentType',
+          'byteSize',
+          'width',
+          'height',
+          'dataUrl',
+          'originalName',
+          'createdAt'
+        ])
+        && request.resource.data.pickupRequestId is string
+        && existsAfter(
+          /databases/$(database)/documents/pickupRequests/$(request.resource.data.pickupRequestId)
+        )
+        && getAfter(
+          /databases/$(database)/documents/pickupRequests/$(request.resource.data.pickupRequestId)
+        ).data.ownerUid == request.auth.uid
+        && getAfter(
+          /databases/$(database)/documents/pickupRequests/$(request.resource.data.pickupRequestId)
+        ).data.intakePhotoMediaIds.hasAny([mediaId])
+        && request.resource.data.contentType == 'image/jpeg'
+        && request.resource.data.byteSize > 0
+        && request.resource.data.byteSize <= 300000
+        && request.resource.data.width is int
+        && request.resource.data.height is int
+        && request.resource.data.dataUrl is string
+        && request.resource.data.dataUrl.size() <= 410000
+        && request.resource.data.originalName is string
+        && request.resource.data.originalName.size() <= 120
+        && request.resource.data.createdAt == request.time;
+      allow update, delete: if false;
     }
 
     match /whatsappMessages/{messageId} {

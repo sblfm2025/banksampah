@@ -102,6 +102,39 @@ describe('Firestore role access', () => {
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   };
+  const officialPickup = {
+    ticketCode: 'JSP-20260614-0001',
+    source: 'PWA',
+    customerId: 'customer-google',
+    ownerUid: 'customer-google',
+    customerPhoneNumber: '6281234567890',
+    customerName: 'Andi Saputra',
+    district: 'PALETEANG',
+    villageId: 'temmassarangnge',
+    addressText: 'Jalan Bulu Manarang dekat masjid',
+    location: { lat: -3.78, lng: 119.65 },
+    locationSource: 'MANUAL_PIN',
+    locationValidationStatus: 'INSIDE_SERVICE_AREA',
+    serviceType: 'REGULAR_HOUSEHOLD_PICKUP',
+    volumeLevel: 'MEDIUM',
+    tricycleLoadEstimate: 'HALF',
+    photoUrls: [],
+    intakePhotoMediaIds: ['ticket-public_intake'],
+    status: 'NEW',
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  };
+  const intakeMedia = {
+    pickupRequestId: 'ticket-public',
+    ownerUid: 'customer-google',
+    contentType: 'image/jpeg',
+    byteSize: 12,
+    width: 100,
+    height: 80,
+    dataUrl: 'data:image/jpeg;base64,AAA=',
+    originalName: 'foto.jpg',
+    createdAt: serverTimestamp(),
+  };
 
   it('warga Google dapat membuat profil lengkap miliknya sendiri', async () => {
     const db = environment
@@ -154,6 +187,78 @@ describe('Firestore role access', () => {
         locationValidationStatus: 'UNKNOWN',
       }),
     );
+  });
+
+  it('warga dengan profil lengkap dapat mengirim permintaan resmi dan foto intake', async () => {
+    const db = environment
+      .authenticatedContext('customer-google', {
+        email: 'andi@example.com',
+      })
+      .firestore();
+
+    await environment.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), 'users/customer-google'), {
+        ...customerProfile,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+    });
+
+    const batch = writeBatch(db);
+    batch.set(doc(db, 'pickupRequests/ticket-public'), officialPickup);
+    batch.set(doc(db, 'customerWasteMedia/ticket-public_intake'), intakeMedia);
+    await assertSucceeds(batch.commit());
+    await assertSucceeds(getDoc(doc(db, 'pickupRequests/ticket-public')));
+    await assertSucceeds(
+      getDoc(doc(db, 'customerWasteMedia/ticket-public_intake')),
+    );
+  });
+
+  it('warga tidak dapat mengirim atau membaca permintaan milik akun lain', async () => {
+    const ownerDb = environment
+      .authenticatedContext('customer-google', {
+        email: 'andi@example.com',
+      })
+      .firestore();
+    const otherDb = environment
+      .authenticatedContext('customer-other', {
+        email: 'other@example.com',
+      })
+      .firestore();
+
+    await environment.withSecurityRulesDisabled(async (context) => {
+      const db = context.firestore();
+      await Promise.all([
+        setDoc(doc(db, 'users/customer-google'), {
+          ...customerProfile,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        }),
+        setDoc(doc(db, 'users/customer-other'), {
+          ...customerProfile,
+          email: 'other@example.com',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        }),
+        setDoc(doc(db, 'pickupRequests/other-ticket'), {
+          ...officialPickup,
+          customerId: 'customer-other',
+          ownerUid: 'customer-other',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        }),
+      ]);
+    });
+
+    await assertFails(
+      setDoc(doc(ownerDb, 'pickupRequests/wrong-owner'), {
+        ...officialPickup,
+        customerId: 'customer-other',
+        ownerUid: 'customer-other',
+      }),
+    );
+    await assertFails(getDoc(doc(ownerDb, 'pickupRequests/other-ticket')));
+    await assertSucceeds(getDoc(doc(otherDb, 'pickupRequests/other-ticket')));
   });
 
   it('operator dapat membaca tiket dan customer', async () => {

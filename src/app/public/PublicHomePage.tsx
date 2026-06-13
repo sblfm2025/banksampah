@@ -33,7 +33,7 @@ export function PublicHomePage() {
             className="rounded-full bg-[#e6f7fa] px-3 py-2 text-xs font-bold text-[#087f8c]"
             to="/login"
           >
-            Masuk Petugas
+            Masuk/Daftar
           </Link>
         }
         subtitle="Watang Sawitto & Paleteang"

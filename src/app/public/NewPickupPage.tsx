@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../auth/auth-context';
 import {
   AppHeader,
   AppDialog,
@@ -26,7 +27,9 @@ import {
   isValidIndonesianPhoneNumber,
   normalizeIndonesianPhoneNumber,
   savePublicTicket,
+  updatePublicTicket,
 } from './public-data';
+import { submitPublicTicket } from './public-ticket.repository';
 import { reverseGeocode } from '../components/map/reverse-geocoding';
 import { detectServiceArea } from '../../shared/regions/service-area-boundaries';
 import { composeServiceAddress } from '../../shared/regions/location-address';
@@ -46,23 +49,35 @@ const volumeOptions: Array<{
 
 export function NewPickupPage() {
   const navigate = useNavigate();
+  const { authUid, user } = useAuth();
   const savedProfile = getPublicProfile();
+  const customer = user?.role === 'CUSTOMER' ? user : null;
   const [step, setStep] = useState(1);
-  const [address, setAddress] = useState(savedProfile?.address ?? '');
-  const [district, setDistrict] = useState<ActiveDistrict | ''>(
-    savedProfile?.district ?? '',
+  const [address, setAddress] = useState(
+    customer?.addressText ?? savedProfile?.address ?? '',
   );
-  const [villageId, setVillageId] = useState(savedProfile?.villageId ?? '');
+  const [district, setDistrict] = useState<ActiveDistrict | ''>(
+    customer?.district ?? savedProfile?.district ?? '',
+  );
+  const [villageId, setVillageId] = useState(
+    customer?.villageId ?? savedProfile?.villageId ?? '',
+  );
   const [location, setLocation] = useState<{ lat: number; lng: number } | undefined>(
-    savedProfile?.location,
+    customer?.location ?? savedProfile?.location,
   );
   const [locationAccuracyMeters, setLocationAccuracyMeters] =
-    useState<number | undefined>(savedProfile?.locationAccuracyMeters);
+    useState<number | undefined>(
+      customer?.locationAccuracyMeters ?? savedProfile?.locationAccuracyMeters,
+    );
   const [locationSource, setLocationSource] =
-    useState<LocationSource>(savedProfile?.locationSource ?? 'MANUAL_TEXT');
+    useState<LocationSource>(
+      customer?.locationSource ?? savedProfile?.locationSource ?? 'MANUAL_TEXT',
+    );
   const [locationValidationStatus, setLocationValidationStatus] =
     useState<LocationValidationStatus>(
-      savedProfile?.locationValidationStatus ?? 'UNKNOWN',
+      customer?.locationValidationStatus ??
+        savedProfile?.locationValidationStatus ??
+        'UNKNOWN',
     );
   const [locationMessage, setLocationMessage] = useState('');
   const [isResolvingAddress, setIsResolvingAddress] = useState(false);
@@ -74,14 +89,17 @@ export function NewPickupPage() {
   const geocodingTimer = useRef<number | undefined>(undefined);
   const geocodingAbort = useRef<AbortController | undefined>(undefined);
   const [photo, setPhoto] = useState<string>();
+  const [photoFile, setPhotoFile] = useState<File>();
   const [volume, setVolume] = useState<Volume>('MEDIUM');
   const [notes, setNotes] = useState('');
   const [customerName, setCustomerName] = useState(
-    savedProfile?.fullName ?? '',
+    customer ? customer.name : savedProfile?.fullName ?? '',
   );
   const [customerPhoneNumber, setCustomerPhoneNumber] = useState(
-    savedProfile?.phoneNumber ?? '',
+    customer ? customer.phoneNumber ?? '' : savedProfile?.phoneNumber ?? '',
   );
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [sheet, setSheet] = useState<'district' | 'volume' | null>(null);
   const [confirm, setConfirm] = useState(false);
 
@@ -93,12 +111,15 @@ export function NewPickupPage() {
     step === 1
       ? address.trim().length >= 8 &&
         Boolean(district) &&
-        Boolean(villageId)
+        Boolean(villageId) &&
+        Boolean(location) &&
+        locationValidationStatus === 'INSIDE_SERVICE_AREA'
       : step === 2
         ? Boolean(photo)
         : step === 4
           ? customerName.trim().length >= 2 &&
-            isValidIndonesianPhoneNumber(customerPhoneNumber)
+            isValidIndonesianPhoneNumber(customerPhoneNumber) &&
+            privacyAccepted
           : true;
 
   function selectPhoto(file?: File) {
@@ -114,6 +135,7 @@ export function NewPickupPage() {
     const reader = new FileReader();
     reader.onload = () => setPhoto(String(reader.result));
     reader.readAsDataURL(file);
+    setPhotoFile(file);
   }
 
   function updateLocation(
@@ -194,8 +216,18 @@ export function NewPickupPage() {
     }, 700);
   }
 
-  function finish() {
-    if (!district || !villageId) return;
+  async function finish() {
+    if (
+      !district ||
+      !villageId ||
+      !authUid ||
+      !photoFile ||
+      isSubmitting
+    ) {
+      return;
+    }
+    setIsSubmitting(true);
+    setConfirm(false);
     const ticket = savePublicTicket({
       customerName,
       customerPhoneNumber,
@@ -214,7 +246,25 @@ export function NewPickupPage() {
       notes,
       photo,
     });
-    navigate(`/tickets/${ticket.id}`);
+    try {
+      const submitted = await submitPublicTicket(ticket, authUid, photoFile);
+      updatePublicTicket(ticket.id, {
+        code: submitted.ticketCode,
+        deliveryStatus: 'SUBMITTED',
+        remoteId: submitted.id,
+        lastSyncError: undefined,
+      });
+      navigate(`/tickets/${ticket.id}`);
+    } catch {
+      updatePublicTicket(ticket.id, {
+        deliveryStatus: 'PENDING_SYNC',
+        lastSyncError:
+          'Belum dapat dikirim. Periksa koneksi lalu coba kembali dari detail permintaan.',
+      });
+      navigate(`/tickets/${ticket.id}`);
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -420,6 +470,7 @@ export function NewPickupPage() {
                 maxLength={120}
                 onChange={(event) => setCustomerName(event.target.value)}
                 placeholder="Nama warga yang mengajukan"
+                readOnly={user?.role === 'CUSTOMER'}
                 required
                 value={customerName}
               />
@@ -432,6 +483,7 @@ export function NewPickupPage() {
                 inputMode="tel"
                 onChange={(event) => setCustomerPhoneNumber(event.target.value)}
                 placeholder="Contoh: 0812 3456 7890"
+                readOnly={user?.role === 'CUSTOMER'}
                 required
                 type="tel"
                 value={customerPhoneNumber}
@@ -443,6 +495,12 @@ export function NewPickupPage() {
                   </span>
                 )}
             </label>
+            {user?.role === 'CUSTOMER' && (
+              <p className="mt-2 text-xs text-slate-500">
+                Identitas mengikuti profil akun. Perbarui melalui halaman
+                profil bila ada perubahan.
+              </p>
+            )}
             <label className="mt-4 block text-sm font-bold">
               Catatan untuk petugas
             <textarea
@@ -452,11 +510,18 @@ export function NewPickupPage() {
               value={notes}
             />
             </label>
-            <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
-              Pengajuan web disimpan sebagai draft di perangkat ini. Operator
-              belum menerima data sampai kanal pengiriman permintaan web
-              diaktifkan.
-            </div>
+            <label className="mt-4 flex items-start gap-3 rounded-2xl border border-cyan-200 bg-cyan-50 p-4 text-sm leading-6 text-cyan-950">
+              <input
+                checked={privacyAccepted}
+                className="mt-1 h-4 w-4 accent-[#159fb3]"
+                onChange={(event) => setPrivacyAccepted(event.target.checked)}
+                type="checkbox"
+              />
+              <span>
+                Saya setuju nama, nomor WhatsApp, alamat, titik lokasi, dan foto
+                digunakan hanya untuk memproses penjemputan sampah.
+              </span>
+            </label>
             <Card className="mt-4 p-5 shadow-none">
               <Summary label="Nama" value={customerName || '-'} />
               <Summary
@@ -510,13 +575,17 @@ export function NewPickupPage() {
             </Link>
           )}
           <PrimaryButton
-            disabled={!canContinue}
+            disabled={!canContinue || isSubmitting}
             onClick={() => {
               if (step < 4) setStep((current) => current + 1);
               else setConfirm(true);
             }}
           >
-            {step === 4 ? 'Simpan Draft' : 'Lanjut'}
+            {step === 4
+              ? isSubmitting
+                ? 'Mengirim...'
+                : 'Kirim Permintaan'
+              : 'Lanjut'}
           </PrimaryButton>
         </div>
       </main>
@@ -575,11 +644,11 @@ export function NewPickupPage() {
       </BottomSheet>
 
       <ConfirmModal
-        description="Data akan disimpan sebagai draft pada perangkat ini dan belum dikirim ke operator."
+        description="Permintaan akan dikirim ke operator. Jika koneksi terputus, data disimpan sebagai antrean dan dapat dikirim ulang."
         onCancel={() => setConfirm(false)}
-        onConfirm={finish}
+        onConfirm={() => void finish()}
         open={confirm}
-        title="Simpan draft pengajuan?"
+        title="Kirim permintaan jemput?"
       />
       <AppDialog
         confirmLabel="Mengerti"

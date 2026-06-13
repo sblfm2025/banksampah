@@ -6,7 +6,10 @@ import { SERVICE_TYPE_LABELS } from '../../shared/constants/services';
 import type { PickupRequest } from '../../shared/schemas/pickup.schema';
 import { operatorRepository } from './operator.repository';
 import { StatusBadge } from './StatusBadge';
-import { loadPickupProof } from './pickup-proof-media';
+import {
+  loadCustomerWasteMedia,
+  loadPickupProof,
+} from './pickup-proof-media';
 import { getVillage } from '../../shared/regions/service-areas';
 import { AppDialog } from '../ui/components';
 
@@ -35,6 +38,12 @@ export function TicketDetailPage() {
     queryKey: ['pickup-proof', id],
     queryFn: () => loadPickupProof(id!),
     enabled: Boolean(id),
+  });
+  const intakePhotos = useQuery({
+    queryKey: ['customer-waste-media', id, ticket.data?.intakePhotoMediaIds],
+    queryFn: () =>
+      loadCustomerWasteMedia(ticket.data?.intakePhotoMediaIds),
+    enabled: Boolean(ticket.data?.intakePhotoMediaIds?.length),
   });
 
   async function refresh(updated: PickupRequest) {
@@ -185,10 +194,23 @@ export function TicketDetailPage() {
           </InfoSection>
 
           <InfoSection title="Foto Sampah">
-            {data.photoUrls.length === 0 ? (
+            {intakePhotos.isLoading ? (
+              <p className="text-slate-500">Memuat foto sampah...</p>
+            ) : intakePhotos.isError ? (
+              <p className="text-red-700">Foto sampah tidak dapat dimuat.</p>
+            ) : data.photoUrls.length === 0 &&
+              (intakePhotos.data?.length ?? 0) === 0 ? (
               <p className="text-slate-500">Belum ada foto tersimpan.</p>
             ) : (
               <div className="grid gap-3 sm:grid-cols-2">
+                {intakePhotos.data?.map((url, index) => (
+                  <img
+                    alt="Foto sampah dari warga"
+                    className="h-52 w-full rounded-xl border border-slate-200 object-cover"
+                    key={`intake-${index}`}
+                    src={url}
+                  />
+                ))}
                 {data.photoUrls.map((url) =>
                   url.startsWith('http') ? (
                     <a
