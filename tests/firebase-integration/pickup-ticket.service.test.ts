@@ -601,7 +601,7 @@ describe('PickupTicketService', () => {
       completed: 1,
       completionRate: 100,
     });
-    expect(sender.sent[0].body).toContain('Nomor tiket:');
+    expect(sender.sent[0].body).toContain('Nomor permintaan:');
     expect(customers.size).toBe(1);
     expect(messagesSnapshot.size).toBe(2);
     expect(proofs.size).toBe(1);

@@ -1,12 +1,24 @@
 import { getApp, getApps, initializeApp } from 'firebase/app';
 import {
+  GoogleAuthProvider,
   getAuth,
   signInWithEmailAndPassword,
+  signInWithPopup,
   signOut,
   onAuthStateChanged as observeAuthState,
 } from 'firebase/auth';
-import { doc, getDoc, getFirestore } from 'firebase/firestore';
-import { appUserSchema, type AppUser } from '../shared/schemas/user.schema';
+import {
+  doc,
+  getDoc,
+  getFirestore,
+  serverTimestamp,
+  setDoc,
+} from 'firebase/firestore';
+import {
+  appUserSchema,
+  type AppUser,
+  type CustomerProfileInput,
+} from '../shared/schemas/user.schema';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -32,6 +44,12 @@ export async function loginWithEmail(email: string, password: string) {
   await signInWithEmailAndPassword(auth, email, password);
 }
 
+export async function loginWithGoogle() {
+  const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: 'select_account' });
+  await signInWithPopup(auth, provider);
+}
+
 export async function logout() {
   await signOut(auth);
 }
@@ -54,4 +72,38 @@ export async function getAppUser(uid: string): Promise<AppUser | null> {
   return snapshot.exists()
     ? appUserSchema.parse({ id: snapshot.id, ...snapshot.data() })
     : null;
+}
+
+export async function saveCustomerAppProfile(
+  profile: CustomerProfileInput,
+): Promise<void> {
+  const firebaseUser = auth.currentUser;
+  if (!firebaseUser?.email) {
+    throw new Error('Akun Google tidak memiliki alamat email yang dapat dipakai.');
+  }
+
+  const reference = doc(db, 'users', firebaseUser.uid);
+  const existing = await getDoc(reference);
+  await setDoc(
+    reference,
+    {
+      name: profile.fullName.trim(),
+      email: firebaseUser.email,
+      phoneNumber: profile.phoneNumber,
+      role: 'CUSTOMER',
+      isActive: true,
+      addressText: profile.address.trim(),
+      district: profile.district,
+      villageId: profile.villageId,
+      location: profile.location,
+      ...(profile.locationAccuracyMeters === undefined
+        ? {}
+        : { locationAccuracyMeters: profile.locationAccuracyMeters }),
+      locationSource: profile.locationSource,
+      locationValidationStatus: profile.locationValidationStatus,
+      updatedAt: serverTimestamp(),
+      ...(existing.exists() ? {} : { createdAt: serverTimestamp() }),
+    },
+    { merge: existing.exists() },
+  );
 }

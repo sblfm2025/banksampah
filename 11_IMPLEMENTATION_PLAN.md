@@ -308,6 +308,9 @@ Status: selesai dan tervalidasi pada build produksi.
   komponen loading, error, empty state, badge, modal, dan bottom sheet bersama.
 - Halaman warga tersedia pada `/`, `/sampahku`, `/tickets`, `/tickets/:id`,
   `/profile`, dan wizard empat langkah `/pickup/new`.
+- Warga dapat mendaftar atau masuk dengan Google. Akun baru wajib melengkapi
+  nama, nomor WhatsApp, alamat, serta titik peta terverifikasi sebelum membuat
+  permintaan; profil disimpan sebagai role `CUSTOMER` milik UID tersebut.
 - Draft pengajuan warga disimpan lokal di browser. Ini bukan tiket produksi;
   WhatsApp tetap menjadi kanal masuk resmi sampai integrasi API publik tersedia.
 - Dashboard operator, login, dan PWA petugas telah diselaraskan dengan identitas

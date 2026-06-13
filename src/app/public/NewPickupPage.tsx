@@ -53,13 +53,17 @@ export function NewPickupPage() {
     savedProfile?.district ?? '',
   );
   const [villageId, setVillageId] = useState(savedProfile?.villageId ?? '');
-  const [location, setLocation] = useState<{ lat: number; lng: number }>();
+  const [location, setLocation] = useState<{ lat: number; lng: number } | undefined>(
+    savedProfile?.location,
+  );
   const [locationAccuracyMeters, setLocationAccuracyMeters] =
-    useState<number>();
+    useState<number | undefined>(savedProfile?.locationAccuracyMeters);
   const [locationSource, setLocationSource] =
-    useState<LocationSource>('MANUAL_TEXT');
+    useState<LocationSource>(savedProfile?.locationSource ?? 'MANUAL_TEXT');
   const [locationValidationStatus, setLocationValidationStatus] =
-    useState<LocationValidationStatus>('UNKNOWN');
+    useState<LocationValidationStatus>(
+      savedProfile?.locationValidationStatus ?? 'UNKNOWN',
+    );
   const [locationMessage, setLocationMessage] = useState('');
   const [isResolvingAddress, setIsResolvingAddress] = useState(false);
   const [notice, setNotice] = useState<{

@@ -87,6 +87,75 @@ afterAll(async () => {
 });
 
 describe('Firestore role access', () => {
+  const customerProfile = {
+    name: 'Andi Saputra',
+    email: 'andi@example.com',
+    phoneNumber: '6281234567890',
+    role: 'CUSTOMER',
+    isActive: true,
+    addressText: 'Jalan Bulu Manarang dekat masjid',
+    district: 'PALETEANG',
+    villageId: 'temmassarangnge',
+    location: { lat: -3.78, lng: 119.65 },
+    locationSource: 'MANUAL_PIN',
+    locationValidationStatus: 'INSIDE_SERVICE_AREA',
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  };
+
+  it('warga Google dapat membuat profil lengkap miliknya sendiri', async () => {
+    const db = environment
+      .authenticatedContext('customer-google', {
+        email: 'andi@example.com',
+      })
+      .firestore();
+
+    await assertSucceeds(
+      setDoc(doc(db, 'users/customer-google'), customerProfile),
+    );
+    await assertSucceeds(getDoc(doc(db, 'users/customer-google')));
+  });
+
+  it('warga tidak dapat menaikkan role atau menulis profil akun lain', async () => {
+    const db = environment
+      .authenticatedContext('customer-google', {
+        email: 'andi@example.com',
+      })
+      .firestore();
+
+    await assertFails(
+      setDoc(doc(db, 'users/customer-google'), {
+        ...customerProfile,
+        role: 'SUPER_ADMIN',
+      }),
+    );
+    await assertFails(
+      setDoc(doc(db, 'users/customer-lain'), customerProfile),
+    );
+  });
+
+  it('warga wajib menyimpan kontak, alamat, dan titik terverifikasi', async () => {
+    const db = environment
+      .authenticatedContext('customer-google', {
+        email: 'andi@example.com',
+      })
+      .firestore();
+    const withoutPhone = { ...customerProfile } as Partial<
+      typeof customerProfile
+    >;
+    delete withoutPhone.phoneNumber;
+
+    await assertFails(
+      setDoc(doc(db, 'users/customer-google'), withoutPhone),
+    );
+    await assertFails(
+      setDoc(doc(db, 'users/customer-google'), {
+        ...customerProfile,
+        locationValidationStatus: 'UNKNOWN',
+      }),
+    );
+  });
+
   it('operator dapat membaca tiket dan customer', async () => {
     const db = environment
       .authenticatedContext('operator-1')

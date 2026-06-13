@@ -32,6 +32,69 @@ service cloud.firestore {
       return isAdmin() || isOperator();
     }
 
+    function validCustomerProfile() {
+      return request.resource.data.keys().hasOnly([
+          'name',
+          'email',
+          'phoneNumber',
+          'role',
+          'isActive',
+          'addressText',
+          'district',
+          'villageId',
+          'location',
+          'locationAccuracyMeters',
+          'locationSource',
+          'locationValidationStatus',
+          'createdAt',
+          'updatedAt'
+        ])
+        && request.resource.data.keys().hasAll([
+          'name',
+          'email',
+          'phoneNumber',
+          'role',
+          'isActive',
+          'addressText',
+          'district',
+          'villageId',
+          'location',
+          'locationSource',
+          'locationValidationStatus',
+          'createdAt',
+          'updatedAt'
+        ])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() >= 2
+        && request.resource.data.name.size() <= 120
+        && request.resource.data.email is string
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.phoneNumber is string
+        && request.resource.data.phoneNumber.matches('^628[0-9]{7,12}$')
+        && request.resource.data.role == 'CUSTOMER'
+        && request.resource.data.isActive == true
+        && request.resource.data.addressText is string
+        && request.resource.data.addressText.size() >= 8
+        && request.resource.data.addressText.size() <= 500
+        && request.resource.data.district in [
+          'WATANG_SAWITTO',
+          'PALETEANG'
+        ]
+        && request.resource.data.villageId is string
+        && request.resource.data.villageId.size() > 0
+        && request.resource.data.location is map
+        && request.resource.data.location.keys().hasOnly(['lat', 'lng'])
+        && request.resource.data.location.lat is number
+        && request.resource.data.location.lng is number
+        && request.resource.data.locationSource in [
+          'BROWSER_GPS',
+          'MANUAL_PIN'
+        ]
+        && request.resource.data.locationValidationStatus
+          == 'INSIDE_SERVICE_AREA'
+        && request.resource.data.updatedAt == request.time;
+    }
+
     function isAssignedDriver() {
       return isDriver() && resource.data.assignedDriverId == request.auth.uid;
     }
@@ -194,7 +257,42 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if (signedIn() && request.auth.uid == userId)
         || isBackOffice();
-      allow create, update: if isAdmin()
+      allow create: if (
+          signedIn()
+          && request.auth.uid == userId
+          && validCustomerProfile()
+          && request.resource.data.createdAt == request.time
+        )
+        || (
+          isAdmin()
+          && request.resource.data.keys().hasOnly([
+            'name',
+            'email',
+            'phoneNumber',
+            'role',
+            'isActive'
+          ])
+          && request.resource.data.name is string
+          && request.resource.data.email is string
+          && request.resource.data.role in [
+            'SUPER_ADMIN',
+            'OPERATOR',
+            'DRIVER',
+            'CUSTOMER'
+          ]
+          && request.resource.data.isActive is bool
+        );
+      allow update: if (
+          signedIn()
+          && request.auth.uid == userId
+          && resource.data.role == 'CUSTOMER'
+          && request.resource.data.role == resource.data.role
+          && request.resource.data.isActive == resource.data.isActive
+          && request.resource.data.email == resource.data.email
+          && request.resource.data.createdAt == resource.data.createdAt
+          && validCustomerProfile()
+        )
+        || (isAdmin()
         && request.resource.data.keys().hasOnly([
           'name',
           'email',
@@ -210,7 +308,7 @@ service cloud.firestore {
           'DRIVER',
           'CUSTOMER'
         ]
-        && request.resource.data.isActive is bool;
+        && request.resource.data.isActive is bool);
       allow delete: if false;
     }
 

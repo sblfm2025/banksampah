@@ -33,6 +33,10 @@ export interface PublicProfile {
   address: string;
   district?: 'WATANG_SAWITTO' | 'PALETEANG';
   villageId?: string;
+  location?: { lat: number; lng: number };
+  locationAccuracyMeters?: number;
+  locationSource?: LocationSource;
+  locationValidationStatus?: LocationValidationStatus;
   updatedAt: string;
 }
 
@@ -65,6 +69,10 @@ export function getPublicProfile(): PublicProfile | null {
       address: profile.address,
       district: profile.district,
       villageId: profile.villageId,
+      location: profile.location,
+      locationAccuracyMeters: profile.locationAccuracyMeters,
+      locationSource: profile.locationSource,
+      locationValidationStatus: profile.locationValidationStatus,
       updatedAt:
         typeof profile.updatedAt === 'string'
           ? profile.updatedAt
@@ -134,6 +142,10 @@ export function savePublicTicket(
     address: item.address,
     district: item.district,
     villageId: item.villageId,
+    location: item.location,
+    locationAccuracyMeters: item.locationAccuracyMeters,
+    locationSource: item.locationSource,
+    locationValidationStatus: item.locationValidationStatus,
   });
   return item;
 }

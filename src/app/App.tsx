@@ -10,6 +10,7 @@ import { DriverManagementPage } from './admin/DriverManagementPage';
 import { RegionManagementPage } from './admin/RegionManagementPage';
 import { RoleGuard } from './auth/RoleGuard';
 import { LoginPage } from './auth/LoginPage';
+import { CustomerProfileGuard } from './auth/CustomerProfileGuard';
 import { DriverLayout } from './driver/DriverLayout';
 import { DriverPickupDetailPage } from './driver/DriverPickupDetailPage';
 import { DriverPickupsPage } from './driver/DriverPickupsPage';
@@ -45,9 +46,11 @@ export function App() {
       <Route
         path="/pickup/new"
         element={
-          <Suspense fallback={<LoadingState label="Memuat peta lokasi..." />}>
-            <NewPickupPage />
-          </Suspense>
+          <CustomerProfileGuard>
+            <Suspense fallback={<LoadingState label="Memuat peta lokasi..." />}>
+              <NewPickupPage />
+            </Suspense>
+          </CustomerProfileGuard>
         }
       />
       <Route path="/login" element={<LoginPage />} />
