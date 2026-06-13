@@ -3,7 +3,6 @@ import {
   AppIcon,
   AppLogo,
   Card,
-  ServiceCard,
   type IconName,
 } from '../../ui/components';
 import { landingImpactStats } from '../content/impact-content';
@@ -85,6 +84,33 @@ const roleLinks = [
   },
 ];
 
+const impactTiles = [
+  {
+    title: 'Lingkungan',
+    image: '/illustrations/community-impact-pinrang-v2.webp',
+    description: 'Pemilahan bersih dan penjemputan yang lebih tertib.',
+  },
+  {
+    title: 'Sosial',
+    image: '/illustrations/founder-story-ali-topan-illustration-v2.webp',
+    description: 'Gerakan warga, sekolah, relawan, dan pengurus komunitas.',
+  },
+  {
+    title: 'Operasional',
+    image: '/illustrations/landing-hero-recycling-bin-v2.webp',
+    description: 'Foto, lokasi, jadwal, dan status tercatat dalam satu alur.',
+  },
+];
+
+const mediaMentions = [
+  'Komunitas',
+  'Sekolah',
+  'UMKM',
+  'Pemerintah',
+  'Relawan',
+  'Warga',
+];
+
 function SectionHeading({
   eyebrow,
   title,
@@ -159,12 +185,12 @@ function ClaimBadge({ status }: { status: 'verified' | 'needsVerification' }) {
 
 export function LandingHeader() {
   return (
-    <header className="sticky top-0 z-30 border-b border-slate-200/70 bg-white/95 backdrop-blur">
-      <div className="app-container flex min-h-20 items-center justify-between gap-4">
+    <header className="sticky top-0 z-30 border-b border-slate-100 bg-white/95 backdrop-blur">
+      <div className="app-container flex min-h-14 items-center justify-between gap-4">
         <Link aria-label="Kembali ke beranda" to="/">
           <AppLogo compact />
         </Link>
-        <nav className="hidden items-center gap-5 text-sm font-bold text-slate-600 lg:flex">
+        <nav className="hidden items-center gap-6 text-xs font-bold text-slate-600 lg:flex">
           <a className="hover:text-[#087f8c]" href="#layanan">
             Layanan
           </a>
@@ -183,13 +209,13 @@ export function LandingHeader() {
         </nav>
         <div className="flex items-center gap-2">
           <Link
-            className="hidden rounded-full border border-[#159fb3] px-4 py-2 text-sm font-bold text-[#087f8c] sm:inline-flex"
+            className="hidden rounded-full border border-[#159fb3] px-4 py-2 text-xs font-bold text-[#087f8c] sm:inline-flex"
             to="/login"
           >
             Masuk
           </Link>
           <Link
-            className="rounded-full bg-[#159fb3] px-4 py-2 text-sm font-bold text-white shadow-[0_10px_24px_rgb(21_159_179/0.24)]"
+            className="rounded-full bg-[#159fb3] px-4 py-2 text-xs font-bold text-white shadow-[0_10px_24px_rgb(21_159_179/0.24)]"
             to="/pickup/new"
           >
             Ajukan Jemput
@@ -202,19 +228,24 @@ export function LandingHeader() {
 
 export function HeroSection() {
   return (
-    <section className="brand-grid overflow-hidden text-white">
-      <div className="app-container grid items-center gap-8 py-12 sm:py-16 lg:grid-cols-[0.9fr_1.1fr]">
-        <div>
-          <span className="inline-flex rounded-full bg-white/15 px-4 py-2 text-xs font-bold">
-            Layanan jemput sampah komunitas Pinrang
-          </span>
-          <h1 className="mt-5 text-4xl font-extrabold leading-tight sm:text-6xl">
-            Sampah dijemput, warga terbantu, lingkungan lebih tertata.
-          </h1>
-          <p className="mt-5 max-w-xl text-sm leading-7 text-cyan-50 sm:text-base">
-            {organizationProfile.description}
-          </p>
-          <div className="mt-8 grid gap-3 sm:flex">
+    <section className="relative min-h-[560px] overflow-hidden bg-[#0f8f4a] text-white">
+      <img
+        alt="Bak hijau berisi plastik, kertas, dan kardus daur ulang"
+        className="absolute inset-0 h-full w-full object-cover"
+        src="/illustrations/landing-hero-recycling-bin-v2.webp"
+      />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#07843f]/75 via-[#07843f]/35 to-[#064d2b]/15" />
+      <div className="relative mx-auto flex min-h-[560px] max-w-4xl flex-col items-center px-6 pt-16 text-center">
+        <span className="inline-flex rounded-full bg-white/15 px-4 py-2 text-xs font-bold">
+          Bank Sampah Peduli Pinrang
+        </span>
+        <h1 className="mt-6 text-4xl font-extrabold leading-tight sm:text-6xl">
+          Kami Membangun Jaringan Jemput Sampah Warga
+        </h1>
+        <p className="mt-4 max-w-2xl text-sm font-semibold leading-7 text-green-50 sm:text-base">
+          #UbahSampahJadiKebaikan
+        </p>
+        <div className="mt-7 grid gap-3 sm:flex">
             <Link
               className="flex items-center justify-center gap-2 rounded-2xl bg-white px-5 py-4 font-bold text-[#087f8c] shadow-xl"
               to="/pickup/new"
@@ -229,27 +260,6 @@ export function HeroSection() {
               <AppIcon name="user" />
               Lihat Profil YMPP
             </Link>
-          </div>
-          <div className="mt-8 grid gap-3 sm:grid-cols-3">
-            {landingImpactStats.slice(0, 3).map((item) => (
-              <div
-                className="rounded-2xl border border-white/15 bg-white/10 p-4"
-                key={item.label}
-              >
-                <p className="text-2xl font-extrabold">{item.value}</p>
-                <p className="mt-1 text-xs font-semibold text-cyan-50">
-                  {item.label}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="overflow-hidden rounded-[2rem] border border-white/20 bg-white/10 p-2 shadow-2xl">
-          <img
-            alt="Petugas Jemput Sampah Pinrang menerima sampah rumah tangga"
-            className="aspect-[16/10] w-full rounded-[1.55rem] object-cover"
-            src="/illustrations/hero-jemput-sampah-pinrang.webp"
-          />
         </div>
       </div>
     </section>
@@ -278,21 +288,16 @@ export function QuickBenefitsSection() {
 
 export function FoundationIntroSection() {
   return (
-    <section className="app-container py-8">
-      <Card className="grid items-center gap-6 overflow-hidden p-6 md:grid-cols-[0.85fr_1.15fr] md:p-8">
-        <div className="rounded-[2rem] bg-[#e6f7fa] p-6">
-          <AppLogo />
-          <div className="mt-8 space-y-3 text-sm font-semibold text-slate-600">
-            <p>{organizationProfile.foundationName}</p>
-            <p>{organizationProfile.bankName}</p>
-            <p>{organizationProfile.location}</p>
-          </div>
+    <section className="app-container py-14">
+      <div className="grid items-center gap-10 md:grid-cols-[0.9fr_1.1fr]">
+        <div className="mx-auto grid h-64 w-64 place-items-center rounded-full bg-[#e6f7fa] text-[#087f8c] md:h-80 md:w-80">
+          <AppIcon className="h-32 w-32 md:h-40 md:w-40" name="leaf" />
         </div>
         <div>
           <SectionHeading
             description={organizationProfile.headline}
-            eyebrow="Profil gerakan"
-            title="Teknologi sederhana untuk kerja komunitas yang lebih rapi."
+            eyebrow="Misi Kami"
+            title="Menyediakan akses kelola sampah yang lebih mudah bagi warga Pinrang."
           />
           <p className="mt-5 text-sm leading-7 text-slate-600">
             Aplikasi ini menjadi pintu layanan untuk warga, sekaligus alat bantu
@@ -308,7 +313,36 @@ export function FoundationIntroSection() {
             <AppIcon className="h-4 w-4" name="arrow" />
           </Link>
         </div>
-      </Card>
+      </div>
+    </section>
+  );
+}
+
+export function CommunityFeatureSection() {
+  return (
+    <section className="app-container py-8">
+      <div className="grid items-center overflow-hidden bg-[#e4f5ee] md:grid-cols-[0.95fr_1.05fr]">
+        <div className="p-8 md:p-12">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#087f8c]">
+            Dirancang untuk gerakan lokal
+          </p>
+          <h2 className="mt-3 text-2xl font-extrabold leading-tight md:text-3xl">
+            Peduli Pinrang menangkap sampah dari sumbernya, dengan ukuran
+            kecil sekalipun.
+          </h2>
+          <p className="mt-4 text-sm leading-7 text-slate-600">
+            Warga dapat mengirim foto, alamat, dan titik lokasi. Operator
+            kemudian menilai data secara manusiawi sebelum menjadwalkan petugas
+            sesuai kapasitas layanan.
+          </p>
+        </div>
+        <img
+          alt="Komunitas Peduli Pinrang mengelola sampah terpilah"
+          className="h-full min-h-72 w-full object-cover"
+          loading="lazy"
+          src="/illustrations/community-impact-pinrang-v2.webp"
+        />
+      </div>
     </section>
   );
 }
@@ -321,14 +355,17 @@ export function ServicesSection() {
         eyebrow="Layanan utama"
         title="Dari pengajuan warga sampai penjemputan petugas."
       />
-      <div className="mt-6 grid gap-4 md:grid-cols-3">
+      <div className="mt-7 grid gap-px overflow-hidden border border-slate-200 bg-slate-200 md:grid-cols-3">
         {publicServices.map((service) => (
-          <ServiceCard
-            description={service.description}
-            icon={service.icon}
-            key={service.title}
-            title={service.title}
-          />
+          <div className="bg-white p-6" key={service.title}>
+            <span className="grid h-10 w-10 place-items-center rounded-full bg-[#e6f7fa] text-[#087f8c]">
+              <AppIcon name={service.icon} />
+            </span>
+            <h3 className="mt-4 font-extrabold">{service.title}</h3>
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              {service.description}
+            </p>
+          </div>
         ))}
       </div>
     </section>
@@ -348,9 +385,9 @@ export function FeaturedProgramsSection() {
           Lihat detail program
         </Link>
       </div>
-      <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="mt-7 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
         {featuredPrograms.map((program) => (
-          <Card className="flex flex-col p-5" key={program.title}>
+          <Card className="flex min-h-52 flex-col rounded-none border-slate-200 p-6 shadow-none" key={program.title}>
             <div className="flex items-start justify-between gap-3">
               <h3 className="font-extrabold">{program.title}</h3>
               <ProgramStatusBadge status={program.status} />
@@ -433,9 +470,9 @@ export function SolutionsSection() {
         eyebrow="Solusi MVP"
         title="Sederhana, praktis, dan tidak menjanjikan fitur yang belum aktif."
       />
-      <div className="mt-6 grid gap-4 md:grid-cols-3">
+      <div className="mt-7 grid gap-4 md:grid-cols-3">
         {solutionPillars.map((pillar) => (
-          <Card className="p-5" key={pillar.title}>
+          <Card className="rounded-none border-slate-200 p-6 shadow-none" key={pillar.title}>
             <span className="grid h-12 w-12 place-items-center rounded-2xl bg-green-50 text-green-700">
               <AppIcon name="check" />
             </span>
@@ -452,13 +489,13 @@ export function SolutionsSection() {
 
 export function ImpactStatsSection() {
   return (
-    <section className="app-container py-10">
+    <section className="app-container py-12">
       <SectionHeading
         description="Dampak ditulis dengan status klaim agar publik memahami mana yang sudah menjadi data layanan dan mana yang masih perlu pembaruan."
         eyebrow="Dampak awal"
         title="Transparan sejak dari halaman depan."
       />
-      <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="mt-7 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {landingImpactStats.map((item) => (
           <Card className="p-5" key={item.label}>
             <div className="flex items-start justify-between gap-3">
@@ -478,33 +515,121 @@ export function ImpactStatsSection() {
   );
 }
 
+export function ImpactVisualSection() {
+  return (
+    <section className="app-container py-12">
+      <SectionHeading
+        eyebrow="Hadir Menciptakan Dampak"
+        title="Lingkungan, sosial, dan operasional berjalan bersama."
+      />
+      <div className="mt-7 grid gap-4 md:grid-cols-3">
+        {impactTiles.map((tile) => (
+          <div className="group relative min-h-72 overflow-hidden" key={tile.title}>
+            <img
+              alt={tile.description}
+              className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105"
+              loading="lazy"
+              src={tile.image}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-slate-950/20 to-transparent" />
+            <div className="absolute inset-x-0 bottom-0 p-5 text-white">
+              <h3 className="text-xl font-extrabold">{tile.title}</h3>
+              <p className="mt-2 text-sm leading-6 text-white/80">
+                {tile.description}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export function FounderStorySection() {
   return (
-    <section className="app-container py-10">
-      <Card className="grid gap-6 overflow-hidden bg-[#0b6f3a] p-6 text-white md:grid-cols-[0.8fr_1.2fr] md:p-8">
-        <div className="rounded-[2rem] bg-white/10 p-6">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-100">
+    <section className="app-container py-12">
+      <div className="grid items-center overflow-hidden bg-[#e4f5ee] md:grid-cols-[0.9fr_1.1fr]">
+        <div className="p-8 md:p-12">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#087f8c]">
             Penggerak komunitas
           </p>
-          <h2 className="mt-3 text-3xl font-extrabold">
+          <h2 className="mt-3 text-3xl font-extrabold text-slate-950">
             {founderProfile.name}
           </h2>
-          <p className="mt-2 text-sm font-semibold text-cyan-50">
+          <p className="mt-2 text-sm font-semibold text-[#087f8c]">
             {founderProfile.role}
           </p>
-        </div>
-        <div>
-          <h3 className="text-2xl font-extrabold">
+          <h3 className="mt-8 text-2xl font-extrabold text-slate-950">
             {founderProfile.headline}
           </h3>
-          <p className="mt-4 text-sm leading-7 text-green-50">
+          <p className="mt-4 text-sm leading-7 text-slate-600">
             {founderProfile.description}
           </p>
-          <p className="mt-4 rounded-2xl bg-white/10 p-4 text-xs leading-6 text-green-50">
+          <p className="mt-4 rounded-2xl bg-white p-4 text-xs leading-6 text-slate-500">
             {founderProfile.privacyNote}
           </p>
         </div>
-      </Card>
+        <img
+          alt="Ilustrasi Ali Topan sebagai penggerak komunitas Peduli Pinrang"
+          className="h-full min-h-96 w-full object-cover"
+          loading="lazy"
+          src="/illustrations/founder-story-ali-topan-illustration-v2.webp"
+        />
+      </div>
+    </section>
+  );
+}
+
+export function RecognitionSection() {
+  return (
+    <section className="bg-[#e4f5ee] py-14">
+      <div className="app-container">
+        <SectionHeading
+          eyebrow="Pengakuan"
+          title="Dampak gerakan dicatat dengan prinsip kehati-hatian."
+          description="Bagian ini menjadi ruang untuk menampilkan penghargaan, publikasi, atau capaian yang sudah diverifikasi oleh pengurus."
+        />
+        <Card className="mt-7 grid items-center gap-6 rounded-none border-0 p-8 shadow-none md:grid-cols-[1fr_0.8fr]">
+          <div>
+            <p className="text-sm font-bold text-slate-500">
+              Catatan transparansi
+            </p>
+            <h3 className="mt-4 text-3xl font-extrabold">
+              Data layanan dan jejaring diperbarui bertahap.
+            </h3>
+            <p className="mt-4 text-sm leading-7 text-slate-600">
+              Angka yang belum tetap ditulis sebagai estimasi dan diberi label
+              verifikasi. Ini menjaga halaman publik tetap menarik tanpa
+              melebih-lebihkan klaim.
+            </p>
+          </div>
+          <div className="grid gap-3">
+            {landingImpactStats.map((item) => (
+              <div className="flex items-center justify-between border-b border-slate-100 py-3" key={item.label}>
+                <span className="font-bold">{item.label}</span>
+                <span className="text-2xl font-extrabold text-[#087f8c]">
+                  {item.value}
+                </span>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
+    </section>
+  );
+}
+
+export function MediaMentionSection() {
+  return (
+    <section className="app-container py-14 text-center">
+      <p className="text-sm font-extrabold text-slate-950">
+        Didukung Ekosistem Lokal
+      </p>
+      <div className="mt-8 flex flex-wrap items-center justify-center gap-8 text-sm font-extrabold text-slate-300">
+        {mediaMentions.map((item) => (
+          <span key={item}>{item}</span>
+        ))}
+      </div>
     </section>
   );
 }
@@ -589,9 +714,9 @@ export function WhatsAppCTASection() {
   const whatsappUrl = getWhatsAppUrl();
 
   return (
-    <section className="app-container py-10" id="bantuan">
-      <Card className="overflow-hidden bg-[#e6f7fa] p-6 md:p-8">
-        <div className="grid items-center gap-6 md:grid-cols-[1fr_auto]">
+    <section className="app-container py-16" id="bantuan">
+      <div className="relative overflow-hidden bg-[#e4f5ee]">
+        <div className="grid items-center gap-6 p-8 md:grid-cols-[0.9fr_1.1fr] md:p-12">
           <div className="flex items-start gap-4">
             <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white text-[#087f8c]">
               <AppIcon name="phone" />
@@ -609,6 +734,14 @@ export function WhatsAppCTASection() {
               </p>
             </div>
           </div>
+          <img
+            alt="Komunitas bergabung dalam gerakan Peduli Pinrang"
+            className="h-72 w-full rounded-tl-[7rem] object-cover"
+            loading="lazy"
+            src="/illustrations/community-impact-pinrang-v2.webp"
+          />
+        </div>
+        <div className="px-8 pb-8 md:px-12 md:pb-12">
           {whatsappUrl ? (
             <a
               className="inline-flex justify-center rounded-2xl bg-[#159fb3] px-5 py-4 font-bold text-white shadow-[0_10px_24px_rgb(21_159_179/0.24)]"
@@ -624,25 +757,36 @@ export function WhatsAppCTASection() {
             </p>
           )}
         </div>
-      </Card>
+      </div>
     </section>
   );
 }
 
 export function PublicFooter() {
   return (
-    <footer className="border-t border-slate-200 bg-white">
-      <div className="app-container grid gap-6 py-8 md:grid-cols-[1fr_auto]">
+    <footer className="bg-[#1f2d33] text-white">
+      <div className="app-container grid gap-8 py-10 md:grid-cols-[1.2fr_1fr_1fr]">
         <div>
-          <AppLogo compact />
-          <p className="mt-4 max-w-xl text-sm leading-6 text-slate-500">
+          <AppLogo compact inverse />
+          <p className="mt-4 max-w-xl text-sm leading-6 text-slate-300">
             {organizationProfile.transparencyNote}
           </p>
         </div>
-        <div className="flex flex-wrap gap-4 text-sm font-bold text-slate-600">
-          <Link to="/profil">Profil YMPP</Link>
-          <Link to="/tickets">Cek Permintaan</Link>
-          <Link to="/pickup/new">Ajukan Jemput</Link>
+        <div>
+          <p className="text-sm font-extrabold">Peduli Pinrang</p>
+          <div className="mt-4 grid gap-2 text-sm text-slate-300">
+            <Link to="/profil">Tentang Kami</Link>
+            <Link to="/profil#program">Program</Link>
+            <Link to="/tickets">Cek Permintaan</Link>
+          </div>
+        </div>
+        <div>
+          <p className="text-sm font-extrabold">Akses</p>
+          <div className="mt-4 grid gap-2 text-sm text-slate-300">
+            <Link to="/pickup/new">Ajukan Jemput</Link>
+            <Link to="/login">Masuk Akun</Link>
+            <a href="#bantuan">Kontak Operator</a>
+          </div>
         </div>
       </div>
     </footer>
