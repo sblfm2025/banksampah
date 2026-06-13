@@ -16,6 +16,7 @@ import { DriverPickupDetailPage } from './driver/DriverPickupDetailPage';
 import { DriverPickupsPage } from './driver/DriverPickupsPage';
 import { PublicLayout } from './public/PublicLayout';
 import { PublicHomePage } from './public/PublicHomePage';
+import { OrganizationProfilePage } from './public/OrganizationProfilePage';
 import { PublicProfilePage } from './public/PublicProfilePage';
 import { PublicTicketDetailPage } from './public/PublicTicketDetailPage';
 import { PublicTicketsPage } from './public/PublicTicketsPage';
@@ -38,6 +39,7 @@ export function App() {
     <Routes>
       <Route element={<PublicLayout />}>
         <Route path="/" element={<PublicHomePage />} />
+        <Route path="/profil" element={<OrganizationProfilePage />} />
         <Route path="/sampahku" element={<WasteSummaryPage />} />
         <Route path="/tickets" element={<PublicTicketsPage />} />
         <Route path="/tickets/:id" element={<PublicTicketDetailPage />} />

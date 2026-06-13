@@ -497,7 +497,7 @@ export function ErrorState({ message }: { message: string }) {
   );
 }
 
-type IconName =
+export type IconName =
   | 'home'
   | 'leaf'
   | 'ticket'
