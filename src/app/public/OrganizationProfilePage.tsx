@@ -8,6 +8,7 @@ import {
   stakeholderGroups,
 } from './content/profile-content';
 import { featuredPrograms } from './content/program-content';
+import { PublicFooter } from './landing/LandingSections';
 
 function ClaimBadge({ status }: { status: 'verified' | 'needsVerification' }) {
   return (
@@ -38,29 +39,36 @@ export function OrganizationProfilePage() {
         subtitle="Profil YMPP dan Bank Sampah Peduli Pinrang"
         title="Profil Peduli Pinrang"
       />
-      <main className="app-container space-y-8 py-8">
+      <main className="app-container space-y-8 py-8 lg:py-10">
         <Card className="overflow-hidden">
-          <div className="brand-grid p-6 text-white md:p-10">
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-100">
-              {organizationProfile.foundationName}
-            </p>
-            <h1 className="mt-3 max-w-3xl text-3xl font-extrabold leading-tight md:text-5xl">
-              {organizationProfile.headline}
-            </h1>
-            <p className="mt-5 max-w-2xl text-sm leading-7 text-cyan-50">
-              {organizationProfile.description}
-            </p>
-            <div className="mt-7 flex flex-wrap gap-3">
-              <span className="rounded-full bg-white/15 px-4 py-2 text-sm font-bold">
-                {organizationProfile.bankName}
-              </span>
-              <span className="rounded-full bg-white/15 px-4 py-2 text-sm font-bold">
-                {organizationProfile.location}
-              </span>
-              <span className="rounded-full bg-white/15 px-4 py-2 text-sm font-bold">
-                Pilot: {organizationProfile.serviceArea}
-              </span>
+          <div className="brand-grid grid items-center gap-6 p-6 text-white md:grid-cols-[1fr_0.82fr] md:p-10">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-100">
+                {organizationProfile.foundationName}
+              </p>
+              <h1 className="mt-3 max-w-3xl text-3xl font-extrabold leading-tight md:text-5xl">
+                {organizationProfile.headline}
+              </h1>
+              <p className="mt-5 max-w-2xl text-sm leading-7 text-cyan-50">
+                {organizationProfile.description}
+              </p>
+              <div className="mt-7 flex flex-wrap gap-3">
+                <span className="rounded-full bg-white/15 px-4 py-2 text-sm font-bold">
+                  {organizationProfile.bankName}
+                </span>
+                <span className="rounded-full bg-white/15 px-4 py-2 text-sm font-bold">
+                  {organizationProfile.location}
+                </span>
+                <span className="rounded-full bg-white/15 px-4 py-2 text-sm font-bold">
+                  Pilot: {organizationProfile.serviceArea}
+                </span>
+              </div>
             </div>
+            <img
+              alt="Ilustrasi Ali Topan sebagai penggerak komunitas Peduli Pinrang"
+              className="max-h-80 w-full rounded-[1.5rem] object-cover shadow-2xl"
+              src="/illustrations/founder-story-ali-topan-illustration-v2.webp"
+            />
           </div>
         </Card>
 
@@ -104,7 +112,10 @@ export function OrganizationProfilePage() {
           </h2>
           <Card className="mt-5 divide-y divide-slate-100 px-5">
             {profileTimeline.map((item) => (
-              <div className="grid gap-4 py-5 md:grid-cols-[10rem_1fr_auto]" key={item.title}>
+              <div
+                className="grid gap-4 py-5 md:grid-cols-[10rem_1fr_auto]"
+                key={item.title}
+              >
                 <p className="text-sm font-extrabold text-[#087f8c]">
                   {item.year}
                 </p>
@@ -168,7 +179,10 @@ export function OrganizationProfilePage() {
             <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-600">
               {impactPrinciples.map((item) => (
                 <li className="flex gap-2" key={item}>
-                  <AppIcon className="mt-0.5 h-4 w-4 shrink-0 text-green-700" name="check" />
+                  <AppIcon
+                    className="mt-0.5 h-4 w-4 shrink-0 text-green-700"
+                    name="check"
+                  />
                   <span>{item}</span>
                 </li>
               ))}
@@ -216,6 +230,7 @@ export function OrganizationProfilePage() {
           </Link>
         </Card>
       </main>
+      <PublicFooter />
     </>
   );
 }

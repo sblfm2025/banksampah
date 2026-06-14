@@ -75,6 +75,12 @@ textarea:focus-visible {
   padding-bottom: calc(6.5rem + env(safe-area-inset-bottom));
 }
 
+@media (min-width: 1024px) {
+  .safe-bottom {
+    padding-bottom: 0;
+  }
+}
+
 .soft-grid {
   background-image:
     linear-gradient(rgb(21 159 179 / 5%) 1px, transparent 1px),

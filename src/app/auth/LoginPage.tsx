@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { isCustomerProfileComplete } from '../../shared/schemas/user.schema';
-import { AppLogo, ErrorState, PrimaryButton } from '../ui/components';
+import { AppIcon, AppLogo, ErrorState, PrimaryButton } from '../ui/components';
 import { useAuth } from './auth-context';
 
 export function LoginPage() {
@@ -76,10 +76,10 @@ export function LoginPage() {
   }
 
   return (
-    <main className="grid min-h-screen lg:grid-cols-2">
-      <section className="brand-grid hidden p-12 text-white lg:flex lg:flex-col lg:justify-between">
+    <main className="grid min-h-screen bg-white lg:grid-cols-[0.95fr_1.05fr]">
+      <section className="brand-grid hidden overflow-hidden p-12 text-white lg:flex lg:flex-col">
         <AppLogo inverse />
-        <div className="max-w-lg">
+        <div className="my-auto max-w-xl">
           <p className="text-sm font-bold uppercase tracking-[0.18em] text-cyan-100">
             Portal operasional
           </p>
@@ -90,13 +90,28 @@ export function LoginPage() {
             Verifikasi permintaan, atur jadwal, dan bantu petugas
             menyelesaikan penjemputan dari satu dashboard.
           </p>
+          <div className="mt-8 grid max-w-md gap-3">
+            {[
+              'Warga masuk dengan Google dan melengkapi profil.',
+              'Operator meninjau pengajuan dan mengatur jadwal.',
+              'Petugas melihat alamat, kontak, dan foto warga.',
+            ].map((item) => (
+              <p
+                className="flex items-start gap-3 rounded-2xl bg-white/10 p-3 text-sm leading-6 text-cyan-50"
+                key={item}
+              >
+                <AppIcon className="mt-0.5 h-4 w-4 shrink-0" name="check" />
+                <span>{item}</span>
+              </p>
+            ))}
+          </div>
         </div>
         <p className="text-xs text-cyan-100">
           Yayasan Masyarakat Peduli Pinrang
         </p>
       </section>
       <section className="grid place-items-center bg-[#f8fafc] px-4 py-10">
-        <div className="w-full max-w-md">
+        <div className="w-full max-w-md rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_20px_60px_rgb(15_23_42/0.08)] sm:p-8">
           <div className="mb-8 lg:hidden">
             <AppLogo />
           </div>
@@ -163,7 +178,7 @@ export function LoginPage() {
             className="mt-6 block text-center text-sm font-bold text-[#087f8c]"
             to="/"
           >
-            ← Kembali ke halaman warga
+            Kembali ke halaman warga
           </Link>
         </div>
       </section>

@@ -228,14 +228,14 @@ export function LandingHeader() {
 
 export function HeroSection() {
   return (
-    <section className="relative min-h-[560px] overflow-hidden bg-[#0f8f4a] text-white">
+    <section className="relative min-h-[520px] overflow-hidden bg-[#0f8f4a] text-white">
       <img
         alt="Bak hijau berisi plastik, kertas, dan kardus daur ulang"
-        className="absolute inset-0 h-full w-full object-cover"
+        className="absolute inset-0 h-full w-full object-cover object-bottom"
         src="/illustrations/landing-hero-recycling-bin-v2.webp"
       />
       <div className="absolute inset-0 bg-gradient-to-b from-[#07843f]/75 via-[#07843f]/35 to-[#064d2b]/15" />
-      <div className="relative mx-auto flex min-h-[560px] max-w-4xl flex-col items-center px-6 pt-16 text-center">
+      <div className="relative mx-auto flex min-h-[520px] max-w-4xl flex-col items-center px-6 pt-14 text-center">
         <span className="inline-flex rounded-full bg-white/15 px-4 py-2 text-xs font-bold">
           Bank Sampah Peduli Pinrang
         </span>
@@ -246,20 +246,20 @@ export function HeroSection() {
           #UbahSampahJadiKebaikan
         </p>
         <div className="mt-7 grid gap-3 sm:flex">
-            <Link
-              className="flex items-center justify-center gap-2 rounded-2xl bg-white px-5 py-4 font-bold text-[#087f8c] shadow-xl"
-              to="/pickup/new"
-            >
-              <AppIcon name="camera" />
-              Ajukan Jemput Sampah
-            </Link>
-            <Link
-              className="flex items-center justify-center gap-2 rounded-2xl border border-white/60 px-5 py-4 font-bold text-white"
-              to="/profil"
-            >
-              <AppIcon name="user" />
-              Lihat Profil YMPP
-            </Link>
+          <Link
+            className="flex items-center justify-center gap-2 rounded-2xl bg-white px-5 py-4 font-bold text-[#087f8c] shadow-xl"
+            to="/pickup/new"
+          >
+            <AppIcon name="camera" />
+            Ajukan Jemput Sampah
+          </Link>
+          <Link
+            className="flex items-center justify-center gap-2 rounded-2xl border border-white/60 px-5 py-4 font-bold text-white"
+            to="/profil"
+          >
+            <AppIcon name="user" />
+            Lihat Profil YMPP
+          </Link>
         </div>
       </div>
     </section>
@@ -288,7 +288,7 @@ export function QuickBenefitsSection() {
 
 export function FoundationIntroSection() {
   return (
-    <section className="app-container py-14">
+    <section className="app-container py-16">
       <div className="grid items-center gap-10 md:grid-cols-[0.9fr_1.1fr]">
         <div className="mx-auto grid h-64 w-64 place-items-center rounded-full bg-[#e6f7fa] text-[#087f8c] md:h-80 md:w-80">
           <AppIcon className="h-32 w-32 md:h-40 md:w-40" name="leaf" />
@@ -320,7 +320,7 @@ export function FoundationIntroSection() {
 
 export function CommunityFeatureSection() {
   return (
-    <section className="app-container py-8">
+    <section className="app-container py-6">
       <div className="grid items-center overflow-hidden bg-[#e4f5ee] md:grid-cols-[0.95fr_1.05fr]">
         <div className="p-8 md:p-12">
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#087f8c]">
@@ -349,7 +349,7 @@ export function CommunityFeatureSection() {
 
 export function ServicesSection() {
   return (
-    <section className="app-container py-10" id="layanan">
+    <section className="app-container py-12" id="layanan">
       <SectionHeading
         description="Layanan dibuat bertahap sesuai kapasitas operasional, agar janji ke warga tetap realistis."
         eyebrow="Layanan utama"
@@ -374,7 +374,7 @@ export function ServicesSection() {
 
 export function FeaturedProgramsSection() {
   return (
-    <section className="app-container py-10" id="program">
+    <section className="app-container py-12" id="program">
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
         <SectionHeading
           description="Program ditampilkan dengan status yang jelas supaya warga memahami mana yang aktif, pilot, atau berdasarkan permintaan."
