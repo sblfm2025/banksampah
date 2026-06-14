@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { PARTNER_DESTINATIONS } from '../constants/service-impact';
 import type { PickupStatus } from '../constants/statuses';
 
 export const ACTUAL_TRIP_RESULTS = [
@@ -18,6 +19,8 @@ export const completePickupInputSchema = z
     actualTripResult: z.enum(ACTUAL_TRIP_RESULTS),
     beforePhotoUrls: z.array(z.url()).max(5).default([]),
     afterPhotoUrls: z.array(z.url()).max(5).default([]),
+    finalWeightKg: z.number().nonnegative().optional(),
+    partnerDestination: z.enum(PARTNER_DESTINATIONS).optional(),
     driverNotes: z.string().trim().max(1000).optional(),
   })
   .superRefine((input, context) => {

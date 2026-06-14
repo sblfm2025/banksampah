@@ -62,11 +62,17 @@ export async function submitPublicTicket(
     locationSource: ticket.locationSource,
     locationValidationStatus: ticket.locationValidationStatus,
     serviceType: ticket.service,
+    serviceCategory: 'warga',
+    serviceModel: 'gratis',
     volumeLevel: ticket.volume,
     tricycleLoadEstimate: volumeToLoad(ticket.volume),
     ...(ticket.notes?.trim()
       ? { wasteDescription: ticket.notes.trim() }
       : {}),
+    wasteTypes: [],
+    dataQuality: 'estimated_by_user',
+    paymentStatus: 'gratis',
+    impactTags: ['pengurangan_sampah'],
     photoUrls: [],
     intakePhotoMediaIds: [mediaReference.id],
     status: 'NEW',

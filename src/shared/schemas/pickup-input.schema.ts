@@ -1,6 +1,14 @@
 import { z } from 'zod';
 import { DISTRICTS } from '../constants/districts';
 import { SERVICE_TYPES } from '../constants/services';
+import {
+  DATA_QUALITY_LEVELS,
+  IMPACT_TAGS,
+  PARTNER_DESTINATIONS,
+  PAYMENT_STATUSES,
+  SERVICE_CATEGORIES,
+  SERVICE_MODELS,
+} from '../constants/service-impact';
 import { wasteAiAnalysisSchema } from './ai.schema';
 import { customerInputSchema } from './customer.schema';
 
@@ -39,6 +47,8 @@ export const createPickupRequestInputSchema = z.object({
     ])
     .optional(),
   serviceType: z.enum(SERVICE_TYPES),
+  serviceCategory: z.enum(SERVICE_CATEGORIES).optional(),
+  serviceModel: z.enum(SERVICE_MODELS).optional(),
   volumeLevel: z.enum([
     'SMALL',
     'MEDIUM',
@@ -56,6 +66,16 @@ export const createPickupRequestInputSchema = z.object({
     'UNKNOWN',
   ]),
   wasteDescription: z.string().trim().min(1).max(1000).optional(),
+  wasteTypes: z.array(z.string().trim().min(1).max(80)).max(20).optional(),
+  estimatedWeightKg: z.number().nonnegative().optional(),
+  finalWeightKg: z.number().nonnegative().optional(),
+  dataQuality: z.enum(DATA_QUALITY_LEVELS).optional(),
+  partnerDestination: z.enum(PARTNER_DESTINATIONS).optional(),
+  serviceFee: z.number().nonnegative().optional(),
+  operationalCost: z.number().nonnegative().optional(),
+  paidAmount: z.number().nonnegative().optional(),
+  paymentStatus: z.enum(PAYMENT_STATUSES).optional(),
+  impactTags: z.array(z.enum(IMPACT_TAGS)).max(12).optional(),
   photoUrls: z.array(z.url()).max(10),
   aiAnalysis: wasteAiAnalysisSchema.optional(),
   initialStatus: z
@@ -110,6 +130,8 @@ export const updatePickupIntakeInputSchema = z.object({
     ])
     .optional(),
   serviceType: z.enum(SERVICE_TYPES),
+  serviceCategory: z.enum(SERVICE_CATEGORIES).optional(),
+  serviceModel: z.enum(SERVICE_MODELS).optional(),
   volumeLevel: z.enum([
     'SMALL',
     'MEDIUM',
@@ -127,6 +149,16 @@ export const updatePickupIntakeInputSchema = z.object({
     'UNKNOWN',
   ]),
   wasteDescription: z.string().trim().min(1).max(1000).optional(),
+  wasteTypes: z.array(z.string().trim().min(1).max(80)).max(20).optional(),
+  estimatedWeightKg: z.number().nonnegative().optional(),
+  finalWeightKg: z.number().nonnegative().optional(),
+  dataQuality: z.enum(DATA_QUALITY_LEVELS).optional(),
+  partnerDestination: z.enum(PARTNER_DESTINATIONS).optional(),
+  serviceFee: z.number().nonnegative().optional(),
+  operationalCost: z.number().nonnegative().optional(),
+  paidAmount: z.number().nonnegative().optional(),
+  paymentStatus: z.enum(PAYMENT_STATUSES).optional(),
+  impactTags: z.array(z.enum(IMPACT_TAGS)).max(12).optional(),
   photoUrls: z.array(z.url()).max(10),
   aiAnalysis: wasteAiAnalysisSchema,
   status: z.enum(['NEEDS_INFO', 'NEEDS_OPERATOR_REVIEW']),

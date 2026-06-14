@@ -1,6 +1,13 @@
 import { DISTRICT_LABELS } from '../../shared/constants/districts';
 import { SERVICE_TYPE_LABELS } from '../../shared/constants/services';
 import { PICKUP_STATUS_LABELS } from '../../shared/constants/statuses';
+import {
+  DATA_QUALITY_LABELS,
+  PARTNER_DESTINATION_LABELS,
+  PAYMENT_STATUS_LABELS,
+  SERVICE_CATEGORY_LABELS,
+  SERVICE_MODEL_LABELS,
+} from '../../shared/constants/service-impact';
 import type { OperationalReport } from '../../shared/schemas/report.schema';
 
 function csvCell(value: string | number | undefined): string {
@@ -16,6 +23,16 @@ export function operationalReportToCsv(report: OperationalReport): string {
     'Tanggal Selesai',
     'Kecamatan',
     'Layanan',
+    'Kategori Layanan',
+    'Model Layanan',
+    'Jenis Sampah',
+    'Berat Akhir (kg)',
+    'Kualitas Data',
+    'Tujuan Mitra',
+    'Biaya Layanan',
+    'Biaya Operasional',
+    'Nominal Dibayar',
+    'Status Pembayaran',
     'Status',
     'Petugas',
   ];
@@ -26,6 +43,18 @@ export function operationalReportToCsv(report: OperationalReport): string {
     row.completedDate,
     DISTRICT_LABELS[row.district],
     SERVICE_TYPE_LABELS[row.serviceType],
+    SERVICE_CATEGORY_LABELS[row.serviceCategory],
+    SERVICE_MODEL_LABELS[row.serviceModel],
+    row.wasteTypes.join('; '),
+    row.finalWeightKg,
+    DATA_QUALITY_LABELS[row.dataQuality],
+    row.partnerDestination
+      ? PARTNER_DESTINATION_LABELS[row.partnerDestination]
+      : '',
+    row.serviceFee,
+    row.operationalCost,
+    row.paidAmount,
+    PAYMENT_STATUS_LABELS[row.paymentStatus],
     PICKUP_STATUS_LABELS[row.status],
     row.driverName,
   ]);

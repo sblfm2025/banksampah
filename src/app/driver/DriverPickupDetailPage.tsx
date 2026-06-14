@@ -5,6 +5,10 @@ import {
   ACTUAL_TRIP_RESULTS,
   type CompletePickupInput,
 } from '../../shared/schemas/pickup-proof.schema';
+import {
+  PARTNER_DESTINATIONS,
+  PARTNER_DESTINATION_LABELS,
+} from '../../shared/constants/service-impact';
 import { useAuth } from '../auth/auth-context';
 import { getVillage } from '../../shared/regions/service-areas';
 import { StatusBadge } from '../admin/StatusBadge';
@@ -80,6 +84,8 @@ export function DriverPickupDetailPage() {
     mutationFn: async (input: {
       result: CompletePickupInput['actualTripResult'];
       notes?: string;
+      finalWeightKg?: number;
+      partnerDestination?: CompletePickupInput['partnerDestination'];
     }) => {
       if (beforeFiles.length === 0 && afterFiles.length === 0) {
         throw new Error('Minimal satu bukti foto wajib dipilih.');
@@ -99,6 +105,8 @@ export function DriverPickupDetailPage() {
           actualTripResult: input.result,
           beforePhotoUrls,
           afterPhotoUrls,
+          finalWeightKg: input.finalWeightKg,
+          partnerDestination: input.partnerDestination,
           driverNotes: input.notes,
         });
       } catch (error) {
@@ -109,6 +117,8 @@ export function DriverPickupDetailPage() {
           driverId: user!.id,
           actualTripResult: input.result,
           driverNotes: input.notes,
+          finalWeightKg: input.finalWeightKg,
+          partnerDestination: input.partnerDestination,
           beforeFiles,
           afterFiles,
           lastError: error instanceof Error ? error.message : undefined,
@@ -159,9 +169,15 @@ export function DriverPickupDetailPage() {
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
+    const finalWeight = Number(data.get('finalWeightKg') || 0);
+    const partnerDestination = String(data.get('partnerDestination') || '');
     complete.mutate({
       result: String(data.get('result')) as CompletePickupInput['actualTripResult'],
       notes: String(data.get('notes') || '') || undefined,
+      finalWeightKg: finalWeight > 0 ? finalWeight : undefined,
+      partnerDestination: partnerDestination
+        ? (partnerDestination as CompletePickupInput['partnerDestination'])
+        : undefined,
     });
   }
 
@@ -352,6 +368,33 @@ export function DriverPickupDetailPage() {
               placeholder="Wajib untuk semua hasil selain selesai satu trip"
             />
           </label>
+          <div className="grid gap-4 md:grid-cols-2">
+            <label className="block text-sm font-bold">
+              Berat akhir/estimasi lapangan (kg)
+              <input
+                className="mt-2 w-full rounded-xl border border-slate-300 p-3 text-base"
+                min="0"
+                name="finalWeightKg"
+                placeholder="Opsional"
+                step="0.1"
+                type="number"
+              />
+            </label>
+            <label className="block text-sm font-bold">
+              Tujuan sampah
+              <select
+                className="mt-2 w-full rounded-xl border border-slate-300 p-3 text-base"
+                name="partnerDestination"
+              >
+                <option value="">Belum dicatat</option>
+                {PARTNER_DESTINATIONS.map((destination) => (
+                  <option key={destination} value={destination}>
+                    {PARTNER_DESTINATION_LABELS[destination]}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
           <button
             className="w-full rounded-xl bg-[#159fb3] px-4 py-4 text-lg font-bold text-white disabled:opacity-50"
             disabled={complete.isPending || !proofStorageEnabled}

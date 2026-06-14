@@ -12,6 +12,15 @@ describe('buildOperationalReport', () => {
     const ticket = {
       ...structuredClone(DEMO_TICKETS[2]),
       status: 'COMPLETED' as const,
+      serviceCategory: 'event' as const,
+      serviceModel: 'berbayar' as const,
+      paymentStatus: 'lunas' as const,
+      paidAmount: 350000,
+      operationalCost: 125000,
+      estimatedWeightKg: 18,
+      finalWeightKg: 22.5,
+      dataQuality: 'weighed' as const,
+      partnerDestination: 'tps3r_paleteang_bersinar' as const,
       scheduledDate: '2026-06-13',
       createdAt: '2026-06-13T00:30:00.000Z',
       completedAt: '2026-06-13T04:00:00.000Z',
@@ -28,7 +37,18 @@ describe('buildOperationalReport', () => {
       scheduled: 1,
       completed: 1,
       completionRate: 100,
+      professionalServices: 1,
+      socialServices: 1,
+      professionalRevenue: 350000,
+      operationalCost: 125000,
+      totalWasteKg: 22.5,
     });
+    expect(report.byServiceCategory.event).toBe(1);
+    expect(report.byServiceModel.berbayar).toBe(1);
+    expect(report.byPaymentStatus.lunas).toBe(1);
+    expect(
+      report.byPartnerDestination.tps3r_paleteang_bersinar,
+    ).toBe(1);
     expect(report.daily[0]).toMatchObject({
       date: '2026-06-13',
       created: 2,

@@ -11,6 +11,8 @@ import {
   LandingHeader,
   MediaMentionSection,
   PublicFooter,
+  ProcessingPartnersSection,
+  ProfessionalServicesSection,
   QuickBenefitsSection,
   RecognitionSection,
   RoleLoginSection,
@@ -34,12 +36,14 @@ export function PublicHomePage() {
         <FoundationIntroSection />
         <QuickBenefitsSection />
         <ServicesSection />
+        <ProfessionalServicesSection />
         <HowItWorksSection />
         <CommunityFeatureSection />
         <FeaturedProgramsSection />
         <WasteTypesSection />
         <SolutionsSection />
         <ImpactStatsSection />
+        <ProcessingPartnersSection />
         <ImpactVisualSection />
         <FounderStorySection />
         <RecognitionSection />

@@ -133,19 +133,29 @@ export class DriverPickupService {
         afterPhotoUrls: input.afterPhotoUrls,
         actualTripResult: input.actualTripResult,
         driverNotes: input.driverNotes,
+        finalWeightKg: input.finalWeightKg,
+        partnerDestination: input.partnerDestination,
         completedAt:
           nextStatus === 'COMPLETED' || nextStatus === 'CANCELLED'
             ? timestamp
             : undefined,
         createdAt: timestamp,
       });
-      transaction.update(reference, {
+      const ticketUpdate: Record<string, unknown> = {
         status: nextStatus,
         driverNotes: input.driverNotes,
         completedAt: nextStatus === 'COMPLETED' ? timestamp : undefined,
         cancelledAt: nextStatus === 'CANCELLED' ? timestamp : undefined,
         updatedAt: timestamp,
-      });
+      };
+      if (input.finalWeightKg !== undefined) {
+        ticketUpdate.finalWeightKg = input.finalWeightKg;
+        ticketUpdate.dataQuality = 'confirmed_by_driver';
+      }
+      if (input.partnerDestination) {
+        ticketUpdate.partnerDestination = input.partnerDestination;
+      }
+      transaction.update(reference, ticketUpdate);
       transaction.set(auditReference, {
         actorId: driverId,
         actorRole: 'DRIVER',
@@ -156,6 +166,8 @@ export class DriverPickupService {
         after: {
           status: nextStatus,
           actualTripResult: input.actualTripResult,
+          finalWeightKg: input.finalWeightKg,
+          partnerDestination: input.partnerDestination,
         },
         createdAt: timestamp,
       });

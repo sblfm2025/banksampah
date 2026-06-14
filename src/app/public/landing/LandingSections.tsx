@@ -43,9 +43,9 @@ const quickBenefits = [
 const howItWorks = [
   {
     number: '01',
-    title: 'Lengkapi profil warga',
+    title: 'Mulai dari aplikasi atau WhatsApp',
     description:
-      'Masuk dengan Google atau email, lalu lengkapi nama, alamat, nomor WhatsApp, dan titik lokasi.',
+      'Warga dapat mengisi sendiri di aplikasi atau mengirim nama, foto, dan lokasi lewat WhatsApp untuk dibantu operator.',
   },
   {
     number: '02',
@@ -112,6 +112,51 @@ const mediaMentions = [
   'Warga',
 ];
 
+const professionalServices = [
+  {
+    icon: 'home' as IconName,
+    title: 'UMKM dan toko',
+    description:
+      'Penjemputan atau pendampingan pengelolaan sampah disusun sesuai jenis, volume, lokasi, dan kebutuhan usaha.',
+  },
+  {
+    icon: 'chart' as IconName,
+    title: 'Kantor dan sekolah',
+    description:
+      'Program pemilahan, edukasi, dan layanan berkala dapat dirancang melalui survei serta kesepakatan operasional.',
+  },
+  {
+    icon: 'calendar' as IconName,
+    title: 'Event dan hajatan',
+    description:
+      'Kebutuhan kebersihan acara ditangani berdasarkan estimasi timbulan, jadwal, tenaga, dan tujuan pengolahan.',
+  },
+  {
+    icon: 'leaf' as IconName,
+    title: 'TPS3R dan mitra CSR',
+    description:
+      'Kolaborasi pencatatan, pengangkutan, pengolahan, edukasi, dan pelaporan dampak untuk mitra lokal.',
+  },
+];
+
+const processingPartners = [
+  {
+    title: 'Bank Sampah Peduli Pinrang',
+    description:
+      'Simpul pemilahan, edukasi warga, dan pencatatan material bernilai guna.',
+  },
+  {
+    title: 'TPS3R Paleteang Bersinar',
+    description:
+      'Tujuan pengolahan mitra untuk mendukung alur sampah yang lebih bertanggung jawab.',
+  },
+  {
+    title: 'Jejaring mitra lainnya',
+    description:
+      'Pengepul, pengolah organik, TPS3R, dan mitra program dapat dicatat sesuai tujuan aktual.',
+  },
+];
+
 const solutionTracks = [
   {
     icon: 'camera' as IconName,
@@ -155,7 +200,7 @@ const faqItems = [
   {
     question: 'Apakah warga wajib punya email untuk memakai layanan?',
     answer:
-      'Warga bisa masuk dengan Google bila punya email. Jika belum terbiasa memakai email, warga dapat menghubungi operator lewat WhatsApp untuk dibantu membuat atau melengkapi profil layanan.',
+      'Tidak. Nomor WhatsApp tetap menjadi kontak wajib, sedangkan email hanya diperlukan bila warga memilih masuk dengan Google atau email. Warga juga dapat mengirim nama, foto, dan lokasi lewat WhatsApp untuk dibantu operator.',
   },
   {
     question: 'Mengapa profil harus dilengkapi setelah login Google?',
@@ -175,7 +220,7 @@ const faqItems = [
   {
     question: 'Apakah aplikasi ini sudah menghitung harga atau saldo?',
     answer:
-      'Belum. MVP ini fokus pada pencatatan permintaan, verifikasi foto, penjadwalan, penugasan, dan status penjemputan. Fitur transaksi hanya ditampilkan bila sudah benar-benar siap.',
+      'Harga tidak dipublikasikan sebagai tarif tunggal. Layanan profesional dinilai berdasarkan jenis layanan, volume, jarak, tenaga, dan kebutuhan pengolahan, lalu dikonfirmasi operator melalui penawaran manual.',
   },
 ];
 
@@ -571,6 +616,70 @@ export function ServicesSection() {
             <h3 className="mt-4 font-extrabold">{service.title}</h3>
             <p className="mt-2 text-sm leading-6 text-slate-500">
               {service.description}
+            </p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+export function ProfessionalServicesSection() {
+  return (
+    <section className="bg-[#f4faf7] py-14">
+      <div className="app-container">
+        <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
+          <SectionHeading
+            description="Layanan untuk usaha, institusi, kegiatan, dan mitra dirancang melalui verifikasi kebutuhan. Biaya tidak dibuat seragam karena volume, jarak, tenaga, dan tujuan pengolahan dapat berbeda."
+            eyebrow="Layanan profesional"
+            title="Mendukung keberlanjutan gerakan tanpa mengaburkan misi sosial."
+          />
+          <a
+            className="inline-flex w-fit items-center gap-2 rounded-2xl bg-[#159fb3] px-5 py-4 text-sm font-bold text-white"
+            href="#bantuan"
+          >
+            Konsultasikan kebutuhan
+            <AppIcon className="h-4 w-4" name="arrow" />
+          </a>
+        </div>
+        <div className="mt-7 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {professionalServices.map((service, index) => (
+            <Card
+              className={`reveal-up reveal-delay-${Math.min(index + 1, 4)} p-6`}
+              key={service.title}
+            >
+              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[#e6f7fa] text-[#087f8c]">
+                <AppIcon name={service.icon} />
+              </span>
+              <h3 className="mt-4 font-extrabold">{service.title}</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-500">
+                {service.description}
+              </p>
+            </Card>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+export function ProcessingPartnersSection() {
+  return (
+    <section className="app-container py-14">
+      <SectionHeading
+        description="Setiap penyelesaian layanan dapat mencatat tujuan material. Ini penting agar laporan tidak berhenti pada status dijemput, tetapi menunjukkan alur pengolahan berikutnya."
+        eyebrow="Jejaring pengolahan"
+        title="Sampah diarahkan ke tujuan yang tercatat."
+      />
+      <div className="mt-7 grid gap-px overflow-hidden rounded-[1.7rem] border border-slate-200 bg-slate-200 md:grid-cols-3">
+        {processingPartners.map((partner) => (
+          <div className="bg-white p-6" key={partner.title}>
+            <span className="grid h-11 w-11 place-items-center rounded-full bg-green-50 text-green-700">
+              <AppIcon name="leaf" />
+            </span>
+            <h3 className="mt-4 font-extrabold">{partner.title}</h3>
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              {partner.description}
             </p>
           </div>
         ))}
