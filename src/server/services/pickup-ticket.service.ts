@@ -497,6 +497,7 @@ export class PickupTicketService {
       const before = Object.fromEntries(
         trackedFields.map((field) => [field, snapshot.get(field)]),
       );
+      before.status = snapshot.get('status');
 
       transaction.update(reference, updates);
       transaction.set(auditReference, {
@@ -506,7 +507,7 @@ export class PickupTicketService {
         entityType: 'PICKUP_REQUEST',
         entityId: id,
         before,
-        after: input,
+        after: { ...input, status: snapshot.get('status') },
         createdAt: timestamp,
       });
     });

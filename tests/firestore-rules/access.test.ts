@@ -116,8 +116,14 @@ describe('Firestore role access', () => {
     locationSource: 'MANUAL_PIN',
     locationValidationStatus: 'INSIDE_SERVICE_AREA',
     serviceType: 'REGULAR_HOUSEHOLD_PICKUP',
+    serviceCategory: 'warga',
+    serviceModel: 'gratis',
     volumeLevel: 'MEDIUM',
     tricycleLoadEstimate: 'HALF',
+    wasteTypes: [],
+    dataQuality: 'estimated_by_user',
+    paymentStatus: 'gratis',
+    impactTags: ['pengurangan_sampah'],
     photoUrls: [],
     intakePhotoMediaIds: ['ticket-public_intake'],
     status: 'NEW',
@@ -407,6 +413,47 @@ describe('Firestore role access', () => {
     );
   });
 
+  it('operator dapat memperbarui klasifikasi dampak hanya bersama audit', async () => {
+    const db = environment.authenticatedContext('operator-1').firestore();
+
+    await assertFails(
+      updateDoc(doc(db, 'pickupRequests/ticket-1'), {
+        serviceCategory: 'event',
+        serviceModel: 'berbayar',
+        updatedAt: serverTimestamp(),
+      }),
+    );
+
+    const batch = writeBatch(db);
+    batch.update(doc(db, 'pickupRequests/ticket-1'), {
+      serviceCategory: 'event',
+      serviceModel: 'berbayar',
+      wasteTypes: ['plastik', 'kardus'],
+      estimatedWeightKg: 25,
+      dataQuality: 'estimated_by_operator',
+      partnerDestination: 'tps3r_paleteang_bersinar',
+      serviceFee: 500000,
+      operationalCost: 225000,
+      paidAmount: 250000,
+      paymentStatus: 'dp',
+      impactTags: ['layanan_profesional', 'pengurangan_sampah'],
+      updatedAt: serverTimestamp(),
+      lastAuditId: 'operator-impact',
+    });
+    batch.set(doc(db, 'auditLogs/operator-impact'), {
+      actorId: 'operator-1',
+      actorRole: 'OPERATOR',
+      action: 'PICKUP_IMPACT_UPDATED',
+      entityType: 'PICKUP_REQUEST',
+      entityId: 'ticket-1',
+      before: { status: 'ASSIGNED' },
+      after: { status: 'ASSIGNED' },
+      createdAt: serverTimestamp(),
+    });
+
+    await assertSucceeds(batch.commit());
+  });
+
   it('driver dapat memulai tiket miliknya dengan field terbatas', async () => {
     const db = environment.authenticatedContext('driver-1').firestore();
 
@@ -458,10 +505,15 @@ describe('Firestore role access', () => {
       afterPhotoUrls: [],
       actualTripResult: 'COMPLETED_ONE_TRIP',
       driverNotes: null,
+      finalWeightKg: 18.5,
+      partnerDestination: 'tps3r_paleteang_bersinar',
       createdAt: serverTimestamp(),
     });
     batch.update(doc(db, 'pickupRequests/ticket-1'), {
       status: 'COMPLETED',
+      finalWeightKg: 18.5,
+      dataQuality: 'confirmed_by_driver',
+      partnerDestination: 'tps3r_paleteang_bersinar',
       completedAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
       lastAuditId: 'driver-completed',

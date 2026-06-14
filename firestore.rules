@@ -223,6 +223,28 @@ service cloud.firestore {
       && operatorAuditMatches(ticketId);
     }
 
+    function operatorUpdatesImpactFields(ticketId) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+        'serviceCategory',
+        'serviceModel',
+        'wasteTypes',
+        'estimatedWeightKg',
+        'finalWeightKg',
+        'dataQuality',
+        'partnerDestination',
+        'serviceFee',
+        'operationalCost',
+        'paidAmount',
+        'paymentStatus',
+        'impactTags',
+        'updatedAt',
+        'lastAuditId'
+      ])
+      && request.resource.data.status == resource.data.status
+      && request.resource.data.updatedAt == request.time
+      && validPickupAudit(ticketId, 'PICKUP_IMPACT_UPDATED');
+    }
+
     function driverStartsPickup(ticketId) {
       return resource.data.status == 'ASSIGNED'
         && request.resource.data.status == 'IN_PROGRESS'
@@ -249,6 +271,9 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'status',
           'driverNotes',
+          'finalWeightKg',
+          'dataQuality',
+          'partnerDestination',
           'completedAt',
           'cancelledAt',
           'updatedAt',
@@ -352,9 +377,15 @@ service cloud.firestore {
             'locationSource',
             'locationValidationStatus',
             'serviceType',
+            'serviceCategory',
+            'serviceModel',
             'volumeLevel',
             'tricycleLoadEstimate',
             'wasteDescription',
+            'wasteTypes',
+            'dataQuality',
+            'paymentStatus',
+            'impactTags',
             'photoUrls',
             'intakePhotoMediaIds',
             'status',
@@ -375,8 +406,14 @@ service cloud.firestore {
             'locationSource',
             'locationValidationStatus',
             'serviceType',
+            'serviceCategory',
+            'serviceModel',
             'volumeLevel',
             'tricycleLoadEstimate',
+            'wasteTypes',
+            'dataQuality',
+            'paymentStatus',
+            'impactTags',
             'photoUrls',
             'intakePhotoMediaIds',
             'status',
@@ -413,6 +450,8 @@ service cloud.firestore {
             'REGULAR_HOUSEHOLD_PICKUP',
             'ONE_TRIP_TRICYCLE'
           ]
+          && request.resource.data.serviceCategory == 'warga'
+          && request.resource.data.serviceModel == 'gratis'
           && request.resource.data.volumeLevel in [
             'SMALL',
             'MEDIUM',
@@ -425,6 +464,10 @@ service cloud.firestore {
             'FULL',
             'OVER_CAPACITY'
           ]
+          && request.resource.data.wasteTypes is list
+          && request.resource.data.dataQuality == 'estimated_by_user'
+          && request.resource.data.paymentStatus == 'gratis'
+          && request.resource.data.impactTags is list
           && request.resource.data.photoUrls is list
           && request.resource.data.photoUrls.size() == 0
           && request.resource.data.intakePhotoMediaIds is list
@@ -441,7 +484,10 @@ service cloud.firestore {
         );
       allow update: if (
           isBackOffice()
-          && operatorUpdatesOperationalFields(ticketId)
+          && (
+            operatorUpdatesOperationalFields(ticketId)
+            || operatorUpdatesImpactFields(ticketId)
+          )
         )
         || (
           isAssignedDriver()
@@ -475,6 +521,8 @@ service cloud.firestore {
           'afterPhotoUrls',
           'actualTripResult',
           'driverNotes',
+          'finalWeightKg',
+          'partnerDestination',
           'createdAt'
         ])
         && request.resource.data.beforePhotoUrls is list
@@ -496,6 +544,23 @@ service cloud.firestore {
           'HAZARDOUS_WASTE_FOUND',
           'CANCELLED_ON_SITE'
         ]
+        && (
+          !request.resource.data.keys().hasAny(['finalWeightKg'])
+          || request.resource.data.finalWeightKg == null
+          || request.resource.data.finalWeightKg is number
+        )
+        && (
+          !request.resource.data.keys().hasAny(['partnerDestination'])
+          || request.resource.data.partnerDestination == null
+          || request.resource.data.partnerDestination in [
+            'bank_sampah_peduli_pinrang',
+            'tps3r_paleteang_bersinar',
+            'tps3r_lain',
+            'pengepul',
+            'kompos_maggot',
+            'residu'
+          ]
+        )
         && (
           request.resource.data.actualTripResult == 'COMPLETED_ONE_TRIP'
           || (
@@ -610,6 +675,7 @@ service cloud.firestore {
         && request.resource.data.actorRole == currentUser().data.role
         && request.resource.data.action in [
           'PICKUP_STATUS_CHANGED',
+          'PICKUP_IMPACT_UPDATED',
           'PICKUP_SCHEDULED',
           'PICKUP_DRIVER_ASSIGNED',
           'PICKUP_STARTED',

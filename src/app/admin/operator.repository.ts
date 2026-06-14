@@ -557,6 +557,7 @@ export class FirestoreOperatorRepository implements OperatorRepository {
       if (input[field] === undefined) update[field] = deleteField();
     }
     const before = {
+      status: current.status,
       serviceCategory: current.serviceCategory,
       serviceModel: current.serviceModel,
       paymentStatus: current.paymentStatus,
@@ -579,7 +580,7 @@ export class FirestoreOperatorRepository implements OperatorRepository {
         'PICKUP_IMPACT_UPDATED',
         id,
         before,
-        input,
+        { ...input, status: current.status },
         timestamp,
       ),
     );
