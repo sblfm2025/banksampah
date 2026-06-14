@@ -4,9 +4,16 @@ import { isCustomerProfileComplete } from '../../shared/schemas/user.schema';
 import { AppIcon, AppLogo, ErrorState, PrimaryButton } from '../ui/components';
 import { useAuth } from './auth-context';
 
+type LoginPanel = 'citizen' | 'staff';
+
 export function LoginPage() {
   const [searchParams] = useSearchParams();
   const requestedNext = searchParams.get('next');
+  const roleHint = searchParams.get('role');
+  const initialPanel: LoginPanel =
+    roleHint === 'operator' || roleHint === 'driver' || roleHint === 'admin'
+      ? 'staff'
+      : 'citizen';
   const customerDestination =
     requestedNext?.startsWith('/') && !requestedNext.startsWith('//')
       ? requestedNext
@@ -23,6 +30,8 @@ export function LoginPage() {
     user,
   } = useAuth();
   const [error, setError] = useState('');
+  const [activePanel, setActivePanel] = useState<LoginPanel>(initialPanel);
+  const whatsappUrl = getWhatsAppUrl();
 
   if (user) {
     if (user.role === 'CUSTOMER') {
@@ -120,23 +129,33 @@ export function LoginPage() {
           </p>
           <h1 className="mt-2 text-3xl font-extrabold">Masuk ke akun</h1>
           <p className="mt-2 text-sm leading-6 text-slate-500">
-            Warga dapat masuk dengan Google. Operator dan petugas menggunakan
-            email serta password yang terdaftar.
+            Pilih akses sesuai kebutuhan. Warga bisa masuk cepat, petugas tetap
+            memakai akun operasional yang terdaftar.
           </p>
 
-          <button
-            className="mt-7 flex w-full items-center justify-center gap-3 rounded-2xl border border-slate-300 bg-white px-4 py-3.5 font-bold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-60"
-            disabled={loading}
-            onClick={() => void googleLogin()}
-            type="button"
-          >
-            <GoogleMark />
-            Lanjutkan dengan Google
-          </button>
-          <div className="my-6 flex items-center gap-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
-            <span className="h-px flex-1 bg-slate-200" />
-            Akun petugas
-            <span className="h-px flex-1 bg-slate-200" />
+          <div className="mt-7 grid grid-cols-2 rounded-2xl bg-slate-100 p-1">
+            <button
+              className={`rounded-xl px-4 py-3 text-sm font-extrabold transition ${
+                activePanel === 'citizen'
+                  ? 'bg-white text-[#087f8c] shadow-sm'
+                  : 'text-slate-500'
+              }`}
+              onClick={() => setActivePanel('citizen')}
+              type="button"
+            >
+              Warga
+            </button>
+            <button
+              className={`rounded-xl px-4 py-3 text-sm font-extrabold transition ${
+                activePanel === 'staff'
+                  ? 'bg-white text-[#087f8c] shadow-sm'
+                  : 'text-slate-500'
+              }`}
+              onClick={() => setActivePanel('staff')}
+              type="button"
+            >
+              Petugas
+            </button>
           </div>
 
           {profileMissing && authenticated && (
@@ -158,22 +177,85 @@ export function LoginPage() {
           )}
           {error && <div className="mt-5"><ErrorState message={error} /></div>}
 
-          <form
-            className="space-y-4"
-            hidden={profileMissing && authenticated}
-            onSubmit={submit}
-          >
-            <Field autoComplete="email" label="Email" name="email" type="email" />
-            <Field
-              autoComplete="current-password"
-              label="Password"
-              name="password"
-              type="password"
-            />
-            <PrimaryButton className="mt-2 w-full" disabled={loading} type="submit">
-              {loading ? 'Memeriksa akun...' : 'Masuk'}
-            </PrimaryButton>
-          </form>
+          {activePanel === 'citizen' ? (
+            <section className="mt-6 space-y-4">
+              <button
+                className="flex w-full items-center justify-center gap-3 rounded-2xl border border-slate-300 bg-white px-4 py-3.5 font-bold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-60"
+                disabled={loading}
+                onClick={() => void googleLogin()}
+                type="button"
+              >
+                <GoogleMark />
+                Lanjutkan dengan Google
+              </button>
+              <div className="rounded-2xl border border-[#bde7ec] bg-[#f4fbfc] p-4">
+                <div className="flex items-start gap-3">
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-white text-[#087f8c]">
+                    <AppIcon name="phone" />
+                  </span>
+                  <div>
+                    <h2 className="font-extrabold">
+                      Belum punya email? Bisa dibantu via WhatsApp.
+                    </h2>
+                    <p className="mt-1 text-sm leading-6 text-slate-600">
+                      Warga yang belum terbiasa memakai email dapat meminta
+                      bantuan operator untuk pendaftaran dan pengisian profil.
+                    </p>
+                  </div>
+                </div>
+                {whatsappUrl ? (
+                  <a
+                    className="mt-4 inline-flex w-full justify-center rounded-2xl bg-green-600 px-4 py-3 font-bold text-white"
+                    href={whatsappUrl}
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    Daftar dibantu via WhatsApp
+                  </a>
+                ) : (
+                  <p className="mt-4 rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-500">
+                    Nomor WhatsApp publik belum dikonfigurasi.
+                  </p>
+                )}
+              </div>
+            </section>
+          ) : (
+            <section className="mt-6">
+              <form
+                className="space-y-4"
+                hidden={profileMissing && authenticated}
+                onSubmit={submit}
+              >
+                <Field autoComplete="email" label="Email" name="email" type="email" />
+                <Field
+                  autoComplete="current-password"
+                  label="Password"
+                  name="password"
+                  type="password"
+                />
+                <div className="flex items-center justify-between gap-3 text-sm">
+                  <span className="text-slate-500">Akun khusus operator dan petugas.</span>
+                  {whatsappUrl ? (
+                    <a
+                      className="font-bold text-[#087f8c]"
+                      href={whatsappUrl}
+                      rel="noreferrer"
+                      target="_blank"
+                    >
+                      Lupa password?
+                    </a>
+                  ) : (
+                    <span className="font-bold text-slate-400">
+                      Lupa password?
+                    </span>
+                  )}
+                </div>
+                <PrimaryButton className="mt-2 w-full" disabled={loading} type="submit">
+                  {loading ? 'Memeriksa akun...' : 'Masuk sebagai petugas'}
+                </PrimaryButton>
+              </form>
+            </section>
+          )}
           <Link
             className="mt-6 block text-center text-sm font-bold text-[#087f8c]"
             to="/"
@@ -207,6 +289,21 @@ function GoogleMark() {
       />
     </svg>
   );
+}
+
+function getWhatsAppUrl() {
+  const phone = import.meta.env.VITE_PUBLIC_WHATSAPP_NUMBER as
+    | string
+    | undefined;
+  const message =
+    (import.meta.env.VITE_PUBLIC_WHATSAPP_MESSAGE as string | undefined) ??
+    'Halo Peduli Pinrang, saya ingin dibantu mendaftar atau masuk ke aplikasi Jemput Sampah.';
+
+  if (!phone) {
+    return undefined;
+  }
+
+  return `https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
 }
 
 function Field({

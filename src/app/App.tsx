@@ -14,6 +14,7 @@ import { CustomerProfileGuard } from './auth/CustomerProfileGuard';
 import { DriverLayout } from './driver/DriverLayout';
 import { DriverPickupDetailPage } from './driver/DriverPickupDetailPage';
 import { DriverPickupsPage } from './driver/DriverPickupsPage';
+import { PwaBackGuard } from './navigation/PwaBackGuard';
 import { PublicLayout } from './public/PublicLayout';
 import { PublicHomePage } from './public/PublicHomePage';
 import { OrganizationProfilePage } from './public/OrganizationProfilePage';
@@ -36,63 +37,66 @@ const AdminMapPage = lazy(() =>
 
 export function App() {
   return (
-    <Routes>
-      <Route element={<PublicLayout />}>
-        <Route path="/" element={<PublicHomePage />} />
-        <Route path="/profil" element={<OrganizationProfilePage />} />
-        <Route path="/sampahku" element={<WasteSummaryPage />} />
-        <Route path="/tickets" element={<PublicTicketsPage />} />
-        <Route path="/tickets/:id" element={<PublicTicketDetailPage />} />
-        <Route path="/profile" element={<PublicProfilePage />} />
-      </Route>
-      <Route
-        path="/pickup/new"
-        element={
-          <CustomerProfileGuard>
-            <Suspense fallback={<LoadingState label="Memuat peta lokasi..." />}>
-              <NewPickupPage />
-            </Suspense>
-          </CustomerProfileGuard>
-        }
-      />
-      <Route path="/login" element={<LoginPage />} />
-      <Route
-        path="/admin"
-        element={
-          <RoleGuard roles={['SUPER_ADMIN', 'OPERATOR']}>
-            <AdminLayout />
-          </RoleGuard>
-        }
-      >
-        <Route index element={<AdminOverview />} />
-        <Route path="tickets" element={<TicketsPage />} />
-        <Route path="tickets/:id" element={<TicketDetailPage />} />
-        <Route path="schedules" element={<SchedulesPage />} />
-        <Route path="drivers" element={<DriverManagementPage />} />
+    <>
+      <PwaBackGuard />
+      <Routes>
+        <Route element={<PublicLayout />}>
+          <Route path="/" element={<PublicHomePage />} />
+          <Route path="/profil" element={<OrganizationProfilePage />} />
+          <Route path="/sampahku" element={<WasteSummaryPage />} />
+          <Route path="/tickets" element={<PublicTicketsPage />} />
+          <Route path="/tickets/:id" element={<PublicTicketDetailPage />} />
+          <Route path="/profile" element={<PublicProfilePage />} />
+        </Route>
         <Route
-          path="map"
+          path="/pickup/new"
           element={
-            <Suspense fallback={<LoadingState label="Memuat peta..." />}>
-              <AdminMapPage />
-            </Suspense>
+            <CustomerProfileGuard>
+              <Suspense fallback={<LoadingState label="Memuat peta lokasi..." />}>
+                <NewPickupPage />
+              </Suspense>
+            </CustomerProfileGuard>
           }
         />
-        <Route path="regions" element={<RegionManagementPage />} />
-        <Route path="reports" element={<ReportsPage />} />
-      </Route>
-      <Route
-        path="/driver"
-        element={
-          <RoleGuard roles={['DRIVER']}>
-            <DriverLayout />
-          </RoleGuard>
-        }
-      >
-        <Route index element={<Navigate to="pickups" replace />} />
-        <Route path="pickups" element={<DriverPickupsPage />} />
-        <Route path="pickups/:id" element={<DriverPickupDetailPage />} />
-      </Route>
-      <Route path="*" element={<Navigate replace to="/" />} />
-    </Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route
+          path="/admin"
+          element={
+            <RoleGuard roles={['SUPER_ADMIN', 'OPERATOR']}>
+              <AdminLayout />
+            </RoleGuard>
+          }
+        >
+          <Route index element={<AdminOverview />} />
+          <Route path="tickets" element={<TicketsPage />} />
+          <Route path="tickets/:id" element={<TicketDetailPage />} />
+          <Route path="schedules" element={<SchedulesPage />} />
+          <Route path="drivers" element={<DriverManagementPage />} />
+          <Route
+            path="map"
+            element={
+              <Suspense fallback={<LoadingState label="Memuat peta..." />}>
+                <AdminMapPage />
+              </Suspense>
+            }
+          />
+          <Route path="regions" element={<RegionManagementPage />} />
+          <Route path="reports" element={<ReportsPage />} />
+        </Route>
+        <Route
+          path="/driver"
+          element={
+            <RoleGuard roles={['DRIVER']}>
+              <DriverLayout />
+            </RoleGuard>
+          }
+        >
+          <Route index element={<Navigate to="pickups" replace />} />
+          <Route path="pickups" element={<DriverPickupsPage />} />
+          <Route path="pickups/:id" element={<DriverPickupDetailPage />} />
+        </Route>
+        <Route path="*" element={<Navigate replace to="/" />} />
+      </Routes>
+    </>
   );
 }

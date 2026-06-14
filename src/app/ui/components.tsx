@@ -3,7 +3,7 @@ import type {
   HTMLAttributes,
   ReactNode,
 } from 'react';
-import { NavLink } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 import {
   PICKUP_STATUS_LABELS,
   type PickupStatus,
@@ -55,13 +55,19 @@ export function AppHeader({
       <div className="app-container flex min-h-20 items-center justify-between gap-4">
         <div className="flex min-w-0 items-center gap-3">
           {back}
-          <AppLogo compact />
-          <div className="min-w-0">
+          <Link
+            aria-label="Ke beranda"
+            className="shrink-0"
+            to="/"
+          >
+            <AppLogo compact />
+          </Link>
+          <Link className="min-w-0" to="/">
             <h1 className="truncate text-base font-bold">{title}</h1>
             {subtitle && (
               <p className="truncate text-xs text-slate-500">{subtitle}</p>
             )}
-          </div>
+          </Link>
         </div>
         {action}
       </div>
