@@ -213,6 +213,52 @@ export const updatePickupImpactInputSchema = z
     },
   );
 
+export const createManualPickupInputSchema = z
+  .object({
+    customerName: z.string().trim().min(2).max(120),
+    customerPhoneNumber: z
+      .string()
+      .trim()
+      .regex(/^628\d{7,12}$/, 'Nomor WhatsApp harus berformat 628xxxxxxxx.'),
+    district: z.enum(['WATANG_SAWITTO', 'PALETEANG']),
+    villageId: z.string().trim().min(1).max(120),
+    addressText: z.string().trim().min(8).max(500),
+    location: z
+      .object({
+        lat: z.number().min(-90).max(90),
+        lng: z.number().min(-180).max(180),
+      })
+      .optional(),
+    serviceType: z.enum(SERVICE_TYPES),
+    serviceCategory: z.enum(SERVICE_CATEGORIES),
+    serviceModel: z.enum(SERVICE_MODELS),
+    volumeLevel: z.enum([
+      'SMALL',
+      'MEDIUM',
+      'LARGE',
+      'OVERSIZED',
+      'UNKNOWN',
+    ]),
+    wasteDescription: z.string().trim().min(1).max(1000).optional(),
+    wasteTypes: z.array(z.string().trim().min(1).max(80)).max(20),
+    estimatedWeightKg: z.number().nonnegative().optional(),
+    serviceFee: z.number().nonnegative().optional(),
+    operationalCost: z.number().nonnegative().optional(),
+    paidAmount: z.number().nonnegative().optional(),
+    paymentStatus: z.enum(PAYMENT_STATUSES),
+    impactTags: z.array(z.enum(IMPACT_TAGS)).max(12),
+  })
+  .refine(
+    (input) =>
+      input.paidAmount === undefined ||
+      input.serviceFee === undefined ||
+      input.paidAmount <= input.serviceFee,
+    {
+      path: ['paidAmount'],
+      message: 'Nominal dibayar tidak boleh melebihi biaya layanan.',
+    },
+  );
+
 export type CreatePickupRequestInput = z.infer<
   typeof createPickupRequestInputSchema
 >;
@@ -226,4 +272,7 @@ export type SchedulePickupInput = z.infer<typeof schedulePickupInputSchema>;
 export type AssignDriverInput = z.infer<typeof assignDriverInputSchema>;
 export type UpdatePickupImpactInput = z.infer<
   typeof updatePickupImpactInputSchema
+>;
+export type CreateManualPickupInput = z.infer<
+  typeof createManualPickupInputSchema
 >;

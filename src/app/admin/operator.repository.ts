@@ -1,6 +1,7 @@
 import { canTransitionPickupStatus } from '../../shared/constants/statuses';
 import {
   assignDriverInputSchema,
+  createManualPickupInputSchema,
   schedulePickupInputSchema,
   updatePickupImpactInputSchema,
   updatePickupStatusInputSchema,
@@ -28,6 +29,28 @@ import {
   getOperationalDate,
   getOperationalUtcRange,
 } from '../../shared/utils/date';
+import { stableIdentifier } from '../../shared/utils/identifiers';
+
+function volumeToLoad(volume: PickupRequest['volumeLevel']) {
+  return {
+    SMALL: 'QUARTER',
+    MEDIUM: 'HALF',
+    LARGE: 'FULL',
+    OVERSIZED: 'OVER_CAPACITY',
+    UNKNOWN: 'UNKNOWN',
+  }[volume] as PickupRequest['tricycleLoadEstimate'];
+}
+
+async function numericSuffix(value: string) {
+  const digest = await crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(value),
+  );
+  const bytes = new Uint8Array(digest);
+  return (((bytes[0] << 8) | bytes[1]) % 10_000)
+    .toString()
+    .padStart(4, '0');
+}
 
 function filterTickets(
   tickets: PickupRequest[],
@@ -154,6 +177,52 @@ export class DemoOperatorRepository implements OperatorRepository {
     });
   }
 
+  async createManual(
+    rawInput: Parameters<OperatorRepository['createManual']>[0],
+  ) {
+    const input = createManualPickupInputSchema.parse(rawInput);
+    const now = new Date().toISOString();
+    const id = `manual-${Date.now()}`;
+    const ticket = pickupRequestSchema.parse({
+      id,
+      ticketCode: `JSP-${getOperationalDate().replaceAll('-', '')}-${String(
+        this.tickets.length + 1,
+      ).padStart(4, '0')}`,
+      source: 'WHATSAPP',
+      customerId: `customer-${input.customerPhoneNumber}`,
+      customerPhoneNumber: input.customerPhoneNumber,
+      customerName: input.customerName,
+      district: input.district,
+      villageId: input.villageId,
+      addressText: input.addressText,
+      location: input.location,
+      locationSource: input.location ? 'OPERATOR_INPUT' : 'MANUAL_TEXT',
+      locationValidationStatus: input.location
+        ? 'NEEDS_OPERATOR_REVIEW'
+        : 'UNKNOWN',
+      serviceType: input.serviceType,
+      serviceCategory: input.serviceCategory,
+      serviceModel: input.serviceModel,
+      volumeLevel: input.volumeLevel,
+      tricycleLoadEstimate: volumeToLoad(input.volumeLevel),
+      wasteDescription: input.wasteDescription,
+      wasteTypes: input.wasteTypes,
+      estimatedWeightKg: input.estimatedWeightKg,
+      dataQuality: 'estimated_by_operator',
+      serviceFee: input.serviceFee,
+      operationalCost: input.operationalCost,
+      paidAmount: input.paidAmount,
+      paymentStatus: input.paymentStatus,
+      impactTags: input.impactTags,
+      photoUrls: [],
+      status: 'NEEDS_OPERATOR_REVIEW',
+      createdAt: now,
+      updatedAt: now,
+    });
+    this.tickets = [ticket, ...this.tickets];
+    return structuredClone(ticket);
+  }
+
   async updateImpact(
     id: string,
     rawInput: Parameters<OperatorRepository['updateImpact']>[1],
@@ -254,6 +323,16 @@ export class ApiOperatorRepository implements OperatorRepository {
     return this.request<PickupRequest>(
       `/api/pickup-requests/${id}/status`,
       'PATCH',
+      input,
+    );
+  }
+
+  async createManual(
+    input: Parameters<OperatorRepository['createManual']>[0],
+  ) {
+    return this.request<PickupRequest>(
+      '/api/pickup-requests/manual',
+      'POST',
       input,
     );
   }
@@ -522,6 +601,109 @@ export class FirestoreOperatorRepository implements OperatorRepository {
     );
     await batch.commit();
     return this.getTicket(id);
+  }
+
+  async createManual(
+    rawInput: Parameters<OperatorRepository['createManual']>[0],
+  ) {
+    const input = createManualPickupInputSchema.parse(rawInput);
+    const [
+      { collection, doc, runTransaction, serverTimestamp },
+      { db },
+      actor,
+    ] = await Promise.all([
+      import('firebase/firestore'),
+      import('../../client/firebase'),
+      getCurrentAuditActor(['SUPER_ADMIN', 'OPERATOR']),
+    ]);
+    const ticketReference = doc(collection(db, 'pickupRequests'));
+    const customerId = await stableIdentifier(
+      'customer',
+      input.customerPhoneNumber,
+    );
+    const customerReference = doc(db, 'customers', customerId);
+    const auditReference = doc(collection(db, 'auditLogs'));
+    const ticketCode = `JSP-${getOperationalDate()
+      .replaceAll('-', '')}-${await numericSuffix(ticketReference.id)}`;
+    const timestamp = serverTimestamp();
+    const ticketData = {
+      ticketCode,
+      source: 'WHATSAPP',
+      customerId,
+      customerPhoneNumber: input.customerPhoneNumber,
+      customerName: input.customerName,
+      district: input.district,
+      villageId: input.villageId,
+      addressText: input.addressText,
+      ...(input.location ? { location: input.location } : {}),
+      locationSource: input.location ? 'OPERATOR_INPUT' : 'MANUAL_TEXT',
+      locationValidationStatus: input.location
+        ? 'NEEDS_OPERATOR_REVIEW'
+        : 'UNKNOWN',
+      serviceType: input.serviceType,
+      serviceCategory: input.serviceCategory,
+      serviceModel: input.serviceModel,
+      volumeLevel: input.volumeLevel,
+      tricycleLoadEstimate: volumeToLoad(input.volumeLevel),
+      ...(input.wasteDescription
+        ? { wasteDescription: input.wasteDescription }
+        : {}),
+      wasteTypes: input.wasteTypes,
+      ...(input.estimatedWeightKg === undefined
+        ? {}
+        : { estimatedWeightKg: input.estimatedWeightKg }),
+      dataQuality: 'estimated_by_operator',
+      ...(input.serviceFee === undefined
+        ? {}
+        : { serviceFee: input.serviceFee }),
+      ...(input.operationalCost === undefined
+        ? {}
+        : { operationalCost: input.operationalCost }),
+      ...(input.paidAmount === undefined
+        ? {}
+        : { paidAmount: input.paidAmount }),
+      paymentStatus: input.paymentStatus,
+      impactTags: input.impactTags,
+      photoUrls: [],
+      status: 'NEEDS_OPERATOR_REVIEW',
+      createdAt: timestamp,
+      updatedAt: timestamp,
+      lastAuditId: auditReference.id,
+    };
+    await runTransaction(db, async (transaction) => {
+      const customer = await transaction.get(customerReference);
+      transaction.set(
+        customerReference,
+        {
+          id: customerId,
+          phoneNumber: input.customerPhoneNumber,
+          fullName: input.customerName,
+          district: input.district,
+          village: input.villageId,
+          addressText: input.addressText,
+          ...(input.location ? { location: input.location } : {}),
+          createdFrom: 'ADMIN',
+          updatedAt: timestamp,
+          createdAt: customer.exists()
+            ? customer.data().createdAt
+            : timestamp,
+        },
+        { merge: true },
+      );
+      transaction.set(ticketReference, ticketData);
+      transaction.set(
+        auditReference,
+        buildPickupAudit(
+          actor,
+          'PICKUP_REQUEST_CREATED',
+          ticketReference.id,
+          {},
+          { status: 'NEEDS_OPERATOR_REVIEW', source: 'WHATSAPP' },
+          timestamp,
+        ),
+      );
+    });
+    return this.getTicket(ticketReference.id);
   }
 
   async updateImpact(

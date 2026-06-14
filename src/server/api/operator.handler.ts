@@ -4,6 +4,7 @@ import type { PickupStatus } from '../../shared/constants/statuses';
 import type { PickupRequest } from '../../shared/schemas/pickup.schema';
 import {
   assignDriverInputSchema,
+  createManualPickupInputSchema,
   schedulePickupInputSchema,
   updatePickupImpactInputSchema,
   updatePickupStatusInputSchema,
@@ -46,6 +47,64 @@ export class OperatorApiHandler {
 
   async getTicket(id: string): Promise<ApiResult> {
     return this.wrap(() => this.tickets.getById(id));
+  }
+
+  async createManual(
+    body: unknown,
+    context: OperatorRequestContext,
+  ): Promise<ApiResult> {
+    const input = createManualPickupInputSchema.parse(body);
+    const loadByVolume = {
+      SMALL: 'QUARTER',
+      MEDIUM: 'HALF',
+      LARGE: 'FULL',
+      OVERSIZED: 'OVER_CAPACITY',
+      UNKNOWN: 'UNKNOWN',
+    } as const;
+    return this.wrap(() =>
+      this.tickets.create(
+        {
+          idempotencyKey: `manual:${input.customerPhoneNumber}:${Date.now()}`,
+          source: 'WHATSAPP',
+          customer: {
+            phoneNumber: input.customerPhoneNumber,
+            fullName: input.customerName,
+            district: input.district,
+            village: input.villageId,
+            addressText: input.addressText,
+            location: input.location,
+            createdFrom: 'ADMIN',
+          },
+          district: input.district,
+          villageId: input.villageId,
+          addressText: input.addressText,
+          location: input.location,
+          locationSource: input.location
+            ? 'OPERATOR_INPUT'
+            : 'MANUAL_TEXT',
+          locationValidationStatus: input.location
+            ? 'NEEDS_OPERATOR_REVIEW'
+            : 'UNKNOWN',
+          serviceType: input.serviceType,
+          serviceCategory: input.serviceCategory,
+          serviceModel: input.serviceModel,
+          volumeLevel: input.volumeLevel,
+          tricycleLoadEstimate: loadByVolume[input.volumeLevel],
+          wasteDescription: input.wasteDescription,
+          wasteTypes: input.wasteTypes,
+          estimatedWeightKg: input.estimatedWeightKg,
+          dataQuality: 'estimated_by_operator',
+          serviceFee: input.serviceFee,
+          operationalCost: input.operationalCost,
+          paidAmount: input.paidAmount,
+          paymentStatus: input.paymentStatus,
+          impactTags: input.impactTags,
+          photoUrls: [],
+          initialStatus: 'NEEDS_OPERATOR_REVIEW',
+        },
+        context.actor,
+      ),
+    );
   }
 
   async updateStatus(

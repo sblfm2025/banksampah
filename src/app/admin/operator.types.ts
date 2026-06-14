@@ -2,6 +2,7 @@ import type { District } from '../../shared/constants/districts';
 import type { PickupStatus } from '../../shared/constants/statuses';
 import type {
   AssignDriverInput,
+  CreateManualPickupInput,
   SchedulePickupInput,
   UpdatePickupStatusInput,
   UpdatePickupImpactInput,
@@ -45,6 +46,7 @@ export interface OperatorRepository {
   getOperationalReport(period: ReportPeriod): Promise<OperationalReport>;
   listTickets(filters?: TicketFilters): Promise<PickupRequest[]>;
   getTicket(id: string): Promise<PickupRequest>;
+  createManual(input: CreateManualPickupInput): Promise<PickupRequest>;
   updateStatus(
     id: string,
     input: UpdatePickupStatusInput,

@@ -10,6 +10,12 @@
 
 ### Operations
 
+- Menambahkan halaman operator untuk membuat permintaan manual dari percakapan
+  WhatsApp tanpa mewajibkan warga memiliki akun aplikasi.
+- Permintaan manual menyimpan identitas, alamat, koordinat opsional, klasifikasi
+  layanan, biaya manual, dan tag dampak lalu masuk ke tahap verifikasi.
+- Menyelaraskan Firestore Rules untuk field V3 pada pengajuan warga, klasifikasi
+  operator, serta berat dan tujuan pengolahan yang dicatat petugas.
 - Menambahkan klasifikasi layanan sosial/profesional, model layanan, biaya
   manual, pembayaran, kualitas data, berat sampah, tag dampak, dan tujuan mitra
   pada detail permintaan operator.

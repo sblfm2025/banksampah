@@ -359,5 +359,8 @@ Status: fondasi data, laporan, halaman publik, dan kendali operator selesai.
   biaya operasional, berat sampah, status pembayaran, dan mitra tujuan.
 - Halaman publik menjelaskan layanan warga, layanan profesional, jejaring
   Bank Sampah/TPS3R, dampak terukur, dan jalur WhatsApp-first.
+- Operator dapat membuat permintaan manual dari WhatsApp. Warga cukup
+  memberikan nama, nomor WA, alamat, kelurahan, serta lokasi bila tersedia;
+  data masuk sebagai `NEEDS_OPERATOR_REVIEW`.
 - `serviceFee` adalah nilai penawaran manual per permintaan, bukan harga publik.
   MVP tidak memiliki payment gateway, saldo, maupun tarif otomatis.

@@ -328,6 +328,63 @@ describe('Firestore role access', () => {
     await assertSucceeds(getDoc(doc(db, 'customers/customer-1')));
   });
 
+  it('operator dapat membuat permintaan WhatsApp dengan customer dan audit', async () => {
+    const db = environment.authenticatedContext('operator-1').firestore();
+    const batch = writeBatch(db);
+    batch.set(doc(db, 'customers/manual-customer'), {
+      id: 'manual-customer',
+      phoneNumber: '6281234567890',
+      fullName: 'Ibu Rahma',
+      district: 'PALETEANG',
+      village: 'temmassarangnge',
+      addressText: 'Jalan Bulu Manarang dekat masjid',
+      createdFrom: 'ADMIN',
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+    batch.set(doc(db, 'pickupRequests/manual-ticket'), {
+      ticketCode: 'JSP-20260614-0099',
+      source: 'WHATSAPP',
+      customerId: 'manual-customer',
+      customerPhoneNumber: '6281234567890',
+      customerName: 'Ibu Rahma',
+      district: 'PALETEANG',
+      villageId: 'temmassarangnge',
+      addressText: 'Jalan Bulu Manarang dekat masjid',
+      locationSource: 'MANUAL_TEXT',
+      locationValidationStatus: 'UNKNOWN',
+      serviceType: 'REGULAR_HOUSEHOLD_PICKUP',
+      serviceCategory: 'warga',
+      serviceModel: 'gratis',
+      volumeLevel: 'MEDIUM',
+      tricycleLoadEstimate: 'HALF',
+      wasteTypes: ['plastik'],
+      dataQuality: 'estimated_by_operator',
+      paymentStatus: 'gratis',
+      impactTags: ['pengurangan_sampah'],
+      photoUrls: [],
+      status: 'NEEDS_OPERATOR_REVIEW',
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      lastAuditId: 'manual-created',
+    });
+    batch.set(doc(db, 'auditLogs/manual-created'), {
+      actorId: 'operator-1',
+      actorRole: 'OPERATOR',
+      action: 'PICKUP_REQUEST_CREATED',
+      entityType: 'PICKUP_REQUEST',
+      entityId: 'manual-ticket',
+      before: {},
+      after: {
+        status: 'NEEDS_OPERATOR_REVIEW',
+        source: 'WHATSAPP',
+      },
+      createdAt: serverTimestamp(),
+    });
+
+    await assertSucceeds(batch.commit());
+  });
+
   it('hanya super admin yang dapat mengelola profil petugas', async () => {
     const adminDb = environment.authenticatedContext('admin-1').firestore();
     const operatorDb = environment

@@ -7,6 +7,7 @@ import { SchedulesPage } from './admin/SchedulesPage';
 import { TicketDetailPage } from './admin/TicketDetailPage';
 import { TicketsPage } from './admin/TicketsPage';
 import { DriverManagementPage } from './admin/DriverManagementPage';
+import { ManualPickupPage } from './admin/ManualPickupPage';
 import { RegionManagementPage } from './admin/RegionManagementPage';
 import { RoleGuard } from './auth/RoleGuard';
 import { LoginPage } from './auth/LoginPage';
@@ -69,6 +70,7 @@ export function App() {
         >
           <Route index element={<AdminOverview />} />
           <Route path="tickets" element={<TicketsPage />} />
+          <Route path="tickets/new" element={<ManualPickupPage />} />
           <Route path="tickets/:id" element={<TicketDetailPage />} />
           <Route path="schedules" element={<SchedulesPage />} />
           <Route path="drivers" element={<DriverManagementPage />} />

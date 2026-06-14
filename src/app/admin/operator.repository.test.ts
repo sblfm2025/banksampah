@@ -63,4 +63,26 @@ describe('operator repository', () => {
       'tps3r_paleteang_bersinar',
     );
   });
+
+  it('membuat permintaan manual dari percakapan WhatsApp', async () => {
+    const repository = new DemoOperatorRepository();
+    const ticket = await repository.createManual({
+      customerName: 'Ibu Rahma',
+      customerPhoneNumber: '6281234567890',
+      district: 'PALETEANG',
+      villageId: 'temmassarangnge',
+      addressText: 'Jalan Bulu Manarang, rumah hijau dekat masjid',
+      serviceType: 'REGULAR_HOUSEHOLD_PICKUP',
+      serviceCategory: 'warga',
+      serviceModel: 'gratis',
+      volumeLevel: 'MEDIUM',
+      wasteTypes: ['plastik', 'kardus'],
+      paymentStatus: 'gratis',
+      impactTags: ['pengurangan_sampah'],
+    });
+
+    expect(ticket.source).toBe('WHATSAPP');
+    expect(ticket.status).toBe('NEEDS_OPERATOR_REVIEW');
+    expect(ticket.customerName).toBe('Ibu Rahma');
+  });
 });
