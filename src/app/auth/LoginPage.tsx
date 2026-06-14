@@ -23,6 +23,7 @@ export function LoginPage() {
     authUid,
     loading,
     login,
+    loginWithWhatsApp,
     loginWithGoogle,
     logout,
     profileMissing,
@@ -62,7 +63,7 @@ export function LoginPage() {
     );
   }
 
-  async function submit(event: FormEvent<HTMLFormElement>) {
+  async function submitStaff(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError('');
     const data = new FormData(event.currentTarget);
@@ -70,6 +71,33 @@ export function LoginPage() {
       await login(String(data.get('email')), String(data.get('password')));
     } catch {
       setError('Email atau password tidak valid.');
+    }
+  }
+
+  async function submitCitizenEmail(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError('');
+    const data = new FormData(event.currentTarget);
+    try {
+      await login(String(data.get('email')), String(data.get('password')));
+    } catch {
+      setError('Email atau password tidak valid.');
+    }
+  }
+
+  async function submitCitizenWhatsApp(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError('');
+    const data = new FormData(event.currentTarget);
+    try {
+      await loginWithWhatsApp(
+        String(data.get('phoneNumber')),
+        String(data.get('password')),
+      );
+    } catch {
+      setError(
+        'Nomor WhatsApp atau password tidak valid. Pastikan akun sudah dibuat oleh operator.',
+      );
     }
   }
 
@@ -101,7 +129,7 @@ export function LoginPage() {
           </p>
           <div className="mt-8 grid max-w-md gap-3">
             {[
-              'Warga masuk dengan Google dan melengkapi profil.',
+              'Warga masuk dengan WA, email, atau Google lalu melengkapi profil.',
               'Operator meninjau pengajuan dan mengatur jadwal.',
               'Petugas melihat alamat, kontak, dan foto warga.',
             ].map((item) => (
@@ -179,6 +207,85 @@ export function LoginPage() {
 
           {activePanel === 'citizen' ? (
             <section className="mt-6 space-y-4">
+              <form
+                className="rounded-2xl border border-slate-200 bg-white p-4"
+                onSubmit={submitCitizenWhatsApp}
+              >
+                <div className="flex items-start gap-3">
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#e6f7fa] text-[#087f8c]">
+                    <AppIcon name="phone" />
+                  </span>
+                  <div>
+                    <h2 className="font-extrabold">Masuk dengan WhatsApp</h2>
+                    <p className="mt-1 text-sm leading-6 text-slate-500">
+                      Untuk warga yang dibuatkan akun tanpa email. Nomor WA
+                      tetap menjadi kontak utama layanan.
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-4 grid gap-3">
+                  <Field
+                    autoComplete="tel"
+                    label="Nomor WhatsApp"
+                    name="phoneNumber"
+                    placeholder="0812..."
+                    type="tel"
+                  />
+                  <Field
+                    autoComplete="current-password"
+                    label="Password"
+                    name="password"
+                    type="password"
+                  />
+                  <PrimaryButton disabled={loading} type="submit">
+                    {loading ? 'Memeriksa akun...' : 'Masuk dengan WA'}
+                  </PrimaryButton>
+                </div>
+              </form>
+
+              <div className="flex items-center gap-3">
+                <span className="h-px flex-1 bg-slate-200" />
+                <span className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
+                  atau
+                </span>
+                <span className="h-px flex-1 bg-slate-200" />
+              </div>
+
+              <form
+                className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
+                onSubmit={submitCitizenEmail}
+              >
+                <h2 className="font-extrabold">Masuk dengan email</h2>
+                <p className="mt-1 text-sm leading-6 text-slate-500">
+                  Bisa memakai email pribadi atau email dummy internal yang
+                  dibuatkan operator.
+                </p>
+                <div className="mt-4 grid gap-3">
+                  <Field autoComplete="email" label="Email" name="email" type="email" />
+                  <Field
+                    autoComplete="current-password"
+                    label="Password"
+                    name="password"
+                    type="password"
+                  />
+                  <button
+                    className="rounded-2xl border border-[#159fb3] bg-white px-5 py-3.5 font-bold text-[#087f8c] transition hover:bg-[#e6f7fa] disabled:opacity-50"
+                    disabled={loading}
+                    type="submit"
+                  >
+                    Masuk dengan email
+                  </button>
+                </div>
+              </form>
+
+              <div className="flex items-center gap-3">
+                <span className="h-px flex-1 bg-slate-200" />
+                <span className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
+                  atau Google
+                </span>
+                <span className="h-px flex-1 bg-slate-200" />
+              </div>
+
               <button
                 className="flex w-full items-center justify-center gap-3 rounded-2xl border border-slate-300 bg-white px-4 py-3.5 font-bold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-60"
                 disabled={loading}
@@ -224,7 +331,7 @@ export function LoginPage() {
               <form
                 className="space-y-4"
                 hidden={profileMissing && authenticated}
-                onSubmit={submit}
+                onSubmit={submitStaff}
               >
                 <Field autoComplete="email" label="Email" name="email" type="email" />
                 <Field

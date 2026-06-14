@@ -3,7 +3,7 @@ import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 import { readEnvFile } from './env-file.mjs';
 
-const allowedRoles = new Set(['SUPER_ADMIN', 'OPERATOR', 'DRIVER']);
+const allowedRoles = new Set(['SUPER_ADMIN', 'OPERATOR', 'DRIVER', 'CUSTOMER']);
 const argumentsMap = new Map(
   process.argv
     .slice(2)
@@ -19,10 +19,14 @@ const projectId =
   process.env.FIREBASE_PROJECT_ID ||
   localEnv.VITE_FIREBASE_PROJECT_ID;
 const confirmedProject = argumentsMap.get('confirm-project');
-const email = argumentsMap.get('email')?.trim().toLowerCase();
+const explicitEmail = argumentsMap.get('email')?.trim().toLowerCase();
 const name = argumentsMap.get('name')?.trim();
 const role = argumentsMap.get('role')?.trim().toUpperCase();
 const phoneNumber = argumentsMap.get('phone')?.trim();
+const normalizedPhone = normalizeIndonesianPhoneNumber(phoneNumber ?? '');
+const email =
+  explicitEmail ||
+  (normalizedPhone ? `${normalizedPhone}@wa.peduli-pinrang.local` : undefined);
 
 if (!projectId || confirmedProject !== projectId) {
   throw new Error(
@@ -31,7 +35,7 @@ if (!projectId || confirmedProject !== projectId) {
 }
 if (!email || !name || !role || !allowedRoles.has(role)) {
   throw new Error(
-    'Gunakan --email=... --name=... --role=SUPER_ADMIN|OPERATOR|DRIVER.',
+    'Gunakan --email=... atau --phone=..., lalu --name=... --role=SUPER_ADMIN|OPERATOR|DRIVER|CUSTOMER.',
   );
 }
 
@@ -71,12 +75,20 @@ try {
 await db.collection('users').doc(user.uid).set(
   {
     name,
-    email,
+    ...(explicitEmail ? { email } : {}),
     role,
     isActive: true,
-    ...(phoneNumber ? { phoneNumber } : {}),
+    ...(normalizedPhone ? { phoneNumber: normalizedPhone } : {}),
   },
   { merge: true },
 );
 
 console.log(`Akun ${role} siap dengan UID ${user.uid}.`);
+
+function normalizeIndonesianPhoneNumber(value) {
+  const digits = value.replaceAll(/\D/g, '');
+  if (!digits) return '';
+  if (digits.startsWith('0')) return `62${digits.slice(1)}`;
+  if (digits.startsWith('8')) return `62${digits}`;
+  return digits;
+}

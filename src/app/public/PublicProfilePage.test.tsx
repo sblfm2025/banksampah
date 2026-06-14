@@ -47,6 +47,7 @@ const anonymousAuth: AuthState = {
   authDisplayName: null,
   isGoogleUser: false,
   login: async () => {},
+  loginWithWhatsApp: async () => {},
   loginWithGoogle: async () => {},
   refreshProfile: async () => {},
   logout: async () => {},

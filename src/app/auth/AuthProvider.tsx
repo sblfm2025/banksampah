@@ -40,6 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     authDisplayName: demoMode ? getDemoUser().name : null,
     isGoogleUser: false,
     login: async () => {},
+    loginWithWhatsApp: async () => {},
     loginWithGoogle: async () => {},
     refreshProfile: async () => {},
     logout: async () => {},
@@ -122,6 +123,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setState((current) => ({ ...current, loading: true }));
         try {
           await loginWithEmail(email, password);
+        } catch (error) {
+          setState((current) => ({ ...current, loading: false }));
+          throw error;
+        }
+      },
+      loginWithWhatsApp: async (phoneNumber, password) => {
+        if (demoMode) return;
+        const { loginWithWhatsAppNumber } = await import('../../client/firebase');
+        setState((current) => ({ ...current, loading: true }));
+        try {
+          await loginWithWhatsAppNumber(phoneNumber, password);
         } catch (error) {
           setState((current) => ({ ...current, loading: false }));
           throw error;

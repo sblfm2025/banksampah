@@ -40,8 +40,42 @@ export const db = getFirestore(app);
 export const auth = getAuth(app);
 export const onAuthStateChanged = observeAuthState;
 
+const phoneLoginEmailDomain =
+  import.meta.env.VITE_PHONE_LOGIN_EMAIL_DOMAIN ?? 'wa.peduli-pinrang.local';
+
+function normalizeIndonesianPhoneNumber(value: string): string {
+  const digits = value.replaceAll(/\D/g, '');
+  if (digits.startsWith('0')) return `62${digits.slice(1)}`;
+  if (digits.startsWith('8')) return `62${digits}`;
+  return digits;
+}
+
+export function phoneNumberToLoginEmail(phoneNumber: string): string {
+  const normalized = normalizeIndonesianPhoneNumber(phoneNumber);
+  if (!/^628\d{7,12}$/.test(normalized)) {
+    throw new Error('Nomor WhatsApp tidak valid.');
+  }
+
+  return `${normalized}@${phoneLoginEmailDomain}`;
+}
+
+function isPhoneLoginEmail(email: string | null): boolean {
+  return Boolean(email?.toLowerCase().endsWith(`@${phoneLoginEmailDomain}`));
+}
+
 export async function loginWithEmail(email: string, password: string) {
   await signInWithEmailAndPassword(auth, email, password);
+}
+
+export async function loginWithWhatsAppNumber(
+  phoneNumber: string,
+  password: string,
+) {
+  await signInWithEmailAndPassword(
+    auth,
+    phoneNumberToLoginEmail(phoneNumber),
+    password,
+  );
 }
 
 export async function loginWithGoogle() {
@@ -78,9 +112,13 @@ export async function saveCustomerAppProfile(
   profile: CustomerProfileInput,
 ): Promise<void> {
   const firebaseUser = auth.currentUser;
-  if (!firebaseUser?.email) {
-    throw new Error('Akun Google tidak memiliki alamat email yang dapat dipakai.');
+  if (!firebaseUser) {
+    throw new Error('Sesi login tidak tersedia.');
   }
+  const email =
+    firebaseUser.email && !isPhoneLoginEmail(firebaseUser.email)
+      ? firebaseUser.email
+      : undefined;
 
   const reference = doc(db, 'users', firebaseUser.uid);
   const existing = await getDoc(reference);
@@ -88,7 +126,7 @@ export async function saveCustomerAppProfile(
     reference,
     {
       name: profile.fullName.trim(),
-      email: firebaseUser.email,
+      ...(email ? { email } : {}),
       phoneNumber: profile.phoneNumber,
       role: 'CUSTOMER',
       isActive: true,
