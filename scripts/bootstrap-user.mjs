@@ -1,7 +1,7 @@
 import { applicationDefault, cert, getApps, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
-import { readEnvFile } from './env-file.mjs';
+import { readEnvFile, updateEnvFile } from './env-file.mjs';
 
 const allowedRoles = new Set(['SUPER_ADMIN', 'OPERATOR', 'DRIVER', 'CUSTOMER']);
 const argumentsMap = new Map(
@@ -24,6 +24,7 @@ const name = argumentsMap.get('name')?.trim();
 const role = argumentsMap.get('role')?.trim().toUpperCase();
 const phoneNumber = argumentsMap.get('phone')?.trim();
 const normalizedPhone = normalizeIndonesianPhoneNumber(phoneNumber ?? '');
+const writePilotUid = argumentsMap.get('write-pilot-uid') === 'true';
 const email =
   explicitEmail ||
   (normalizedPhone ? `${normalizedPhone}@wa.peduli-pinrang.local` : undefined);
@@ -39,8 +40,11 @@ if (!email || !name || !role || !allowedRoles.has(role)) {
   );
 }
 
-const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replaceAll('\\n', '\n');
+const clientEmail =
+  process.env.FIREBASE_CLIENT_EMAIL || localEnv.FIREBASE_CLIENT_EMAIL;
+const privateKey = (
+  process.env.FIREBASE_PRIVATE_KEY || localEnv.FIREBASE_PRIVATE_KEY
+)?.replaceAll('\\n', '\n');
 const credential =
   clientEmail && privateKey
     ? cert({ projectId, clientEmail, privateKey })
@@ -83,7 +87,29 @@ await db.collection('users').doc(user.uid).set(
   { merge: true },
 );
 
+const pilotEnvKeys = {
+  SUPER_ADMIN: 'PILOT_SUPER_ADMIN_UID',
+  OPERATOR: 'PILOT_OPERATOR_UID',
+  DRIVER: 'PILOT_DRIVER_UID',
+};
+const pilotEnvKey = pilotEnvKeys[role];
+if (writePilotUid) {
+  if (!pilotEnvKey) {
+    throw new Error(
+      '--write-pilot-uid=true hanya berlaku untuk SUPER_ADMIN, OPERATOR, atau DRIVER.',
+    );
+  }
+  await updateEnvFile('.env.local', { [pilotEnvKey]: user.uid });
+}
+
 console.log(`Akun ${role} siap dengan UID ${user.uid}.`);
+if (pilotEnvKey) {
+  console.log(
+    writePilotUid
+      ? `${pilotEnvKey} diperbarui di .env.local.`
+      : `Catat UID dengan ${pilotEnvKey}=${user.uid}, atau ulangi memakai --write-pilot-uid=true.`,
+  );
+}
 
 function normalizeIndonesianPhoneNumber(value) {
   const digits = value.replaceAll(/\D/g, '');

@@ -224,7 +224,7 @@ export function DriverPickupDetailPage() {
         </p>
         <div className="mt-4 grid grid-cols-3 gap-3">
           <a
-            className="rounded-xl bg-[#159fb3] px-3 py-3 text-center font-bold text-white"
+            className="rounded-xl bg-[#087f8c] px-3 py-3 text-center font-bold text-white"
             href={mapsUrl(ticket)}
             rel="noreferrer"
             target="_blank"
@@ -303,7 +303,7 @@ export function DriverPickupDetailPage() {
 
       {ticket.status === 'ASSIGNED' && (
         <button
-          className="w-full rounded-2xl bg-[#159fb3] px-5 py-4 text-lg font-bold text-white disabled:opacity-50"
+          className="w-full rounded-2xl bg-[#087f8c] px-5 py-4 text-lg font-bold text-white disabled:opacity-50"
           disabled={start.isPending}
           onClick={() => setConfirmStart(true)}
           type="button"
@@ -396,7 +396,7 @@ export function DriverPickupDetailPage() {
             </label>
           </div>
           <button
-            className="w-full rounded-xl bg-[#159fb3] px-4 py-4 text-lg font-bold text-white disabled:opacity-50"
+            className="w-full rounded-xl bg-[#087f8c] px-4 py-4 text-lg font-bold text-white disabled:opacity-50"
             disabled={complete.isPending || !proofStorageEnabled}
             type="submit"
           >

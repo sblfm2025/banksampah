@@ -29,7 +29,7 @@ export function SchedulesPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#159fb3]">
+          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#087f8c]">
             Jadwal Pickup
           </p>
           <h1 className="mt-2 text-3xl font-bold">Rencana operasional harian</h1>

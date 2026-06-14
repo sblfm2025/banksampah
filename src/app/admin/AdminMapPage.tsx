@@ -15,7 +15,7 @@ export function AdminMapPage() {
   return (
     <div className="space-y-6">
       <div>
-        <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#159fb3]">
+        <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#087f8c]">
           Peta Operasional
         </p>
         <h1 className="mt-2 text-3xl font-bold">Titik jemput aktif</h1>

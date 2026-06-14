@@ -20,7 +20,7 @@ export default defineConfig({
         theme_color: '#159fb3',
         background_color: '#f8fafc',
         display: 'standalone',
-        start_url: '/driver/pickups',
+        start_url: '/app',
         scope: '/',
         icons: [
           {

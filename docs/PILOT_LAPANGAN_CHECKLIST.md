@@ -13,6 +13,8 @@ Gunakan checklist ini secara berurutan. Jangan membuka layanan umum sebelum taha
 - [ ] Minimal satu Operator aktif dan UID tercatat.
 - [ ] Minimal dua Driver aktif; satu UID driver utama tercatat untuk readiness check.
 - [ ] Dokumen `users/{uid}` mempunyai role benar dan `isActive: true`.
+- [ ] UID hasil bootstrap tersimpan pada `PILOT_SUPER_ADMIN_UID`,
+  `PILOT_OPERATOR_UID`, dan `PILOT_DRIVER_UID`.
 - [ ] `npm run check:production` menghasilkan seluruh baris `OK`.
 - [ ] Secret backend tidak memakai prefix `VITE_` dan tidak masuk log atau Git.
 
@@ -29,6 +31,8 @@ Gunakan checklist ini secara berurutan. Jangan membuka layanan umum sebelum taha
 ## 3. Deployment
 
 - [ ] Deploy ke staging lebih dahulu.
+- [ ] `npm run check:production` sudah seluruhnya `OK` sebelum deploy Hosting
+  produksi.
 - [ ] Firestore rules terdeploy.
 - [ ] Firestore indexes selesai dibangun.
 - [ ] Firebase Storage tetap tidak diprovision; jika kelak diaktifkan, deploy `storage.rules` deny-all sebelum digunakan.
@@ -44,7 +48,8 @@ npm run deploy:production
 
 ## 4. Hak Akses
 
-- [ ] Anonymous hanya dapat membuka halaman publik/login.
+- [ ] Anonymous hanya dapat membuka halaman publik, `/app`, `/auth`,
+  `/pickup/new`, dan `/tickets/check`.
 - [ ] Driver ditolak saat membuka `/admin`.
 - [ ] Operator ditolak saat membuka `/driver`.
 - [ ] Driver hanya melihat tiket miliknya.

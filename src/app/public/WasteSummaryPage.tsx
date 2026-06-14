@@ -50,7 +50,7 @@ export function WasteSummaryPage() {
           <EmptyState
             action={
               <Link
-                className="inline-flex rounded-2xl bg-[#159fb3] px-5 py-3 font-bold text-white"
+                className="inline-flex rounded-2xl bg-[#087f8c] px-5 py-3 font-bold text-white"
                 to="/pickup/new"
               >
                 Kirim foto sampah

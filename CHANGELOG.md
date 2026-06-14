@@ -10,6 +10,33 @@
 
 ### Operations
 
+- Memisahkan website publik `/` dari pusat aksi cepat `/app` dan menambahkan
+  route publik layanan, program, wilayah, dampak, mitra, serta bantuan.
+- Membuka wizard `/pickup/new` untuk tamu tanpa login di awal; draft tamu
+  disimpan di perangkat dan diarahkan ke WhatsApp secara jujur.
+- Menambahkan route utama `/auth` dan pintu staff `/auth/staff` sambil
+  mempertahankan kompatibilitas route `/login`.
+- Menyederhanakan auth menjadi satu input email/WhatsApp, menambahkan
+  pendaftaran warga berbasis email, onboarding profil, dan redirect dashboard
+  otomatis berdasarkan role.
+- Mengubah wizard warga menjadi enam langkah dengan foto/deskripsi di awal,
+  data penghubung di akhir, autosave draft, kompresi foto, dan konfirmasi
+  status pengiriman yang jujur.
+- Menambahkan cek status draft menggunakan kode dan nomor WhatsApp, dashboard
+  warga terproteksi, animasi publik berbasis viewport, accordion aksesibel,
+  floating WhatsApp, dan lazy loading homepage.
+- Memperbaiki lebar `.app-container` untuk mencegah risiko horizontal overflow
+  pada viewport mobile.
+- Mengubah start URL PWA ke `/app`, memecah route admin/driver menjadi lazy
+  chunks, dan merapikan import parser Firestore.
+- Menambahkan opsi bootstrap untuk menulis UID pilot langsung ke `.env.local`
+  serta pesan readiness per-role yang lebih spesifik.
+- Mengganti script emulator/deploy agar memakai `npx firebase-tools` dan tidak
+  bergantung pada Firebase CLI global.
+- Menambahkan production readiness gate pada deploy Hosting/production agar
+  frontend pilot tidak bisa terdeploy saat akun Operator/Driver belum lengkap.
+- Menambahkan runbook provisioning akun pilot Operator/Driver dan menyelaraskan
+  dokumentasi auth ke route utama `/auth`.
 - Menambahkan halaman operator untuk membuat permintaan manual dari percakapan
   WhatsApp tanpa mewajibkan warga memiliki akun aplikasi.
 - Permintaan manual menyimpan identitas, alamat, koordinat opsional, klasifikasi

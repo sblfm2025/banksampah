@@ -1,9 +1,14 @@
 import { execFile } from 'node:child_process';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { access, mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
-import { cert, getApps, initializeApp } from 'firebase-admin/app';
+import {
+  applicationDefault,
+  cert,
+  getApps,
+  initializeApp,
+} from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { readEnvFile } from './env-file.mjs';
 
@@ -51,12 +56,17 @@ check(
 );
 
 const configuredPilotUids = pilotRoles.filter(([, uid]) => Boolean(uid));
+const missingPilotRoles = pilotRoles
+  .filter(([, uid]) => !uid)
+  .map(([role]) => role);
 check(
   'UID role pilot',
   configuredPilotUids.length === pilotRoles.length &&
     new Set(configuredPilotUids.map(([, uid]) => uid)).size ===
       pilotRoles.length,
-  `${configuredPilotUids.length}/${pilotRoles.length} role dikonfigurasi`,
+  missingPilotRoles.length === 0
+    ? 'SUPER_ADMIN, OPERATOR, dan DRIVER dikonfigurasi'
+    : `${configuredPilotUids.length}/${pilotRoles.length} role dikonfigurasi; belum: ${missingPilotRoles.join(', ')}`,
 );
 
 const temporaryDirectory = await mkdtemp(join(tmpdir(), 'sampahta-auth-'));
@@ -69,15 +79,7 @@ try {
     'production',
     '--format=json',
   ];
-  if (process.platform === 'win32') {
-    await execFileAsync(
-      'cmd.exe',
-      ['/d', '/s', '/c', 'firebase', ...commandArguments],
-      { windowsHide: true },
-    );
-  } else {
-    await execFileAsync('firebase', commandArguments);
-  }
+  await runFirebaseCli(commandArguments);
   const exported = JSON.parse(await readFile(exportPath, 'utf8'));
   const users = Array.isArray(exported.users) ? exported.users : [];
   const authUids = new Set(users.map((user) => user.localId));
@@ -97,17 +99,74 @@ try {
   await rm(temporaryDirectory, { recursive: true, force: true });
 }
 
+async function runFirebaseCli(args) {
+  const localBinary =
+    process.platform === 'win32'
+      ? join('node_modules', '.bin', 'firebase.cmd')
+      : join('node_modules', '.bin', 'firebase');
+  if (await exists(localBinary)) {
+    await execFileAsync(localBinary, args, { windowsHide: true });
+    return;
+  }
+
+  if (process.platform === 'win32') {
+    try {
+      await execFileAsync('cmd.exe', ['/d', '/s', '/c', 'where', 'firebase'], {
+        windowsHide: true,
+      });
+      await execFileAsync(
+        'cmd.exe',
+        ['/d', '/s', '/c', 'firebase', ...args],
+        { windowsHide: true },
+      );
+      return;
+    } catch {
+      await execFileAsync(
+        'cmd.exe',
+        ['/d', '/s', '/c', 'npx', 'firebase-tools', ...args],
+        { windowsHide: true },
+      );
+      return;
+    }
+  }
+
+  try {
+    await execFileAsync('firebase', args);
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+    await execFileAsync('npx', ['firebase-tools', ...args]);
+  }
+}
+
+async function exists(path) {
+  try {
+    await access(path);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 const clientEmail = values.FIREBASE_CLIENT_EMAIL;
 const privateKey = values.FIREBASE_PRIVATE_KEY?.replaceAll('\\n', '\n');
-if (clientEmail && privateKey && configuredPilotUids.length === pilotRoles.length) {
+const applicationDefaultAvailable = Boolean(
+  process.env.GOOGLE_APPLICATION_CREDENTIALS,
+);
+if (
+  ((clientEmail && privateKey) || applicationDefaultAvailable) &&
+  configuredPilotUids.length === pilotRoles.length
+) {
   try {
     if (getApps().length === 0) {
       initializeApp({
-        credential: cert({
-          projectId,
-          clientEmail,
-          privateKey,
-        }),
+        credential:
+          clientEmail && privateKey
+            ? cert({
+                projectId,
+                clientEmail,
+                privateKey,
+              })
+            : applicationDefault(),
         projectId,
       });
     }
@@ -144,7 +203,16 @@ if (clientEmail && privateKey && configuredPilotUids.length === pilotRoles.lengt
   check(
     'Profil role Firestore',
     false,
-    'isi FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY, dan tiga PILOT_*_UID untuk verifikasi',
+    [
+      (!clientEmail || !privateKey) && !applicationDefaultAvailable
+        ? 'credential Admin belum tersedia'
+        : undefined,
+      missingPilotRoles.length > 0
+        ? `UID belum tersedia: ${missingPilotRoles.join(', ')}`
+        : undefined,
+    ]
+      .filter(Boolean)
+      .join('; '),
   );
 }
 

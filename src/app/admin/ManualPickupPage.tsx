@@ -111,7 +111,7 @@ export function ManualPickupPage() {
         >
           Kembali ke permintaan
         </Link>
-        <p className="mt-5 text-xs font-bold uppercase tracking-[0.18em] text-[#159fb3]">
+        <p className="mt-5 text-xs font-bold uppercase tracking-[0.18em] text-[#087f8c]">
           Input operator
         </p>
         <h1 className="mt-2 text-3xl font-extrabold">
@@ -277,7 +277,7 @@ export function ManualPickupPage() {
         </FormSection>
 
         <button
-          className="w-full rounded-xl bg-[#159fb3] px-5 py-4 font-bold text-white disabled:opacity-50"
+          className="w-full rounded-xl bg-[#087f8c] px-5 py-4 font-bold text-white disabled:opacity-50"
           disabled={mutation.isPending}
           type="submit"
         >

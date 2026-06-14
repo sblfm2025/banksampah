@@ -418,7 +418,7 @@ export function PublicProfilePage() {
         ) : (
           <Link
             className="block rounded-2xl border border-[#159fb3] bg-white px-5 py-4 text-center font-bold text-[#087f8c]"
-            to="/login"
+            to="/auth"
           >
             Masuk atau daftar dengan Google
           </Link>

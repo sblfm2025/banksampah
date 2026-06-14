@@ -12,6 +12,7 @@ export interface AuthState {
   isGoogleUser: boolean;
   login(email: string, password: string): Promise<void>;
   loginWithWhatsApp(phoneNumber: string, password: string): Promise<void>;
+  registerWithEmail(email: string, password: string): Promise<void>;
   loginWithGoogle(): Promise<void>;
   refreshProfile(): Promise<void>;
   logout(): Promise<void>;

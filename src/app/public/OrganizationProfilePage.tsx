@@ -74,7 +74,7 @@ export function OrganizationProfilePage() {
 
         <section className="grid gap-6 md:grid-cols-[0.85fr_1.15fr]">
           <Card className="p-6">
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#159fb3]">
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#087f8c]">
               Pendiri dan penggerak
             </p>
             <h2 className="mt-3 text-2xl font-extrabold">
@@ -104,7 +104,7 @@ export function OrganizationProfilePage() {
         </section>
 
         <section>
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#159fb3]">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#087f8c]">
             Perjalanan gerakan
           </p>
           <h2 className="mt-2 text-2xl font-extrabold">
@@ -132,7 +132,7 @@ export function OrganizationProfilePage() {
         </section>
 
         <section id="program">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#159fb3]">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#087f8c]">
             Program
           </p>
           <h2 className="mt-2 text-2xl font-extrabold">
@@ -154,7 +154,7 @@ export function OrganizationProfilePage() {
         </section>
 
         <section>
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#159fb3]">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#087f8c]">
             Dampak dan catatan data
           </p>
           <h2 className="mt-2 text-2xl font-extrabold">
@@ -191,7 +191,7 @@ export function OrganizationProfilePage() {
         </section>
 
         <section id="jejaring">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#159fb3]">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#087f8c]">
             Peta pemangku kepentingan
           </p>
           <h2 className="mt-2 text-2xl font-extrabold">
@@ -223,7 +223,7 @@ export function OrganizationProfilePage() {
             </p>
           </div>
           <Link
-            className="inline-flex justify-center rounded-2xl bg-[#159fb3] px-5 py-4 font-bold text-white"
+            className="inline-flex justify-center rounded-2xl bg-[#087f8c] px-5 py-4 font-bold text-white"
             to="/pickup/new"
           >
             Ajukan Jemput

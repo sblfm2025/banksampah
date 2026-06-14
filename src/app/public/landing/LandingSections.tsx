@@ -6,6 +6,9 @@ import {
   Card,
   type IconName,
 } from '../../ui/components';
+import { AnimatedAccordion } from '../../ui/animation/AnimatedAccordion';
+import { StaggerContainer } from '../../ui/animation/StaggerContainer';
+import { StaggerItem } from '../../ui/animation/StaggerItem';
 import { landingImpactStats } from '../content/impact-content';
 import {
   founderProfile,
@@ -71,17 +74,17 @@ const roleLinks = [
   {
     title: 'Warga',
     description: 'Ajukan permintaan jemput dan pantau status layanan.',
-    href: '/login?role=citizen',
+    href: '/auth',
   },
   {
     title: 'Petugas',
     description: 'Lihat tugas jemput, alamat, kontak, dan foto dari warga.',
-    href: '/login?role=driver',
+    href: '/auth/staff?role=driver',
   },
   {
     title: 'Operator',
     description: 'Verifikasi permintaan, atur jadwal, dan tugaskan petugas.',
-    href: '/login?role=operator',
+    href: '/auth/staff?role=operator',
   },
 ];
 
@@ -182,7 +185,7 @@ const solutionTracks = [
     title: 'Verifikasi dan atur jadwal',
     description:
       'Permintaan masuk bisa dicek, dilengkapi, dijadwalkan, dan ditugaskan ke petugas lapangan.',
-    href: '/login?role=operator',
+    href: '/auth/staff?role=operator',
     cta: 'Masuk operator',
   },
   {
@@ -191,7 +194,7 @@ const solutionTracks = [
     title: 'Lihat tugas jemput',
     description:
       'Petugas menerima informasi alamat, kontak, foto sampah, dan status tugas dalam satu alur kerja.',
-    href: '/login?role=driver',
+    href: '/auth/staff?role=driver',
     cta: 'Masuk petugas',
   },
 ];
@@ -235,7 +238,7 @@ function SectionHeading({
 }) {
   return (
     <div className="max-w-2xl">
-      <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#159fb3]">
+      <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#087f8c]">
         {eyebrow}
       </p>
       <h2 className="mt-2 text-2xl font-extrabold leading-tight text-slate-950 sm:text-3xl">
@@ -356,14 +359,14 @@ export function LandingBootAnimation() {
         <div className="mx-auto grid h-20 w-20 place-items-center rounded-[1.5rem] bg-[#e6f7fa]">
           <AppLogo compact />
         </div>
-        <p className="mt-5 text-xs font-bold uppercase tracking-[0.2em] text-[#159fb3]">
+        <p className="mt-5 text-xs font-bold uppercase tracking-[0.2em] text-[#087f8c]">
           Peduli Pinrang
         </p>
         <h2 className="mt-2 text-2xl font-extrabold text-slate-950">
           Menyiapkan layanan jemput sampah warga
         </h2>
         <div className="mx-auto mt-6 h-1.5 w-44 overflow-hidden rounded-full bg-slate-100">
-          <span className="landing-loader block h-full w-2/3 rounded-full bg-[#159fb3]" />
+          <span className="landing-loader block h-full w-2/3 rounded-full bg-[#087f8c]" />
         </div>
       </div>
     </div>
@@ -374,38 +377,42 @@ export function LandingHeader() {
   return (
     <header className="sticky top-0 z-30 border-b border-slate-100 bg-white/95 backdrop-blur">
       <div className="app-container flex min-h-14 items-center justify-between gap-4">
-        <Link aria-label="Kembali ke beranda" to="/">
+        <Link
+          aria-label="Kembali ke beranda"
+          className="grid min-h-12 min-w-12 place-items-center rounded-full"
+          to="/"
+        >
           <AppLogo compact />
         </Link>
         <nav className="hidden items-center gap-6 text-xs font-bold text-slate-600 lg:flex">
-          <a className="hover:text-[#087f8c]" href="#layanan">
+          <a className="inline-flex min-h-11 min-w-11 items-center justify-center hover:text-[#087f8c]" href="#layanan">
             Layanan
           </a>
-          <a className="hover:text-[#087f8c]" href="#program">
+          <a className="inline-flex min-h-11 min-w-11 items-center justify-center hover:text-[#087f8c]" href="#program">
             Program
           </a>
-          <Link className="hover:text-[#087f8c]" to="/profil">
+          <Link className="inline-flex min-h-11 min-w-11 items-center justify-center hover:text-[#087f8c]" to="/profil">
             Profil
           </Link>
-          <a className="hover:text-[#087f8c]" href="#wilayah">
+          <a className="inline-flex min-h-11 min-w-11 items-center justify-center hover:text-[#087f8c]" href="#wilayah">
             Wilayah
           </a>
-          <a className="hover:text-[#087f8c]" href="#faq">
+          <a className="inline-flex min-h-11 min-w-11 items-center justify-center hover:text-[#087f8c]" href="#faq">
             FAQ
           </a>
-          <a className="hover:text-[#087f8c]" href="#masuk">
+          <a className="inline-flex min-h-11 min-w-11 items-center justify-center hover:text-[#087f8c]" href="#masuk">
             Masuk
           </a>
         </nav>
         <div className="flex items-center gap-2">
           <Link
-            className="hidden rounded-full border border-[#159fb3] px-4 py-2 text-xs font-bold text-[#087f8c] sm:inline-flex"
-            to="/login"
+            className="hidden min-h-11 items-center rounded-full border border-[#159fb3] px-4 py-2 text-xs font-bold text-[#087f8c] sm:inline-flex"
+            to="/auth"
           >
             Masuk
           </Link>
           <Link
-            className="rounded-full bg-[#159fb3] px-4 py-2 text-xs font-bold text-white shadow-[0_10px_24px_rgb(21_159_179/0.24)]"
+            className="inline-flex min-h-11 items-center rounded-full bg-[#087f8c] px-4 py-2 text-xs font-bold text-white shadow-[0_10px_24px_rgb(21_159_179/0.24)]"
             to="/pickup/new"
           >
             Ajukan Jemput
@@ -507,7 +514,7 @@ export function SolutionFinderSection() {
               <span className="grid h-11 w-11 place-items-center rounded-2xl bg-white text-[#087f8c] shadow-sm">
                 <AppIcon name={track.icon} />
               </span>
-              <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.16em] text-[#159fb3]">
+              <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.16em] text-[#087f8c]">
                 {track.eyebrow}
               </p>
               <h3 className="mt-2 font-extrabold text-slate-950">
@@ -517,7 +524,7 @@ export function SolutionFinderSection() {
                 {track.description}
               </p>
               <LandingCtaLink
-                className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-[#087f8c]"
+                className="mt-5 inline-flex min-h-11 items-center gap-2 text-sm font-bold text-[#087f8c]"
                 href={track.href}
               >
                 {track.cta}
@@ -571,7 +578,7 @@ export function FoundationIntroSection() {
             pemantauan status penjemputan.
           </p>
           <Link
-            className="mt-6 inline-flex items-center gap-2 font-bold text-[#087f8c]"
+            className="mt-6 inline-flex min-h-11 items-center gap-2 font-bold text-[#087f8c]"
             to="/profil"
           >
             Baca profil lengkap
@@ -620,19 +627,21 @@ export function ServicesSection() {
         eyebrow="Layanan utama"
         title="Dari pengajuan warga sampai penjemputan petugas."
       />
-      <div className="reveal-up mt-7 grid gap-px overflow-hidden rounded-[1.7rem] border border-slate-200 bg-slate-200 md:grid-cols-3">
-        {publicServices.map((service) => (
-          <div className="bg-white p-6" key={service.title}>
-            <span className="grid h-10 w-10 place-items-center rounded-full bg-[#e6f7fa] text-[#087f8c]">
-              <AppIcon name={service.icon} />
-            </span>
-            <h3 className="mt-4 font-extrabold">{service.title}</h3>
-            <p className="mt-2 text-sm leading-6 text-slate-500">
-              {service.description}
-            </p>
-          </div>
+      <StaggerContainer className="mt-7 grid gap-px overflow-hidden rounded-[1.7rem] border border-slate-200 bg-slate-200 md:grid-cols-3">
+        {publicServices.map((service, index) => (
+          <StaggerItem className="h-full" index={index} key={service.title}>
+            <div className="h-full bg-white p-6">
+              <span className="grid h-10 w-10 place-items-center rounded-full bg-[#e6f7fa] text-[#087f8c]">
+                <AppIcon name={service.icon} />
+              </span>
+              <h3 className="mt-4 font-extrabold">{service.title}</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-500">
+                {service.description}
+              </p>
+            </div>
+          </StaggerItem>
         ))}
-      </div>
+      </StaggerContainer>
     </section>
   );
 }
@@ -648,7 +657,7 @@ export function ProfessionalServicesSection() {
             title="Mendukung keberlanjutan gerakan tanpa mengaburkan misi sosial."
           />
           <a
-            className="inline-flex w-fit items-center gap-2 rounded-2xl bg-[#159fb3] px-5 py-4 text-sm font-bold text-white"
+            className="inline-flex w-fit items-center gap-2 rounded-2xl bg-[#087f8c] px-5 py-4 text-sm font-bold text-white"
             href="#bantuan"
           >
             Konsultasikan kebutuhan
@@ -710,7 +719,10 @@ export function FeaturedProgramsSection() {
           eyebrow="Program Peduli Pinrang"
           title="Gerakan lingkungan yang bisa tumbuh bersama warga."
         />
-        <Link className="font-bold text-[#087f8c]" to="/profil#program">
+        <Link
+          className="inline-flex min-h-11 items-center font-bold text-[#087f8c]"
+          to="/profil#program"
+        >
           Lihat detail program
         </Link>
       </div>
@@ -725,7 +737,7 @@ export function FeaturedProgramsSection() {
               {program.description}
             </p>
             <Link
-              className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-[#087f8c]"
+              className="mt-5 inline-flex min-h-11 items-center gap-2 text-sm font-bold text-[#087f8c]"
               to={program.href}
             >
               Pelajari
@@ -1018,7 +1030,7 @@ export function FAQSection() {
             title="Jawaban singkat sebelum warga mengajukan permintaan."
           />
           <Link
-            className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-[#159fb3] px-5 py-4 font-bold text-white shadow-[0_10px_24px_rgb(21_159_179/0.24)]"
+            className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-[#087f8c] px-5 py-4 font-bold text-white shadow-[0_10px_24px_rgb(21_159_179/0.24)]"
             to="/pickup/new"
           >
             Ajukan Jemput
@@ -1026,21 +1038,10 @@ export function FAQSection() {
           </Link>
         </div>
         <div className="grid gap-3">
-          {faqItems.map((item, index) => (
-            <details
-              className={`reveal-up reveal-delay-${Math.min(index + 1, 4)} group rounded-[1.3rem] border border-slate-200 bg-white p-5 shadow-[0_10px_35px_rgb(15_23_42/0.05)]`}
-              key={item.question}
-            >
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-extrabold text-slate-950">
-                {item.question}
-                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#e6f7fa] text-[#087f8c] transition group-open:rotate-90">
-                  <AppIcon className="h-4 w-4" name="arrow" />
-                </span>
-              </summary>
-              <p className="mt-4 text-sm leading-7 text-slate-600">
-                {item.answer}
-              </p>
-            </details>
+          {faqItems.map((item) => (
+            <AnimatedAccordion key={item.question} question={item.question}>
+              {item.answer}
+            </AnimatedAccordion>
           ))}
         </div>
       </div>
@@ -1067,7 +1068,7 @@ export function RoleLoginSection() {
               {role.description}
             </p>
             <Link
-              className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-[#087f8c]"
+              className="mt-5 inline-flex min-h-11 items-center gap-2 text-sm font-bold text-[#087f8c]"
               to={role.href}
             >
               Masuk
@@ -1114,7 +1115,7 @@ export function WhatsAppCTASection() {
         <div className="px-8 pb-8 md:px-12 md:pb-12">
           {whatsappUrl ? (
             <a
-              className="inline-flex justify-center rounded-2xl bg-[#159fb3] px-5 py-4 font-bold text-white shadow-[0_10px_24px_rgb(21_159_179/0.24)]"
+              className="inline-flex justify-center rounded-2xl bg-[#087f8c] px-5 py-4 font-bold text-white shadow-[0_10px_24px_rgb(21_159_179/0.24)]"
               href={whatsappUrl}
               rel="noreferrer"
               target="_blank"
@@ -1145,17 +1146,17 @@ export function PublicFooter() {
         <div>
           <p className="text-sm font-extrabold">Peduli Pinrang</p>
           <div className="mt-4 grid gap-2 text-sm text-slate-300">
-            <Link to="/profil">Tentang Kami</Link>
-            <Link to="/profil#program">Program</Link>
-            <Link to="/tickets">Cek Permintaan</Link>
+            <Link className="inline-flex min-h-11 items-center" to="/profil">Tentang Kami</Link>
+            <Link className="inline-flex min-h-11 items-center" to="/profil#program">Program</Link>
+            <Link className="inline-flex min-h-11 items-center" to="/tickets">Cek Permintaan</Link>
           </div>
         </div>
         <div>
           <p className="text-sm font-extrabold">Akses</p>
           <div className="mt-4 grid gap-2 text-sm text-slate-300">
-            <Link to="/pickup/new">Ajukan Jemput</Link>
-            <Link to="/login">Masuk Akun</Link>
-            <a href="#bantuan">Kontak Operator</a>
+            <Link className="inline-flex min-h-11 items-center" to="/pickup/new">Ajukan Jemput</Link>
+            <Link className="inline-flex min-h-11 items-center" to="/auth">Masuk Akun</Link>
+            <a className="inline-flex min-h-11 items-center" href="#bantuan">Kontak Operator</a>
           </div>
         </div>
       </div>

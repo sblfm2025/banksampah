@@ -10,7 +10,7 @@ export function CustomerProfileGuard({ children }: { children: ReactNode }) {
 
   if (loading) return <LoadingState label="Memeriksa profil..." />;
   if (!authenticated) {
-    return <Navigate replace to="/login?next=/pickup/new" />;
+    return <Navigate replace to="/auth?next=/pickup/new" />;
   }
   if (
     isGoogleUser &&

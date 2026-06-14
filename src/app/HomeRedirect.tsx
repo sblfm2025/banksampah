@@ -4,7 +4,7 @@ import { useAuth } from './auth/auth-context';
 export function HomeRedirect() {
   const { user, loading, authenticated } = useAuth();
   if (loading) return null;
-  if (!authenticated) return <Navigate replace to="/login" />;
+  if (!authenticated) return <Navigate replace to="/auth" />;
   return (
     <Navigate
       replace

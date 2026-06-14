@@ -28,7 +28,7 @@ export function AdminOverview() {
   return (
     <div className="space-y-8">
       <section>
-        <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#159fb3]">
+        <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#087f8c]">
           Ringkasan Operasional
         </p>
         <h1 className="mt-2 text-3xl font-bold text-slate-950">

@@ -1,6 +1,7 @@
 import { getApp, getApps, initializeApp } from 'firebase/app';
 import {
   GoogleAuthProvider,
+  createUserWithEmailAndPassword,
   getAuth,
   signInWithEmailAndPassword,
   signInWithPopup,
@@ -59,12 +60,12 @@ export function phoneNumberToLoginEmail(phoneNumber: string): string {
   return `${normalized}@${phoneLoginEmailDomain}`;
 }
 
-function isPhoneLoginEmail(email: string | null): boolean {
-  return Boolean(email?.toLowerCase().endsWith(`@${phoneLoginEmailDomain}`));
-}
-
 export async function loginWithEmail(email: string, password: string) {
   await signInWithEmailAndPassword(auth, email, password);
+}
+
+export async function registerWithEmail(email: string, password: string) {
+  await createUserWithEmailAndPassword(auth, email, password);
 }
 
 export async function loginWithWhatsAppNumber(
@@ -115,10 +116,7 @@ export async function saveCustomerAppProfile(
   if (!firebaseUser) {
     throw new Error('Sesi login tidak tersedia.');
   }
-  const email =
-    firebaseUser.email && !isPhoneLoginEmail(firebaseUser.email)
-      ? firebaseUser.email
-      : undefined;
+  const email = firebaseUser.email ?? undefined;
 
   const reference = doc(db, 'users', firebaseUser.uid);
   const existing = await getDoc(reference);

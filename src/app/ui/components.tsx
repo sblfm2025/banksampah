@@ -44,12 +44,32 @@ export function AppHeader({
   subtitle,
   action,
   back,
+  homeTo = '/',
+  titleAsHeading = true,
+  titleLink = true,
 }: {
   title: string;
   subtitle?: string;
   action?: ReactNode;
   back?: ReactNode;
+  homeTo?: string;
+  titleAsHeading?: boolean;
+  titleLink?: boolean;
 }) {
+  const titleNode = titleAsHeading ? (
+    <h1 className="truncate text-base font-bold">{title}</h1>
+  ) : (
+    <p className="truncate text-base font-bold">{title}</p>
+  );
+  const titleContent = (
+    <>
+      {titleNode}
+      {subtitle && (
+        <p className="truncate text-xs text-slate-500">{subtitle}</p>
+      )}
+    </>
+  );
+
   return (
     <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/95 backdrop-blur">
       <div className="app-container flex min-h-20 items-center justify-between gap-4">
@@ -57,17 +77,18 @@ export function AppHeader({
           {back}
           <Link
             aria-label="Ke beranda"
-            className="shrink-0"
-            to="/"
+            className="grid min-h-12 min-w-12 shrink-0 place-items-center rounded-full"
+            to={homeTo}
           >
             <AppLogo compact />
           </Link>
-          <Link className="min-w-0" to="/">
-            <h1 className="truncate text-base font-bold">{title}</h1>
-            {subtitle && (
-              <p className="truncate text-xs text-slate-500">{subtitle}</p>
-            )}
-          </Link>
+          {titleLink ? (
+            <Link className="min-w-0 py-2" to={homeTo}>
+              {titleContent}
+            </Link>
+          ) : (
+            <div className="min-w-0 py-2">{titleContent}</div>
+          )}
         </div>
         {action}
       </div>
@@ -76,7 +97,7 @@ export function AppHeader({
 }
 
 const navItems = [
-  { to: '/', label: 'Home', icon: 'home' },
+  { to: '/app', label: 'Home', icon: 'home' },
   { to: '/sampahku', label: 'Sampahku', icon: 'leaf' },
   { to: '/tickets', label: 'Permintaan', icon: 'ticket' },
   { to: '/profile', label: 'Profil', icon: 'user' },
@@ -93,7 +114,7 @@ export function BottomNav() {
                 isActive ? 'text-[#087f8c]' : 'text-slate-400'
               }`
             }
-            end={item.to === '/'}
+            end={item.to === '/app'}
             key={item.to}
             to={item.to}
           >
@@ -112,7 +133,7 @@ export function PrimaryButton({
 }: ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
     <button
-      className={`rounded-2xl bg-[#159fb3] px-5 py-3.5 font-bold text-white shadow-[0_10px_24px_rgb(21_159_179/0.24)] transition hover:bg-[#087f8c] disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+      className={`rounded-2xl bg-[#087f8c] px-5 py-3.5 font-bold text-white shadow-[0_10px_24px_rgb(21_159_179/0.24)] transition hover:bg-[#087f8c] disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
       {...props}
     />
   );
@@ -488,7 +509,7 @@ export function LoadingState({ label = 'Memuat data...' }: { label?: string }) {
   return (
     <div className="grid min-h-40 place-items-center text-sm font-medium text-slate-500">
       <div className="text-center">
-        <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-[#bde7ec] border-t-[#159fb3]" />
+        <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-[#bde7ec] border-t-[#087f8c]" />
         <p className="mt-3">{label}</p>
       </div>
     </div>

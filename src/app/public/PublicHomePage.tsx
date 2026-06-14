@@ -24,6 +24,7 @@ import {
   WhatsAppCTASection,
   CommunityFeatureSection,
 } from './landing/LandingSections';
+import { FloatingWhatsApp } from '../ui/FloatingWhatsApp';
 
 export function PublicHomePage() {
   return (
@@ -53,6 +54,7 @@ export function PublicHomePage() {
         <RoleLoginSection />
         <WhatsAppCTASection />
       </main>
+      <FloatingWhatsApp />
       <PublicFooter />
     </>
   );

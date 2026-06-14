@@ -20,11 +20,13 @@ Firebase CLI: `15.18.0`
 ## Hasil Setelah Hardening
 
 - `npm run lint`: PASS.
-- `npm run test`: PASS, 28 file dan 77 test.
+- `npm run test`: PASS, 33 file dan 90 test setelah implementasi V4.
 - `npm run build`: PASS.
 - `npm run test:firebase`: PASS.
 - `npm run test:e2e`: PASS.
-- `npm run check:production`: FAIL secara benar karena konfigurasi akun peran pilot dan service account belum lengkap.
+- `npm run check:production`: FAIL secara benar karena UID Operator/Driver dan
+  credential Admin belum tersedia; Auth export produksi sudah berhasil
+  memverifikasi 1 akun Super Admin.
 
 ## Risiko yang Ditemukan
 
@@ -45,6 +47,10 @@ Firebase CLI: `15.18.0`
 6. Memperketat Firestore rules untuk foto, reason code, catatan lapangan, transisi status, dan audit.
 7. Menstabilkan fixture tanggal laporan dan alur E2E.
 8. Mempertahankan `storage.rules` deny-all untuk dipakai bila Firebase Storage kelak diaktifkan.
+9. Menambahkan UX V4: `/app`, `/auth`, wizard tamu enam langkah, cek status,
+   dashboard warga, animasi ringan, dan lazy route admin/driver.
+10. Mengubah Firebase script ke `npx firebase-tools` agar tidak bergantung CLI
+    global, serta menambah `--write-pilot-uid=true` pada bootstrap akun.
 
 ## Blocker Eksternal Sebelum Pilot
 
@@ -57,6 +63,7 @@ PILOT_OPERATOR_UID=
 PILOT_DRIVER_UID=
 FIREBASE_CLIENT_EMAIL=
 FIREBASE_PRIVATE_KEY=
+# atau GOOGLE_APPLICATION_CREDENTIALS=<path-service-account-di-luar-repo>
 ```
 
 Setelah itu:
@@ -67,7 +74,9 @@ Setelah itu:
 4. Deploy rules, indexes, Storage rules, dan Hosting.
 5. Jalankan checklist pilot lapangan.
 
-Status saat audit ditutup: **kode lolos pengujian dan Super Admin tersedia; akun Operator, Driver, serta verifikasi profil produksi belum siap pilot**.
+Status saat audit ditutup: **kode lolos pengujian, Super Admin tersedia, dan
+Auth export valid; akun Operator, Driver, serta credential Admin untuk
+verifikasi profil produksi belum siap pilot**.
 
 ## Deployment 14 Juni 2026
 

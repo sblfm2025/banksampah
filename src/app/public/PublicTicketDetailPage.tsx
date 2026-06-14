@@ -35,6 +35,7 @@ export function PublicTicketDetailPage() {
   const [loadFailed, setLoadFailed] = useState(false);
   const [retrying, setRetrying] = useState(false);
   const [retryError, setRetryError] = useState('');
+  const whatsappUrl = localTicket ? getDraftWhatsAppUrl(localTicket) : undefined;
 
   useEffect(() => {
     if (!remoteId) return;
@@ -103,8 +104,10 @@ export function PublicTicketDetailPage() {
       />
       <main className="app-container space-y-5 py-7">
         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
-          Permintaan tersimpan aman di perangkat, tetapi belum diterima
-          operator. Kirim ulang saat koneksi internet stabil.
+          Draft tersimpan di perangkat, tetapi belum diterima operator.
+          {authUid
+            ? ' Coba kirim ulang saat koneksi internet stabil.'
+            : ' Kirim melalui WhatsApp atau masuk agar dapat dikirim ke sistem.'}
         </div>
         {retryError && (
           <p className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
@@ -112,16 +115,53 @@ export function PublicTicketDetailPage() {
           </p>
         )}
         <LocalSummary ticket={localTicket} />
-        <PrimaryButton
-          className="w-full"
-          disabled={retrying}
-          onClick={() => void retry(localTicket)}
-        >
-          {retrying ? 'Mengirim...' : 'Coba Kirim Lagi'}
-        </PrimaryButton>
+        {authUid && localTicket.photo ? (
+          <PrimaryButton
+            className="w-full"
+            disabled={retrying}
+            onClick={() => void retry(localTicket)}
+          >
+            {retrying ? 'Mengirim...' : 'Coba Kirim Lagi'}
+          </PrimaryButton>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2">
+            {whatsappUrl && (
+              <a
+                className="rounded-2xl bg-green-600 px-5 py-3.5 text-center font-bold text-white"
+                href={whatsappUrl}
+                rel="noreferrer"
+                target="_blank"
+              >
+                Kirim ke WhatsApp Operator
+              </a>
+            )}
+            <Link
+              className="rounded-2xl border border-[#159fb3] bg-white px-5 py-3.5 text-center font-bold text-[#087f8c]"
+              to={`/auth?next=${encodeURIComponent(`/tickets/${localTicket.id}`)}`}
+            >
+              Masuk / Buat Akun untuk Mengirim
+            </Link>
+          </div>
+        )}
       </main>
     </>
   );
+}
+
+function getDraftWhatsAppUrl(ticket: PublicTicket) {
+  const phone = import.meta.env.VITE_PUBLIC_WHATSAPP_NUMBER as
+    | string
+    | undefined;
+  if (!phone) return undefined;
+  const message = [
+    'Halo Peduli Pinrang, saya ingin mengajukan jemput sampah.',
+    `Nama: ${ticket.customerName ?? '-'}`,
+    `Nomor WA: ${ticket.customerPhoneNumber ?? '-'}`,
+    `Alamat: ${ticket.address}`,
+    `Kode draft perangkat: ${ticket.code}`,
+    'Mohon operator memverifikasi permintaan ini.',
+  ].join('\n');
+  return `https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
 }
 
 function RemoteDetail({ ticket }: { ticket: PickupRequest }) {

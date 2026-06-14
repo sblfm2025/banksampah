@@ -39,7 +39,7 @@ export function DriverPickupsPage() {
   return (
     <div className="space-y-5">
       <div>
-        <p className="text-sm font-bold uppercase tracking-[0.14em] text-[#159fb3]">
+        <p className="text-sm font-bold uppercase tracking-[0.14em] text-[#087f8c]">
           Tugas Hari Ini
         </p>
         <h1 className="mt-1 text-2xl font-bold">Daftar pickup saya</h1>
@@ -128,7 +128,7 @@ export function DriverPickupsPage() {
               </Link>
               {ticket.status === 'ASSIGNED' ? (
                 <button
-                  className="rounded-xl bg-[#159fb3] px-3 py-3 text-sm font-bold text-white disabled:opacity-50"
+                  className="rounded-xl bg-[#087f8c] px-3 py-3 text-sm font-bold text-white disabled:opacity-50"
                   disabled={start.isPending}
                   onClick={() => setPendingStartId(ticket.id)}
                   type="button"
@@ -137,7 +137,7 @@ export function DriverPickupsPage() {
                 </button>
               ) : (
                 <Link
-                  className="rounded-xl bg-[#159fb3] px-3 py-3 text-center text-sm font-bold text-white"
+                  className="rounded-xl bg-[#087f8c] px-3 py-3 text-center text-sm font-bold text-white"
                   to={`/driver/pickups/${ticket.id}`}
                 >
                   Lanjutkan

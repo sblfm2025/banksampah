@@ -14,7 +14,7 @@ production -> peduli-pinrang
 
 ## Status Saat Ini
 
-Pada 13 Juni 2026:
+Pada 14 Juni 2026:
 
 - Firebase CLI login sebagai `maroamabbarakka@gmail.com`.
 - Web App SDK terverifikasi cocok dengan project.
@@ -26,7 +26,8 @@ Pada 13 Juni 2026:
   berstatus `BUILDING` sesaat setelah deployment.
 - Firebase Hosting sudah live di `https://peduli-pinrang.web.app`.
 - Firebase Authentication dan provider Email/Password sudah aktif.
-- Super Admin pertama sudah dibuat; akun driver belum dibuat.
+- Super Admin pertama sudah dibuat dan UID tercatat. Akun Operator dan Driver
+  belum tersedia pada readiness check terakhir.
 - HTML route memakai `no-cache`; asset hash memakai immutable cache.
 - Firebase Storage tidak dipakai karena default bucket baru memerlukan paket
   Blaze, sedangkan project tetap menggunakan paket Spark/free.
@@ -49,8 +50,10 @@ Di Firebase Console project `peduli-pinrang`:
 1. Aktifkan Firebase Authentication dan provider login yang dipakai.
 2. Pantau pemakaian Firestore. Pindahkan media ke object storage saat volume
    operasional sudah melampaui skala pilot.
-3. Buat akun operator dan driver.
-4. Buat dokumen `users/{firebaseAuthUid}` dengan role dan `isActive: true`.
+3. Buat akun Operator dan Driver menggunakan `npm run bootstrap:user` dari
+   `22_AUTH_BOOTSTRAP.md`, atau buat manual di Console.
+4. Pastikan dokumen `users/{firebaseAuthUid}` memiliki role dan
+   `isActive: true`.
 
 Contoh dokumen operator:
 
@@ -72,6 +75,12 @@ npm run test:all
 npm run deploy:rules
 npm run deploy:hosting
 ```
+
+`deploy:hosting` dan `deploy:production` menjalankan
+`npm run check:production` terlebih dahulu. Jika akun pilot atau credential
+Admin belum lengkap, deploy Hosting produksi akan berhenti sebelum build.
+`deploy:rules` tetap dapat dijalankan terpisah untuk memperbaiki rules/indexes
+keamanan sebelum pilot dibuka.
 
 Atau deploy frontend dan rules sekaligus:
 
@@ -104,8 +113,9 @@ Pemeriksaan otomatis:
 npm run check:production
 ```
 
-Perintah akan gagal sampai minimal dua akun Auth tersedia dan mode demo sudah
-dimatikan. Nilai secret tidak dicetak.
+Perintah akan gagal sampai UID `SUPER_ADMIN`, `OPERATOR`, dan `DRIVER`
+terisi, akun Auth ditemukan, dan profil Firestore aktif sesuai role. Nilai
+secret tidak dicetak.
 
 Mode demo sudah dimatikan setelah akun Super Admin dan profil role dibuat:
 
@@ -115,7 +125,8 @@ VITE_USE_DEMO_DATA=false
 
 Kemudian build dan deploy ulang.
 
-Frontend produksi menyediakan login Email/Password pada `/login`, logout, dan
+Frontend produksi menyediakan login Email/Password pada `/auth`, kompatibilitas
+route lama `/login`, logout, dan
 mengirim Firebase ID token sebagai header `Authorization: Bearer ...` ke API.
 Backend deployment wajib memverifikasi token tersebut dengan Firebase Admin
 SDK sebelum meneruskan request ke handler operator atau driver.

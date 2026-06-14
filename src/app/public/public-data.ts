@@ -19,6 +19,11 @@ export interface PublicTicket {
   locationValidationStatus: LocationValidationStatus;
   volume: 'SMALL' | 'MEDIUM' | 'LARGE' | 'OVERSIZED';
   service: 'REGULAR_HOUSEHOLD_PICKUP' | 'ONE_TRIP_TRICYCLE';
+  wasteDescription?: string;
+  wasteTypes?: string[];
+  serviceSource?: string;
+  preferredTime?: string;
+  accessNote?: string;
   notes?: string;
   photo?: string;
   deliveryStatus: 'PENDING_SYNC' | 'SUBMITTED';

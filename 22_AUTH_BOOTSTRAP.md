@@ -15,7 +15,7 @@ Di Firebase Console project `peduli-pinrang`:
 ## 2. Buat Super Admin Pertama
 
 1. Di tab **Users**, buat satu akun Email/Password.
-2. Buka `https://peduli-pinrang.web.app/login` setelah mode demo dimatikan.
+2. Buka `https://peduli-pinrang.web.app/auth` setelah mode demo dimatikan.
 3. Login dengan akun tersebut.
 4. Aplikasi menampilkan path `users/{uid}` jika profil belum tersedia.
 5. Buat dokumen itu melalui Firestore Console:
@@ -41,24 +41,50 @@ npm run bootstrap:user -- `
   --confirm-project=peduli-pinrang `
   --email=admin@example.com `
   --name="Super Admin SampahTa" `
-  --role=SUPER_ADMIN
+  --role=SUPER_ADMIN `
+  --write-pilot-uid=true
 Remove-Item Env:BOOTSTRAP_PASSWORD
 ```
 
 Password tidak boleh diberikan sebagai argumen command karena dapat tersimpan
 pada shell history.
 
+Credential Admin dapat diberikan dengan salah satu cara:
+
+- set `GOOGLE_APPLICATION_CREDENTIALS` ke file service account di luar repo; atau
+- isi `FIREBASE_CLIENT_EMAIL` dan `FIREBASE_PRIVATE_KEY` pada environment
+  proses/`.env.local`.
+
+Jangan commit file service account atau private key.
+
 ## 3. Buat Operator dan Driver
 
-Untuk setiap akun:
+Gunakan script yang sama untuk Operator dan Driver. Flag
+`--write-pilot-uid=true` langsung memperbarui UID role terkait di `.env.local`
+tanpa menyimpan password ke file.
 
-1. Buat user pada Authentication.
-2. Salin UID user.
-3. Buat dokumen `users/{uid}`.
-4. Gunakan role `OPERATOR` atau `DRIVER`.
-5. Set `isActive: true`.
+```powershell
+$env:BOOTSTRAP_PASSWORD = '<password-sementara-kuat>'
+npm run bootstrap:user -- `
+  --confirm-project=peduli-pinrang `
+  --email=operator@example.com `
+  --name="Operator Peduli Pinrang" `
+  --role=OPERATOR `
+  --write-pilot-uid=true
 
-Contoh driver:
+npm run bootstrap:user -- `
+  --confirm-project=peduli-pinrang `
+  --email=driver@example.com `
+  --name="Petugas Jemput Utama" `
+  --role=DRIVER `
+  --write-pilot-uid=true
+Remove-Item Env:BOOTSTRAP_PASSWORD
+```
+
+Untuk login petugas memakai nomor WhatsApp, ganti `--email=...` dengan
+`--phone=08xxxxxxxxxx`. Password tetap dibaca dari environment.
+
+Dokumen driver yang dihasilkan setara dengan:
 
 ```json
 {
@@ -72,6 +98,9 @@ Contoh driver:
 
 Jangan memakai email atau password yang sama untuk beberapa petugas. Menonaktifkan
 akses cukup dengan mengubah `isActive` menjadi `false`.
+
+Jangan menjalankan perintah contoh dengan alamat placeholder. Gunakan identitas
+akun nyata yang telah disetujui pengurus.
 
 ## 4. Aktifkan Mode Produksi
 
@@ -90,6 +119,9 @@ npm run check:production
 npm run test:all
 npm run deploy:production
 ```
+
+Script npm memakai `npx firebase-tools`, sehingga developer tidak perlu
+menginstal Firebase CLI secara global.
 
 ## 5. Verifikasi
 

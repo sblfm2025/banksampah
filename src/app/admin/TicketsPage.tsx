@@ -38,13 +38,13 @@ export function TicketsPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#159fb3]">
+          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#087f8c]">
             Permintaan Masuk
           </p>
           <h1 className="mt-2 text-3xl font-bold">Kelola permintaan pickup</h1>
         </div>
         <Link
-          className="inline-flex justify-center rounded-xl bg-[#159fb3] px-5 py-3 font-bold text-white"
+          className="inline-flex justify-center rounded-xl bg-[#087f8c] px-5 py-3 font-bold text-white"
           to="/admin/tickets/new"
         >
           Buat dari WhatsApp

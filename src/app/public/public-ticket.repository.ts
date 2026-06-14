@@ -1,6 +1,7 @@
 import { getOperationalDate } from '../../shared/utils/date';
 import type { PublicTicket } from './public-data';
 import { compressImage } from '../driver/firestore-proof-media';
+import { parsePickupSnapshot } from '../../client/firestore-pickup';
 
 function volumeToLoad(volume: PublicTicket['volume']) {
   return {
@@ -66,10 +67,10 @@ export async function submitPublicTicket(
     serviceModel: 'gratis',
     volumeLevel: ticket.volume,
     tricycleLoadEstimate: volumeToLoad(ticket.volume),
-    ...(ticket.notes?.trim()
-      ? { wasteDescription: ticket.notes.trim() }
+    ...((ticket.wasteDescription ?? ticket.notes)?.trim()
+      ? { wasteDescription: (ticket.wasteDescription ?? ticket.notes)!.trim() }
       : {}),
-    wasteTypes: [],
+    wasteTypes: ticket.wasteTypes ?? [],
     dataQuality: 'estimated_by_user',
     paymentStatus: 'gratis',
     impactTags: ['pengurangan_sampah'],
@@ -102,11 +103,9 @@ export async function loadCustomerTickets(ownerUid: string) {
   const [
     { collection, getDocs, limit, query, where },
     { db },
-    { parsePickupSnapshot },
   ] = await Promise.all([
     import('firebase/firestore'),
     import('../../client/firebase'),
-    import('../../client/firestore-pickup'),
   ]);
   const snapshot = await getDocs(
     query(
@@ -121,10 +120,9 @@ export async function loadCustomerTickets(ownerUid: string) {
 }
 
 export async function loadCustomerTicket(id: string) {
-  const [{ doc, getDoc }, { db }, { parsePickupSnapshot }] = await Promise.all([
+  const [{ doc, getDoc }, { db }] = await Promise.all([
     import('firebase/firestore'),
     import('../../client/firebase'),
-    import('../../client/firestore-pickup'),
   ]);
   return parsePickupSnapshot(await getDoc(doc(db, 'pickupRequests', id)));
 }

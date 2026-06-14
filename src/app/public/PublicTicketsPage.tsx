@@ -11,7 +11,7 @@ import {
 import { listPublicTickets } from './public-data';
 import { loadCustomerTickets } from './public-ticket.repository';
 
-export function PublicTicketsPage() {
+export function PublicTicketsPage({ embedded = false }: { embedded?: boolean }) {
   const { authUid, user } = useAuth();
   const shouldLoadRemote = Boolean(authUid && user?.role === 'CUSTOMER');
   const localTickets = listPublicTickets();
@@ -43,18 +43,28 @@ export function PublicTicketsPage() {
   const empty = pending.length === 0 && remoteTickets.length === 0;
   return (
     <>
-      <AppHeader
-        subtitle="Pantau permintaan yang sudah diterima operator"
-        title="Permintaan Saya"
-      />
+      {!embedded && (
+        <AppHeader
+          subtitle="Pantau permintaan yang sudah diterima operator"
+          title="Permintaan Saya"
+        />
+      )}
       <main className="app-container py-7">
+        {embedded && (
+          <div className="mb-5">
+            <h2 className="text-2xl font-extrabold">Permintaan Saya</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Riwayat draft dan permintaan yang sudah dikirim.
+            </p>
+          </div>
+        )}
         {loading ? (
           <LoadingState label="Memuat permintaan..." />
         ) : empty ? (
           <EmptyState
             action={
               <Link
-                className="inline-flex rounded-2xl bg-[#159fb3] px-5 py-3 font-bold text-white"
+                className="inline-flex rounded-2xl bg-[#087f8c] px-5 py-3 font-bold text-white"
                 to="/pickup/new"
               >
                 Ajukan Jemput

@@ -1,60 +1,68 @@
 import { useState, type FormEvent } from 'react';
-import { Link, Navigate, useSearchParams } from 'react-router-dom';
+import { Link, Navigate, useLocation, useSearchParams } from 'react-router-dom';
 import { isCustomerProfileComplete } from '../../shared/schemas/user.schema';
-import { AppIcon, AppLogo, ErrorState, PrimaryButton } from '../ui/components';
+import { AppLogo, ErrorState, PrimaryButton } from '../ui/components';
 import { useAuth } from './auth-context';
+import {
+  detectIdentifierType,
+  getDefaultRouteByRole,
+  normalizeIndonesianWhatsApp,
+  type AuthIdentifierType,
+} from './auth-utils';
 
-type LoginPanel = 'citizen' | 'staff';
+type AuthStep = 'identifier' | 'choice' | 'password' | 'register';
 
 export function LoginPage() {
+  const location = useLocation();
   const [searchParams] = useSearchParams();
+  const staffMode =
+    location.pathname === '/auth/staff' ||
+    ['operator', 'driver', 'admin'].includes(searchParams.get('role') ?? '');
   const requestedNext = searchParams.get('next');
-  const roleHint = searchParams.get('role');
-  const initialPanel: LoginPanel =
-    roleHint === 'operator' || roleHint === 'driver' || roleHint === 'admin'
-      ? 'staff'
-      : 'citizen';
   const customerDestination =
     requestedNext?.startsWith('/') && !requestedNext.startsWith('//')
       ? requestedNext
-      : '/';
+      : '/warga/dashboard';
   const {
     authenticated,
     authUid,
     loading,
     login,
-    loginWithWhatsApp,
     loginWithGoogle,
+    loginWithWhatsApp,
     logout,
     profileMissing,
-    isGoogleUser,
+    registerWithEmail,
     user,
   } = useAuth();
+  const [step, setStep] = useState<AuthStep>('identifier');
+  const [identifier, setIdentifier] = useState('');
+  const [identifierType, setIdentifierType] =
+    useState<AuthIdentifierType>('invalid');
   const [error, setError] = useState('');
-  const [activePanel, setActivePanel] = useState<LoginPanel>(initialPanel);
   const whatsappUrl = getWhatsAppUrl();
 
   if (user) {
-    if (user.role === 'CUSTOMER') {
+    if (user.role === 'CUSTOMER' && !isCustomerProfileComplete(user)) {
       return (
         <Navigate
           replace
-          to={
-            isCustomerProfileComplete(user)
-              ? customerDestination
-              : `/profile?onboarding=1&next=${encodeURIComponent(customerDestination)}`
-          }
+          to={`/profile?onboarding=1&next=${encodeURIComponent(customerDestination)}`}
         />
       );
     }
     return (
       <Navigate
         replace
-        to={user.role === 'DRIVER' ? '/driver/pickups' : '/admin'}
+        to={
+          user.role === 'CUSTOMER'
+            ? customerDestination
+            : getDefaultRouteByRole(user.role)
+        }
       />
     );
   }
-  if (authenticated && profileMissing && isGoogleUser) {
+  if (authenticated && profileMissing && !staffMode) {
     return (
       <Navigate
         replace
@@ -63,40 +71,63 @@ export function LoginPage() {
     );
   }
 
-  async function submitStaff(event: FormEvent<HTMLFormElement>) {
+  function continueIdentifier(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError('');
-    const data = new FormData(event.currentTarget);
-    try {
-      await login(String(data.get('email')), String(data.get('password')));
-    } catch {
-      setError('Email atau password tidak valid.');
-    }
-  }
-
-  async function submitCitizenEmail(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError('');
-    const data = new FormData(event.currentTarget);
-    try {
-      await login(String(data.get('email')), String(data.get('password')));
-    } catch {
-      setError('Email atau password tidak valid.');
-    }
-  }
-
-  async function submitCitizenWhatsApp(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError('');
-    const data = new FormData(event.currentTarget);
-    try {
-      await loginWithWhatsApp(
-        String(data.get('phoneNumber')),
-        String(data.get('password')),
+    const type = detectIdentifierType(identifier);
+    if (type === 'invalid') {
+      setError(
+        'Masukkan email atau nomor WhatsApp yang benar, misalnya nama@email.com atau 0812xxxx.',
       );
+      return;
+    }
+    setIdentifierType(type);
+    setIdentifier(
+      type === 'whatsapp'
+        ? normalizeIndonesianWhatsApp(identifier)
+        : identifier.trim().toLowerCase(),
+    );
+    setStep(staffMode ? 'password' : 'choice');
+  }
+
+  async function submitPassword(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError('');
+    const password = String(new FormData(event.currentTarget).get('password'));
+    try {
+      if (identifierType === 'whatsapp') {
+        await loginWithWhatsApp(identifier, password);
+      } else {
+        await login(identifier, password);
+      }
     } catch {
       setError(
-        'Nomor WhatsApp atau password tidak valid. Pastikan akun sudah dibuat oleh operator.',
+        staffMode
+          ? 'Akun atau password tidak cocok. Hubungi admin bila akses staff belum dibuat.'
+          : 'Akun atau password tidak cocok. Anda dapat mencoba lagi, daftar sebagai warga, atau lanjut tanpa akun.',
+      );
+    }
+  }
+
+  async function submitRegistration(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError('');
+    const data = new FormData(event.currentTarget);
+    const password = String(data.get('password'));
+    const confirmation = String(data.get('confirmation'));
+    if (password.length < 8) {
+      setError('Password minimal 8 karakter.');
+      return;
+    }
+    if (password !== confirmation) {
+      setError('Konfirmasi password belum sama.');
+      return;
+    }
+    try {
+      await registerWithEmail(identifier, password);
+    } catch {
+      setError(
+        'Akun belum dapat dibuat. Email mungkin sudah terdaftar atau koneksi sedang bermasalah.',
       );
     }
   }
@@ -106,94 +137,60 @@ export function LoginPage() {
     try {
       await loginWithGoogle();
     } catch {
-      setError(
-        'Login Google belum berhasil. Pastikan popup diizinkan dan akun Google aktif.',
-      );
+      setError('Login Google belum berhasil. Pastikan popup diizinkan.');
     }
   }
 
   return (
-    <main className="grid min-h-screen bg-white lg:grid-cols-[0.95fr_1.05fr]">
-      <section className="brand-grid hidden overflow-hidden p-12 text-white lg:flex lg:flex-col">
+    <main className="grid min-h-screen bg-white lg:grid-cols-[0.9fr_1.1fr]">
+      <section className="brand-grid hidden p-12 text-white lg:flex lg:flex-col">
         <AppLogo inverse />
         <div className="my-auto max-w-xl">
           <p className="text-sm font-bold uppercase tracking-[0.18em] text-cyan-100">
-            Portal operasional
+            {staffMode ? 'Akses operasional' : 'Akun Peduli Pinrang'}
           </p>
-          <h1 className="mt-5 text-5xl font-extrabold leading-tight">
-            Jemput sampah lebih tertata untuk Pinrang.
-          </h1>
+          <h2 className="mt-5 text-5xl font-extrabold leading-tight">
+            {staffMode
+              ? 'Masuk untuk melanjutkan pekerjaan layanan.'
+              : 'Satu pintu masuk untuk layanan warga.'}
+          </h2>
           <p className="mt-5 leading-8 text-cyan-50">
-            Verifikasi permintaan, atur jadwal, dan bantu petugas
-            menyelesaikan penjemputan dari satu dashboard.
+            Sistem mengenali email atau nomor WhatsApp secara otomatis. Warga
+            tetap dapat mengajukan jemput tanpa akun.
           </p>
-          <div className="mt-8 grid max-w-md gap-3">
-            {[
-              'Warga masuk dengan WA, email, atau Google lalu melengkapi profil.',
-              'Operator meninjau pengajuan dan mengatur jadwal.',
-              'Petugas melihat alamat, kontak, dan foto warga.',
-            ].map((item) => (
-              <p
-                className="flex items-start gap-3 rounded-2xl bg-white/10 p-3 text-sm leading-6 text-cyan-50"
-                key={item}
-              >
-                <AppIcon className="mt-0.5 h-4 w-4 shrink-0" name="check" />
-                <span>{item}</span>
-              </p>
-            ))}
-          </div>
         </div>
         <p className="text-xs text-cyan-100">
           Yayasan Masyarakat Peduli Pinrang
         </p>
       </section>
-      <section className="grid place-items-center bg-[#f8fafc] px-4 py-10">
-        <div className="w-full max-w-md rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_20px_60px_rgb(15_23_42/0.08)] sm:p-8">
-          <div className="mb-8 lg:hidden">
-            <AppLogo />
-          </div>
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#159fb3]">
-            Selamat datang
-          </p>
-          <h1 className="mt-2 text-3xl font-extrabold">Masuk ke akun</h1>
-          <p className="mt-2 text-sm leading-6 text-slate-500">
-            Pilih akses sesuai kebutuhan. Warga bisa masuk cepat, petugas tetap
-            memakai akun operasional yang terdaftar.
-          </p>
 
-          <div className="mt-7 grid grid-cols-2 rounded-2xl bg-slate-100 p-1">
-            <button
-              className={`rounded-xl px-4 py-3 text-sm font-extrabold transition ${
-                activePanel === 'citizen'
-                  ? 'bg-white text-[#087f8c] shadow-sm'
-                  : 'text-slate-500'
-              }`}
-              onClick={() => setActivePanel('citizen')}
-              type="button"
-            >
-              Warga
-            </button>
-            <button
-              className={`rounded-xl px-4 py-3 text-sm font-extrabold transition ${
-                activePanel === 'staff'
-                  ? 'bg-white text-[#087f8c] shadow-sm'
-                  : 'text-slate-500'
-              }`}
-              onClick={() => setActivePanel('staff')}
-              type="button"
-            >
-              Petugas
-            </button>
-          </div>
+      <section className="grid place-items-center bg-slate-50 px-4 py-10">
+        <div className="w-full max-w-md rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_20px_60px_rgb(15_23_42/0.08)] sm:p-8">
+          <div className="mb-7 lg:hidden"><AppLogo /></div>
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#087f8c]">
+            {staffMode ? 'Khusus staff terdaftar' : 'Selamat datang'}
+          </p>
+          <h1 className="mt-2 text-3xl font-extrabold">
+            {step === 'register'
+              ? 'Daftar sebagai Warga'
+              : staffMode
+                ? 'Masuk Petugas / Operator'
+                : 'Masuk atau Daftar'}
+          </h1>
+          <p className="mt-2 text-base leading-7 text-slate-500">
+            {step === 'identifier'
+              ? 'Masukkan email atau nomor WhatsApp. Sistem akan menyesuaikan otomatis.'
+              : step === 'register'
+                ? 'Buat akun email, lalu lengkapi nama, WhatsApp, dan alamat layanan.'
+                : step === 'choice'
+                  ? `Pilih cara melanjutkan dengan ${identifierType === 'email' ? 'email' : 'nomor WhatsApp'} ${identifier}.`
+                  : `Lanjutkan dengan ${identifierType === 'email' ? 'email' : 'nomor WhatsApp'} ${identifier}.`}
+          </p>
 
           {profileMissing && authenticated && (
             <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-              Login berhasil, tetapi profil dan role akun belum dibuat.
-              {authUid && (
-                <code className="mt-3 block break-all rounded-xl bg-white p-3 text-xs">
-                  users/{authUid}
-                </code>
-              )}
+              Akun sudah login, tetapi profil belum lengkap.
+              {authUid && <code className="mt-2 block break-all">users/{authUid}</code>}
               <button
                 className="mt-3 font-bold underline"
                 onClick={() => void logout()}
@@ -205,212 +202,203 @@ export function LoginPage() {
           )}
           {error && <div className="mt-5"><ErrorState message={error} /></div>}
 
-          {activePanel === 'citizen' ? (
-            <section className="mt-6 space-y-4">
-              <form
-                className="rounded-2xl border border-slate-200 bg-white p-4"
-                onSubmit={submitCitizenWhatsApp}
-              >
-                <div className="flex items-start gap-3">
-                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#e6f7fa] text-[#087f8c]">
-                    <AppIcon name="phone" />
-                  </span>
-                  <div>
-                    <h2 className="font-extrabold">Masuk dengan WhatsApp</h2>
-                    <p className="mt-1 text-sm leading-6 text-slate-500">
-                      Untuk warga yang dibuatkan akun tanpa email. Nomor WA
-                      tetap menjadi kontak utama layanan.
-                    </p>
-                  </div>
-                </div>
-                <div className="mt-4 grid gap-3">
-                  <Field
-                    autoComplete="tel"
-                    label="Nomor WhatsApp"
-                    name="phoneNumber"
-                    placeholder="0812..."
-                    type="tel"
-                  />
-                  <Field
-                    autoComplete="current-password"
-                    label="Password"
-                    name="password"
-                    type="password"
-                  />
-                  <PrimaryButton disabled={loading} type="submit">
-                    {loading ? 'Memeriksa akun...' : 'Masuk dengan WA'}
-                  </PrimaryButton>
-                </div>
-              </form>
+          {step === 'identifier' && (
+            <form className="mt-7 space-y-4" onSubmit={continueIdentifier}>
+              <Field
+                autoComplete="username"
+                label="Email atau Nomor WhatsApp"
+                onChange={(event) => setIdentifier(event.target.value)}
+                placeholder="nama@email.com atau 0812..."
+                value={identifier}
+              />
+              <PrimaryButton className="min-h-12 w-full" type="submit">
+                Lanjutkan
+              </PrimaryButton>
+              {!staffMode && (
+                <button
+                  className="min-h-12 w-full text-sm font-bold text-[#087f8c]"
+                  onClick={() => void googleLogin()}
+                  type="button"
+                >
+                  Lanjutkan dengan Google
+                </button>
+              )}
+            </form>
+          )}
 
-              <div className="flex items-center gap-3">
-                <span className="h-px flex-1 bg-slate-200" />
-                <span className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
-                  atau
-                </span>
-                <span className="h-px flex-1 bg-slate-200" />
-              </div>
-
-              <form
-                className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
-                onSubmit={submitCitizenEmail}
-              >
-                <h2 className="font-extrabold">Masuk dengan email</h2>
-                <p className="mt-1 text-sm leading-6 text-slate-500">
-                  Bisa memakai email pribadi atau email dummy internal yang
-                  dibuatkan operator.
-                </p>
-                <div className="mt-4 grid gap-3">
-                  <Field autoComplete="email" label="Email" name="email" type="email" />
-                  <Field
-                    autoComplete="current-password"
-                    label="Password"
-                    name="password"
-                    type="password"
-                  />
-                  <button
-                    className="rounded-2xl border border-[#159fb3] bg-white px-5 py-3.5 font-bold text-[#087f8c] transition hover:bg-[#e6f7fa] disabled:opacity-50"
-                    disabled={loading}
-                    type="submit"
-                  >
-                    Masuk dengan email
-                  </button>
-                </div>
-              </form>
-
-              <div className="flex items-center gap-3">
-                <span className="h-px flex-1 bg-slate-200" />
-                <span className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
-                  atau Google
-                </span>
-                <span className="h-px flex-1 bg-slate-200" />
-              </div>
-
-              <button
-                className="flex w-full items-center justify-center gap-3 rounded-2xl border border-slate-300 bg-white px-4 py-3.5 font-bold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-60"
-                disabled={loading}
-                onClick={() => void googleLogin()}
+          {step === 'choice' && (
+            <div className="mt-7 grid gap-3">
+              <PrimaryButton
+                className="min-h-12 w-full"
+                onClick={() => setStep('password')}
                 type="button"
               >
-                <GoogleMark />
-                Lanjutkan dengan Google
-              </button>
-              <div className="rounded-2xl border border-[#bde7ec] bg-[#f4fbfc] p-4">
-                <div className="flex items-start gap-3">
-                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-white text-[#087f8c]">
-                    <AppIcon name="phone" />
-                  </span>
-                  <div>
-                    <h2 className="font-extrabold">
-                      Belum punya email? Bisa dibantu via WhatsApp.
-                    </h2>
-                    <p className="mt-1 text-sm leading-6 text-slate-600">
-                      Warga yang belum terbiasa memakai email dapat meminta
-                      bantuan operator untuk pendaftaran dan pengisian profil.
-                    </p>
-                  </div>
-                </div>
-                {whatsappUrl ? (
+                Masuk dengan Password
+              </PrimaryButton>
+              {identifierType === 'email' ? (
+                <button
+                  className="min-h-12 rounded-2xl border border-[#159fb3] px-4 font-bold text-[#087f8c]"
+                  onClick={() => {
+                    setStep('register');
+                    setError('');
+                  }}
+                  type="button"
+                >
+                  Daftar sebagai Warga
+                </button>
+              ) : (
+                whatsappUrl && (
                   <a
-                    className="mt-4 inline-flex w-full justify-center rounded-2xl bg-green-600 px-4 py-3 font-bold text-white"
+                    className="grid min-h-12 place-items-center rounded-2xl border border-green-600 px-4 text-center font-bold text-green-700"
                     href={whatsappUrl}
                     rel="noreferrer"
                     target="_blank"
                   >
-                    Daftar dibantu via WhatsApp
+                    Minta Bantuan Daftar via WhatsApp
                   </a>
-                ) : (
-                  <p className="mt-4 rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-500">
-                    Nomor WhatsApp publik belum dikonfigurasi.
-                  </p>
-                )}
-              </div>
-            </section>
-          ) : (
-            <section className="mt-6">
-              <form
-                className="space-y-4"
-                hidden={profileMissing && authenticated}
-                onSubmit={submitStaff}
+                )
+              )}
+              <Link
+                className="grid min-h-12 place-items-center text-center text-sm font-bold text-slate-600"
+                to="/pickup/new"
               >
-                <Field autoComplete="email" label="Email" name="email" type="email" />
-                <Field
-                  autoComplete="current-password"
-                  label="Password"
-                  name="password"
-                  type="password"
-                />
-                <div className="flex items-center justify-between gap-3 text-sm">
-                  <span className="text-slate-500">Akun khusus operator dan petugas.</span>
-                  {whatsappUrl ? (
-                    <a
-                      className="font-bold text-[#087f8c]"
-                      href={whatsappUrl}
-                      rel="noreferrer"
-                      target="_blank"
-                    >
-                      Lupa password?
-                    </a>
-                  ) : (
-                    <span className="font-bold text-slate-400">
-                      Lupa password?
-                    </span>
-                  )}
-                </div>
-                <PrimaryButton className="mt-2 w-full" disabled={loading} type="submit">
-                  {loading ? 'Memeriksa akun...' : 'Masuk sebagai petugas'}
-                </PrimaryButton>
-              </form>
-            </section>
+                Lanjutkan tanpa akun
+              </Link>
+              <button
+                className="min-h-12 w-full text-sm font-bold text-slate-500"
+                onClick={() => {
+                  setStep('identifier');
+                  setError('');
+                }}
+                type="button"
+              >
+                Ganti email atau nomor
+              </button>
+            </div>
           )}
-          <Link
-            className="mt-6 block text-center text-sm font-bold text-[#087f8c]"
-            to="/"
-          >
-            Kembali ke halaman warga
-          </Link>
+
+          {step === 'password' && (
+            <form className="mt-7 space-y-4" onSubmit={submitPassword}>
+              <Field
+                autoComplete="current-password"
+                label="Password"
+                name="password"
+                type="password"
+              />
+              <PrimaryButton
+                className="min-h-12 w-full"
+                disabled={loading}
+                type="submit"
+              >
+                {loading ? 'Memeriksa akun...' : 'Masuk'}
+              </PrimaryButton>
+              <button
+                className="min-h-12 w-full text-sm font-bold text-slate-500"
+                onClick={() => {
+                  setStep(staffMode ? 'identifier' : 'choice');
+                  setError('');
+                }}
+                type="button"
+              >
+                Ganti email atau nomor
+              </button>
+              {!staffMode && (
+                <div className="grid gap-3 border-t border-slate-100 pt-4">
+                  {identifierType === 'email' ? (
+                    <button
+                      className="min-h-12 rounded-2xl border border-[#159fb3] px-4 font-bold text-[#087f8c]"
+                      onClick={() => {
+                        setStep('register');
+                        setError('');
+                      }}
+                      type="button"
+                    >
+                      Daftar sebagai Warga
+                    </button>
+                  ) : (
+                    whatsappUrl && (
+                      <a
+                        className="grid min-h-12 place-items-center rounded-2xl border border-green-600 px-4 text-center font-bold text-green-700"
+                        href={whatsappUrl}
+                        rel="noreferrer"
+                        target="_blank"
+                      >
+                        Minta Bantuan Daftar via WhatsApp
+                      </a>
+                    )
+                  )}
+                  <Link
+                    className="grid min-h-12 place-items-center text-center text-sm font-bold text-slate-600"
+                    to="/pickup/new"
+                  >
+                    Lanjutkan tanpa akun
+                  </Link>
+                </div>
+              )}
+            </form>
+          )}
+
+          {step === 'register' && (
+            <form className="mt-7 space-y-4" onSubmit={submitRegistration}>
+              <div className="rounded-2xl bg-[#e6f7fa] p-4 text-sm text-[#075e68]">
+                Email akun: <strong>{identifier}</strong>
+              </div>
+              <Field
+                autoComplete="new-password"
+                label="Buat password"
+                name="password"
+                type="password"
+              />
+              <Field
+                autoComplete="new-password"
+                label="Ulangi password"
+                name="confirmation"
+                type="password"
+              />
+              <PrimaryButton
+                className="min-h-12 w-full"
+                disabled={loading}
+                type="submit"
+              >
+                {loading ? 'Membuat akun...' : 'Buat Akun Warga'}
+              </PrimaryButton>
+              <button
+                className="min-h-12 w-full text-sm font-bold text-slate-500"
+                onClick={() => setStep('choice')}
+                type="button"
+              >
+                Kembali
+              </button>
+            </form>
+          )}
+
+          <div className="mt-6 border-t border-slate-100 pt-5 text-center">
+            {!staffMode ? (
+              <Link
+                className="inline-flex min-h-12 items-center text-sm font-bold text-slate-500"
+                to="/auth/staff"
+              >
+                Masuk sebagai petugas/operator
+              </Link>
+            ) : (
+              <Link
+                className="inline-flex min-h-12 items-center text-sm font-bold text-[#087f8c]"
+                to="/auth"
+              >
+                Kembali ke akses warga
+              </Link>
+            )}
+            <Link
+              className="mx-auto mt-2 inline-flex min-h-12 items-center text-sm font-bold text-[#087f8c]"
+              to="/app"
+            >
+              Kembali ke Pusat Layanan
+            </Link>
+          </div>
         </div>
       </section>
     </main>
   );
-}
-
-function GoogleMark() {
-  return (
-    <svg aria-hidden className="h-5 w-5" viewBox="0 0 24 24">
-      <path
-        d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.9h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.7 3-4.3 3-7.4Z"
-        fill="#4285F4"
-      />
-      <path
-        d="M12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.5c-.9.6-2 1-3.4 1a5.8 5.8 0 0 1-5.5-4H3.2v2.6A10 10 0 0 0 12 22Z"
-        fill="#34A853"
-      />
-      <path
-        d="M6.5 14.1a6 6 0 0 1 0-4.2V7.3H3.2a10 10 0 0 0 0 9.4l3.3-2.6Z"
-        fill="#FBBC05"
-      />
-      <path
-        d="M12 5.9c1.5 0 2.8.5 3.8 1.5l2.9-2.8A9.7 9.7 0 0 0 3.2 7.3l3.3 2.6a5.8 5.8 0 0 1 5.5-4Z"
-        fill="#EA4335"
-      />
-    </svg>
-  );
-}
-
-function getWhatsAppUrl() {
-  const phone = import.meta.env.VITE_PUBLIC_WHATSAPP_NUMBER as
-    | string
-    | undefined;
-  const message =
-    (import.meta.env.VITE_PUBLIC_WHATSAPP_MESSAGE as string | undefined) ??
-    'Halo Peduli Pinrang, saya ingin dibantu mendaftar atau masuk ke aplikasi Jemput Sampah.';
-
-  if (!phone) {
-    return undefined;
-  }
-
-  return `https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
 }
 
 function Field({
@@ -418,14 +406,23 @@ function Field({
   ...props
 }: React.InputHTMLAttributes<HTMLInputElement> & { label: string }) {
   return (
-    <label className="block text-sm font-bold">
+    <label className="block text-base font-bold">
       {label}
       <input
-        className="mt-2 w-full rounded-2xl border border-[#d9e2e7] bg-white p-3.5 outline-none focus:border-[#159fb3]"
-        minLength={props.type === 'password' ? 6 : undefined}
+        className="mt-2 min-h-12 w-full rounded-2xl border border-[#d9e2e7] bg-white px-4 py-3 text-base outline-none focus:border-[#159fb3]"
         required
         {...props}
       />
     </label>
   );
+}
+
+function getWhatsAppUrl() {
+  const phone = import.meta.env.VITE_PUBLIC_WHATSAPP_NUMBER as
+    | string
+    | undefined;
+  if (!phone) return undefined;
+  const message =
+    'Halo Peduli Pinrang, saya ingin dibantu membuat atau memulihkan akun warga.';
+  return `https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
 }

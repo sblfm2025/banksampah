@@ -23,6 +23,9 @@ describe('public ticket draft', () => {
       locationValidationStatus: 'NEEDS_OPERATOR_REVIEW',
       volume: 'MEDIUM',
       service: 'REGULAR_HOUSEHOLD_PICKUP',
+      wasteDescription: 'Plastik dan kardus rumah tangga',
+      wasteTypes: ['plastik', 'kertas'],
+      preferredTime: '2026-06-15T09:00',
       notes: 'Rumah pagar hijau',
     });
 
@@ -32,6 +35,7 @@ describe('public ticket draft', () => {
     expect(getPublicTicket(ticket.id)?.address).toContain('Pinrang');
     expect(ticket.customerName).toBe('Andi');
     expect(ticket.customerPhoneNumber).toBe('6281234567890');
+    expect(ticket.wasteTypes).toEqual(['plastik', 'kertas']);
     expect(getPublicProfile()).toMatchObject({
       fullName: 'Andi',
       phoneNumber: '6281234567890',

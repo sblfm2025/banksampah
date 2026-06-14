@@ -20,7 +20,7 @@ export function RoleGuard({
     );
   }
 
-  if (!authenticated) return <Navigate replace to="/login" />;
+  if (!authenticated) return <Navigate replace to="/auth" />;
 
   if (!user || profileMissing || !user.isActive || !roles.includes(user.role)) {
     return (
