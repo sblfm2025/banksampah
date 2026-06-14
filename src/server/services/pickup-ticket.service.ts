@@ -10,11 +10,13 @@ import {
   createPickupRequestInputSchema,
   schedulePickupInputSchema,
   updatePickupIntakeInputSchema,
+  updatePickupImpactInputSchema,
   updatePickupStatusInputSchema,
   type AssignDriverInput,
   type CreatePickupRequestInput,
   type SchedulePickupInput,
   type UpdatePickupIntakeInput,
+  type UpdatePickupImpactInput,
   type UpdatePickupStatusInput,
 } from '../../shared/schemas/pickup-input.schema';
 import type { PickupRequest } from '../../shared/schemas/pickup.schema';
@@ -438,6 +440,73 @@ export class PickupTicketService {
         entityId: id,
         before: { status: currentStatus },
         after: { status: input.status, notes: input.notes },
+        createdAt: timestamp,
+      });
+    });
+
+    return this.getById(id);
+  }
+
+  async updateImpact(
+    id: string,
+    rawInput: UpdatePickupImpactInput,
+    actor: AuditActor,
+    now = new Date(),
+  ): Promise<PickupRequest> {
+    const input = updatePickupImpactInputSchema.parse(rawInput);
+    const reference = this.db.collection(COLLECTIONS.pickupRequests).doc(id);
+
+    await this.db.runTransaction(async (transaction) => {
+      const snapshot = await transaction.get(reference);
+      if (!snapshot.exists) {
+        throw new ServiceError('NOT_FOUND', 'Permintaan tidak ditemukan.');
+      }
+
+      const timestamp = Timestamp.fromDate(now);
+      const auditReference = this.db.collection(COLLECTIONS.auditLogs).doc();
+      const updates: DocumentData = {
+        ...input,
+        updatedAt: timestamp,
+      };
+      for (const field of [
+        'estimatedWeightKg',
+        'finalWeightKg',
+        'partnerDestination',
+        'serviceFee',
+        'operationalCost',
+        'paidAmount',
+      ] as const) {
+        if (input[field] === undefined) {
+          updates[field] = FieldValue.delete();
+        }
+      }
+      const trackedFields = [
+        'serviceCategory',
+        'serviceModel',
+        'wasteTypes',
+        'estimatedWeightKg',
+        'finalWeightKg',
+        'dataQuality',
+        'partnerDestination',
+        'serviceFee',
+        'operationalCost',
+        'paidAmount',
+        'paymentStatus',
+        'impactTags',
+      ];
+      const before = Object.fromEntries(
+        trackedFields.map((field) => [field, snapshot.get(field)]),
+      );
+
+      transaction.update(reference, updates);
+      transaction.set(auditReference, {
+        actorId: actor.id,
+        actorRole: actor.role,
+        action: 'PICKUP_IMPACT_UPDATED',
+        entityType: 'PICKUP_REQUEST',
+        entityId: id,
+        before,
+        after: input,
         createdAt: timestamp,
       });
     });

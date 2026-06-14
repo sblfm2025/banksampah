@@ -3,6 +3,19 @@ import { useState, type FormEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { DISTRICT_LABELS } from '../../shared/constants/districts';
 import { SERVICE_TYPE_LABELS } from '../../shared/constants/services';
+import {
+  DATA_QUALITY_LABELS,
+  IMPACT_TAGS,
+  IMPACT_TAG_LABELS,
+  PARTNER_DESTINATIONS,
+  PARTNER_DESTINATION_LABELS,
+  PAYMENT_STATUSES,
+  PAYMENT_STATUS_LABELS,
+  SERVICE_CATEGORIES,
+  SERVICE_CATEGORY_LABELS,
+  SERVICE_MODELS,
+  SERVICE_MODEL_LABELS,
+} from '../../shared/constants/service-impact';
 import type { PickupRequest } from '../../shared/schemas/pickup.schema';
 import { operatorRepository } from './operator.repository';
 import { StatusBadge } from './StatusBadge';
@@ -69,6 +82,11 @@ export function TicketDetailPage() {
       operatorRepository.assignDriver(id!, input),
     onSuccess: refresh,
   });
+  const impactMutation = useMutation({
+    mutationFn: (input: Parameters<typeof operatorRepository.updateImpact>[1]) =>
+      operatorRepository.updateImpact(id!, input),
+    onSuccess: refresh,
+  });
 
   if (ticket.isLoading) {
     return <p className="text-slate-500">Memuat detail permintaan...</p>;
@@ -83,7 +101,10 @@ export function TicketDetailPage() {
 
   const data = ticket.data;
   const mutationError =
-    statusMutation.error ?? scheduleMutation.error ?? assignMutation.error;
+    statusMutation.error ??
+    scheduleMutation.error ??
+    assignMutation.error ??
+    impactMutation.error;
 
   return (
     <div className="space-y-6">
@@ -282,6 +303,12 @@ export function TicketDetailPage() {
               ]}
             />
           </InfoSection>
+
+          <ImpactForm
+            disabled={impactMutation.isPending}
+            ticket={data}
+            onSubmit={(input) => impactMutation.mutate(input)}
+          />
 
           {(data.status === 'NEW' ||
             data.status === 'NEEDS_OPERATOR_REVIEW') && (
@@ -608,6 +635,234 @@ function AssignForm({
         Tugaskan Petugas
       </button>
     </form>
+  );
+}
+
+function ImpactForm({
+  disabled,
+  ticket,
+  onSubmit,
+}: {
+  disabled: boolean;
+  ticket: PickupRequest;
+  onSubmit: (
+    input: Parameters<typeof operatorRepository.updateImpact>[1],
+  ) => void;
+}) {
+  function optionalNumber(data: FormData, key: string) {
+    const value = String(data.get(key) ?? '').trim();
+    return value === '' ? undefined : Number(value);
+  }
+
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    onSubmit({
+      serviceCategory: String(data.get('serviceCategory')) as NonNullable<
+        PickupRequest['serviceCategory']
+      >,
+      serviceModel: String(data.get('serviceModel')) as NonNullable<
+        PickupRequest['serviceModel']
+      >,
+      wasteTypes: String(data.get('wasteTypes') ?? '')
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean),
+      estimatedWeightKg: optionalNumber(data, 'estimatedWeightKg'),
+      finalWeightKg: optionalNumber(data, 'finalWeightKg'),
+      dataQuality: String(data.get('dataQuality')) as NonNullable<
+        PickupRequest['dataQuality']
+      >,
+      partnerDestination:
+        (String(data.get('partnerDestination') ?? '') as NonNullable<
+          PickupRequest['partnerDestination']
+        >) || undefined,
+      serviceFee: optionalNumber(data, 'serviceFee'),
+      operationalCost: optionalNumber(data, 'operationalCost'),
+      paidAmount: optionalNumber(data, 'paidAmount'),
+      paymentStatus: String(data.get('paymentStatus')) as NonNullable<
+        PickupRequest['paymentStatus']
+      >,
+      impactTags: data.getAll('impactTags') as NonNullable<
+        PickupRequest['impactTags']
+      >,
+    });
+  }
+
+  return (
+    <form
+      className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+      onSubmit={submit}
+    >
+      <h2 className="font-bold">Klasifikasi & Dampak</h2>
+      <p className="mt-1 text-xs leading-5 text-slate-500">
+        Data ini menjadi dasar laporan sosial, ekonomi, lingkungan, dan mitra.
+      </p>
+      <SelectField
+        defaultValue={ticket.serviceCategory ?? 'warga'}
+        label="Kategori layanan"
+        name="serviceCategory"
+        options={SERVICE_CATEGORIES.map((value) => ({
+          value,
+          label: SERVICE_CATEGORY_LABELS[value],
+        }))}
+      />
+      <SelectField
+        defaultValue={ticket.serviceModel ?? 'gratis'}
+        label="Model layanan"
+        name="serviceModel"
+        options={SERVICE_MODELS.map((value) => ({
+          value,
+          label: SERVICE_MODEL_LABELS[value],
+        }))}
+      />
+      <label className="mt-3 block text-sm font-semibold">
+        Jenis sampah
+        <input
+          className="mt-1 w-full rounded-xl border border-slate-300 p-3"
+          defaultValue={(ticket.wasteTypes ?? []).join(', ')}
+          name="wasteTypes"
+          placeholder="Plastik, kardus, organik"
+        />
+      </label>
+      <div className="mt-3 grid grid-cols-2 gap-3">
+        <NumberField
+          defaultValue={ticket.estimatedWeightKg}
+          label="Estimasi kg"
+          name="estimatedWeightKg"
+        />
+        <NumberField
+          defaultValue={ticket.finalWeightKg}
+          label="Berat akhir kg"
+          name="finalWeightKg"
+        />
+      </div>
+      <SelectField
+        defaultValue={ticket.dataQuality ?? 'estimated_by_operator'}
+        label="Kualitas data"
+        name="dataQuality"
+        options={Object.entries(DATA_QUALITY_LABELS).map(([value, label]) => ({
+          value,
+          label,
+        }))}
+      />
+      <SelectField
+        defaultValue={ticket.partnerDestination ?? ''}
+        label="Tujuan sampah"
+        name="partnerDestination"
+        options={[
+          { value: '', label: 'Belum ditentukan' },
+          ...PARTNER_DESTINATIONS.map((value) => ({
+            value,
+            label: PARTNER_DESTINATION_LABELS[value],
+          })),
+        ]}
+      />
+      <div className="mt-3 grid gap-3 sm:grid-cols-3">
+        <NumberField
+          defaultValue={ticket.serviceFee}
+          label="Biaya layanan"
+          name="serviceFee"
+        />
+        <NumberField
+          defaultValue={ticket.operationalCost}
+          label="Biaya operasional"
+          name="operationalCost"
+        />
+        <NumberField
+          defaultValue={ticket.paidAmount}
+          label="Sudah dibayar"
+          name="paidAmount"
+        />
+      </div>
+      <SelectField
+        defaultValue={ticket.paymentStatus ?? 'gratis'}
+        label="Status pembayaran"
+        name="paymentStatus"
+        options={PAYMENT_STATUSES.map((value) => ({
+          value,
+          label: PAYMENT_STATUS_LABELS[value],
+        }))}
+      />
+      <fieldset className="mt-4">
+        <legend className="text-sm font-semibold">Tag dampak</legend>
+        <div className="mt-2 grid gap-2">
+          {IMPACT_TAGS.map((tag) => (
+            <label className="flex items-center gap-2 text-sm" key={tag}>
+              <input
+                defaultChecked={(ticket.impactTags ?? [
+                  'pengurangan_sampah',
+                ]).includes(tag)}
+                name="impactTags"
+                type="checkbox"
+                value={tag}
+              />
+              {IMPACT_TAG_LABELS[tag]}
+            </label>
+          ))}
+        </div>
+      </fieldset>
+      <button
+        className="mt-5 w-full rounded-xl bg-[#159fb3] px-4 py-3 font-bold text-white disabled:opacity-50"
+        disabled={disabled}
+        type="submit"
+      >
+        {disabled ? 'Menyimpan...' : 'Simpan klasifikasi'}
+      </button>
+    </form>
+  );
+}
+
+function SelectField({
+  defaultValue,
+  label,
+  name,
+  options,
+}: {
+  defaultValue: string;
+  label: string;
+  name: string;
+  options: Array<{ value: string; label: string }>;
+}) {
+  return (
+    <label className="mt-3 block text-sm font-semibold">
+      {label}
+      <select
+        className="mt-1 w-full rounded-xl border border-slate-300 p-3"
+        defaultValue={defaultValue}
+        name={name}
+      >
+        {options.map((option) => (
+          <option key={option.value || 'empty'} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function NumberField({
+  defaultValue,
+  label,
+  name,
+}: {
+  defaultValue?: number;
+  label: string;
+  name: string;
+}) {
+  return (
+    <label className="text-sm font-semibold">
+      {label}
+      <input
+        className="mt-1 w-full rounded-xl border border-slate-300 p-3"
+        defaultValue={defaultValue}
+        min="0"
+        name={name}
+        step="0.1"
+        type="number"
+      />
+    </label>
   );
 }
 

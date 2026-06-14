@@ -2,6 +2,7 @@ import type { AppUser } from '../shared/schemas/user.schema';
 
 export type PickupAuditAction =
   | 'PICKUP_STATUS_CHANGED'
+  | 'PICKUP_IMPACT_UPDATED'
   | 'PICKUP_SCHEDULED'
   | 'PICKUP_DRIVER_ASSIGNED'
   | 'PICKUP_STARTED'

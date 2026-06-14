@@ -2,6 +2,7 @@ import { canTransitionPickupStatus } from '../../shared/constants/statuses';
 import {
   assignDriverInputSchema,
   schedulePickupInputSchema,
+  updatePickupImpactInputSchema,
   updatePickupStatusInputSchema,
 } from '../../shared/schemas/pickup-input.schema';
 import {
@@ -153,6 +154,19 @@ export class DemoOperatorRepository implements OperatorRepository {
     });
   }
 
+  async updateImpact(
+    id: string,
+    rawInput: Parameters<OperatorRepository['updateImpact']>[1],
+  ) {
+    const input = updatePickupImpactInputSchema.parse(rawInput);
+    const ticket = await this.getTicket(id);
+    return this.replace(id, {
+      ...ticket,
+      ...input,
+      updatedAt: new Date().toISOString(),
+    });
+  }
+
   async schedule(
     id: string,
     rawInput: Parameters<OperatorRepository['schedule']>[1],
@@ -239,6 +253,17 @@ export class ApiOperatorRepository implements OperatorRepository {
   ) {
     return this.request<PickupRequest>(
       `/api/pickup-requests/${id}/status`,
+      'PATCH',
+      input,
+    );
+  }
+
+  async updateImpact(
+    id: string,
+    input: Parameters<OperatorRepository['updateImpact']>[1],
+  ) {
+    return this.request<PickupRequest>(
+      `/api/pickup-requests/${id}/impact`,
       'PATCH',
       input,
     );
@@ -492,6 +517,69 @@ export class FirestoreOperatorRepository implements OperatorRepository {
         id,
         { status: current.status },
         after,
+        timestamp,
+      ),
+    );
+    await batch.commit();
+    return this.getTicket(id);
+  }
+
+  async updateImpact(
+    id: string,
+    rawInput: Parameters<OperatorRepository['updateImpact']>[1],
+  ) {
+    const input = updatePickupImpactInputSchema.parse(rawInput);
+    const current = await this.getTicket(id);
+    const [
+      { collection, deleteField, doc, serverTimestamp, writeBatch },
+      { db },
+      actor,
+    ] = await Promise.all([
+      import('firebase/firestore'),
+      import('../../client/firebase'),
+      getCurrentAuditActor(['SUPER_ADMIN', 'OPERATOR']),
+    ]);
+    const timestamp = serverTimestamp();
+    const auditReference = doc(collection(db, 'auditLogs'));
+    const update: Record<string, unknown> = {
+      ...input,
+      updatedAt: timestamp,
+      lastAuditId: auditReference.id,
+    };
+    for (const field of [
+      'estimatedWeightKg',
+      'finalWeightKg',
+      'partnerDestination',
+      'serviceFee',
+      'operationalCost',
+      'paidAmount',
+    ] as const) {
+      if (input[field] === undefined) update[field] = deleteField();
+    }
+    const before = {
+      serviceCategory: current.serviceCategory,
+      serviceModel: current.serviceModel,
+      paymentStatus: current.paymentStatus,
+      partnerDestination: current.partnerDestination,
+      serviceFee: current.serviceFee,
+      operationalCost: current.operationalCost,
+      paidAmount: current.paidAmount,
+      estimatedWeightKg: current.estimatedWeightKg,
+      finalWeightKg: current.finalWeightKg,
+      dataQuality: current.dataQuality,
+      wasteTypes: current.wasteTypes,
+      impactTags: current.impactTags,
+    };
+    const batch = writeBatch(db);
+    batch.update(doc(db, 'pickupRequests', id), update);
+    batch.set(
+      auditReference,
+      buildPickupAudit(
+        actor,
+        'PICKUP_IMPACT_UPDATED',
+        id,
+        before,
+        input,
         timestamp,
       ),
     );

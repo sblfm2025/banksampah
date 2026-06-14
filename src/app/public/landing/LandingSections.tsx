@@ -417,6 +417,8 @@ export function LandingHeader() {
 }
 
 export function HeroSection() {
+  const whatsappUrl = getWhatsAppUrl();
+
   return (
     <section className="relative min-h-[520px] overflow-hidden bg-[#0f8f4a] text-white">
       <img
@@ -451,6 +453,17 @@ export function HeroSection() {
             <AppIcon name="user" />
             Lihat Profil YMPP
           </Link>
+          {whatsappUrl && (
+            <a
+              className="flex items-center justify-center gap-2 rounded-2xl border border-white/60 bg-[#075f32]/30 px-5 py-4 font-bold text-white"
+              href={whatsappUrl}
+              rel="noreferrer"
+              target="_blank"
+            >
+              <AppIcon name="phone" />
+              Chat WhatsApp Operator
+            </a>
+          )}
         </div>
         <div className="reveal-up reveal-delay-4 mt-10 grid w-full max-w-3xl gap-3 rounded-[2rem] border border-white/20 bg-white/12 p-3 text-left backdrop-blur md:grid-cols-3">
           {[

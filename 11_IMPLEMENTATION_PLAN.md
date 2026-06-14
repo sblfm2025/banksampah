@@ -344,3 +344,20 @@ Implementasi fase ini tidak boleh menambahkan:
 - e-wallet,
 - optimasi rute kompleks,
 - ekspansi wilayah di luar dua kecamatan pilot.
+
+## 7. Implementasi Arah Produk V3
+
+Status: fondasi data, laporan, halaman publik, dan kendali operator selesai.
+
+- Permintaan memiliki klasifikasi kategori dan model layanan, status
+  pembayaran, biaya manual, kualitas data, tag dampak, serta tujuan mitra.
+- Operator dapat memperbarui klasifikasi sosial/profesional dan data ekonomi
+  dari halaman detail permintaan; perubahan dicatat pada audit log.
+- Petugas dapat mencatat berat akhir dan tujuan material saat menyelesaikan
+  penjemputan, termasuk pada antrean offline.
+- Dashboard dan CSV memisahkan layanan sosial/profesional, pendapatan tercatat,
+  biaya operasional, berat sampah, status pembayaran, dan mitra tujuan.
+- Halaman publik menjelaskan layanan warga, layanan profesional, jejaring
+  Bank Sampah/TPS3R, dampak terukur, dan jalur WhatsApp-first.
+- `serviceFee` adalah nilai penawaran manual per permintaan, bukan harga publik.
+  MVP tidak memiliki payment gateway, saldo, maupun tarif otomatis.

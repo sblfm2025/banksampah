@@ -10,6 +10,15 @@
 
 ### Operations
 
+- Menambahkan klasifikasi layanan sosial/profesional, model layanan, biaya
+  manual, pembayaran, kualitas data, berat sampah, tag dampak, dan tujuan mitra
+  pada detail permintaan operator.
+- Menambahkan audit `PICKUP_IMPACT_UPDATED` untuk setiap perubahan data dampak
+  oleh operator.
+- Menambahkan pencatatan berat akhir dan tujuan pengolahan oleh petugas,
+  dashboard output/outcome, serta kolom dampak pada ekspor CSV.
+- Menambahkan CTA WhatsApp langsung pada hero dan penjelasan layanan
+  profesional serta jejaring Bank Sampah/TPS3R pada halaman publik.
 - Menambahkan validasi akun aktif Super Admin, Operator, dan Driver pada production readiness.
 - Menambahkan filter server-side dan composite indexes untuk workflow operator.
 - Menambahkan reason code masalah lapangan dan eskalasi ke review operator.

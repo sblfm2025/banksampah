@@ -40,4 +40,27 @@ describe('operator repository', () => {
     expect(assigned.status).toBe('ASSIGNED');
     expect(assigned.assignedDriverName).toBe('Pak Amir');
   });
+
+  it('menyimpan klasifikasi layanan profesional dan dampaknya', async () => {
+    const repository = new DemoOperatorRepository();
+    const updated = await repository.updateImpact('ticket-demo-1', {
+      serviceCategory: 'event',
+      serviceModel: 'berbayar',
+      wasteTypes: ['plastik', 'kardus'],
+      estimatedWeightKg: 25,
+      dataQuality: 'estimated_by_operator',
+      partnerDestination: 'tps3r_paleteang_bersinar',
+      serviceFee: 500000,
+      operationalCost: 225000,
+      paidAmount: 250000,
+      paymentStatus: 'dp',
+      impactTags: ['layanan_profesional', 'pengurangan_sampah'],
+    });
+
+    expect(updated.serviceCategory).toBe('event');
+    expect(updated.paymentStatus).toBe('dp');
+    expect(updated.partnerDestination).toBe(
+      'tps3r_paleteang_bersinar',
+    );
+  });
 });

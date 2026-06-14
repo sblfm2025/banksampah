@@ -4,6 +4,7 @@ import type {
   AssignDriverInput,
   SchedulePickupInput,
   UpdatePickupStatusInput,
+  UpdatePickupImpactInput,
 } from '../../shared/schemas/pickup-input.schema';
 import type { PickupRequest } from '../../shared/schemas/pickup.schema';
 import type {
@@ -47,6 +48,10 @@ export interface OperatorRepository {
   updateStatus(
     id: string,
     input: UpdatePickupStatusInput,
+  ): Promise<PickupRequest>;
+  updateImpact(
+    id: string,
+    input: UpdatePickupImpactInput,
   ): Promise<PickupRequest>;
   schedule(id: string, input: SchedulePickupInput): Promise<PickupRequest>;
   assignDriver(

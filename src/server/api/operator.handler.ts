@@ -5,6 +5,7 @@ import type { PickupRequest } from '../../shared/schemas/pickup.schema';
 import {
   assignDriverInputSchema,
   schedulePickupInputSchema,
+  updatePickupImpactInputSchema,
   updatePickupStatusInputSchema,
 } from '../../shared/schemas/pickup-input.schema';
 import { PickupTicketService } from '../services/pickup-ticket.service';
@@ -70,6 +71,20 @@ export class OperatorApiHandler {
       this.tickets.schedule(
         id,
         schedulePickupInputSchema.parse(body),
+        context.actor,
+      ),
+    );
+  }
+
+  async updateImpact(
+    id: string,
+    body: unknown,
+    context: OperatorRequestContext,
+  ): Promise<ApiResult> {
+    return this.wrap(() =>
+      this.tickets.updateImpact(
+        id,
+        updatePickupImpactInputSchema.parse(body),
         context.actor,
       ),
     );

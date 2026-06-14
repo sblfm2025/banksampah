@@ -187,6 +187,32 @@ export const assignDriverInputSchema = z.object({
   driverName: z.string().trim().min(1).max(120),
 });
 
+export const updatePickupImpactInputSchema = z
+  .object({
+    serviceCategory: z.enum(SERVICE_CATEGORIES),
+    serviceModel: z.enum(SERVICE_MODELS),
+    wasteTypes: z.array(z.string().trim().min(1).max(80)).max(20),
+    estimatedWeightKg: z.number().nonnegative().optional(),
+    finalWeightKg: z.number().nonnegative().optional(),
+    dataQuality: z.enum(DATA_QUALITY_LEVELS),
+    partnerDestination: z.enum(PARTNER_DESTINATIONS).optional(),
+    serviceFee: z.number().nonnegative().optional(),
+    operationalCost: z.number().nonnegative().optional(),
+    paidAmount: z.number().nonnegative().optional(),
+    paymentStatus: z.enum(PAYMENT_STATUSES),
+    impactTags: z.array(z.enum(IMPACT_TAGS)).max(12),
+  })
+  .refine(
+    (input) =>
+      input.paidAmount === undefined ||
+      input.serviceFee === undefined ||
+      input.paidAmount <= input.serviceFee,
+    {
+      path: ['paidAmount'],
+      message: 'Nominal dibayar tidak boleh melebihi biaya layanan.',
+    },
+  );
+
 export type CreatePickupRequestInput = z.infer<
   typeof createPickupRequestInputSchema
 >;
@@ -198,3 +224,6 @@ export type UpdatePickupIntakeInput = z.infer<
 >;
 export type SchedulePickupInput = z.infer<typeof schedulePickupInputSchema>;
 export type AssignDriverInput = z.infer<typeof assignDriverInputSchema>;
+export type UpdatePickupImpactInput = z.infer<
+  typeof updatePickupImpactInputSchema
+>;
