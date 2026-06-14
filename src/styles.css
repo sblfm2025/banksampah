@@ -96,3 +96,112 @@ textarea:focus-visible {
     linear-gradient(135deg, #087f8c, #159fb3);
   background-size: 24px 24px, 24px 24px, cover;
 }
+
+@keyframes landing-boot-out {
+  0%,
+  68% {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  100% {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+@keyframes landing-loader {
+  0% {
+    transform: translateX(-120%);
+  }
+
+  100% {
+    transform: translateX(180%);
+  }
+}
+
+@keyframes fade-up {
+  0% {
+    opacity: 0;
+    transform: translateY(1.4rem);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes hero-zoom {
+  0% {
+    transform: scale(1.06);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+.landing-boot {
+  animation: landing-boot-out 1.9s ease forwards;
+  pointer-events: none;
+}
+
+.landing-boot-card {
+  animation: fade-up 0.55s ease both;
+}
+
+.landing-loader {
+  animation: landing-loader 1.05s ease-in-out infinite;
+}
+
+.hero-kenburns {
+  animation: hero-zoom 10s ease-out both;
+}
+
+.reveal-up {
+  opacity: 0;
+  transform: translateY(1.4rem);
+  animation: fade-up 0.72s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+}
+
+.reveal-delay-1 {
+  animation-delay: 0.08s;
+}
+
+.reveal-delay-2 {
+  animation-delay: 0.16s;
+}
+
+.reveal-delay-3 {
+  animation-delay: 0.24s;
+}
+
+.reveal-delay-4 {
+  animation-delay: 0.32s;
+}
+
+details > summary::-webkit-details-marker {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+  }
+
+  .landing-boot {
+    display: none;
+  }
+
+  .landing-boot-card,
+  .landing-loader,
+  .hero-kenburns,
+  .reveal-up {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
+  }
+}

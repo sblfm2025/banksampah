@@ -1,11 +1,13 @@
 import {
   FeaturedProgramsSection,
+  FAQSection,
   FoundationIntroSection,
   FounderStorySection,
   HeroSection,
   HowItWorksSection,
   ImpactStatsSection,
   ImpactVisualSection,
+  LandingBootAnimation,
   LandingHeader,
   MediaMentionSection,
   PublicFooter,
@@ -14,6 +16,7 @@ import {
   RoleLoginSection,
   ServiceAreaSection,
   ServicesSection,
+  SolutionFinderSection,
   SolutionsSection,
   WasteTypesSection,
   WhatsAppCTASection,
@@ -24,22 +27,25 @@ export function PublicHomePage() {
   return (
     <>
       <LandingHeader />
+      <LandingBootAnimation />
       <main>
         <HeroSection />
+        <SolutionFinderSection />
         <FoundationIntroSection />
-        <CommunityFeatureSection />
         <QuickBenefitsSection />
         <ServicesSection />
-        <FeaturedProgramsSection />
         <HowItWorksSection />
+        <CommunityFeatureSection />
+        <FeaturedProgramsSection />
         <WasteTypesSection />
         <SolutionsSection />
-        <ImpactVisualSection />
         <ImpactStatsSection />
+        <ImpactVisualSection />
         <FounderStorySection />
         <RecognitionSection />
         <MediaMentionSection />
         <ServiceAreaSection />
+        <FAQSection />
         <RoleLoginSection />
         <WhatsAppCTASection />
       </main>

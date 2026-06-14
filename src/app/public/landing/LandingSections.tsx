@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import {
   AppIcon,
@@ -111,6 +112,73 @@ const mediaMentions = [
   'Warga',
 ];
 
+const solutionTracks = [
+  {
+    icon: 'camera' as IconName,
+    eyebrow: 'Untuk warga',
+    title: 'Ajukan jemput sampah',
+    description:
+      'Mulai dari foto sampah, alamat, titik lokasi, dan nomor WhatsApp agar operator bisa memverifikasi dengan jelas.',
+    href: '/pickup/new',
+    cta: 'Mulai ajukan',
+  },
+  {
+    icon: 'phone' as IconName,
+    eyebrow: 'Butuh pendampingan',
+    title: 'Dibantu lewat WhatsApp',
+    description:
+      'Cocok untuk warga yang belum terbiasa aplikasi atau ingin bertanya dulu tentang area dan jenis sampah.',
+    href: '#bantuan',
+    cta: 'Minta bantuan',
+  },
+  {
+    icon: 'chart' as IconName,
+    eyebrow: 'Untuk operator',
+    title: 'Verifikasi dan atur jadwal',
+    description:
+      'Permintaan masuk bisa dicek, dilengkapi, dijadwalkan, dan ditugaskan ke petugas lapangan.',
+    href: '/login?role=operator',
+    cta: 'Masuk operator',
+  },
+  {
+    icon: 'truck' as IconName,
+    eyebrow: 'Untuk petugas',
+    title: 'Lihat tugas jemput',
+    description:
+      'Petugas menerima informasi alamat, kontak, foto sampah, dan status tugas dalam satu alur kerja.',
+    href: '/login?role=driver',
+    cta: 'Masuk petugas',
+  },
+];
+
+const faqItems = [
+  {
+    question: 'Apakah warga wajib punya email untuk memakai layanan?',
+    answer:
+      'Warga bisa masuk dengan Google bila punya email. Jika belum terbiasa memakai email, warga dapat menghubungi operator lewat WhatsApp untuk dibantu membuat atau melengkapi profil layanan.',
+  },
+  {
+    question: 'Mengapa profil harus dilengkapi setelah login Google?',
+    answer:
+      'Akun Google hanya memberi identitas dasar. Layanan jemput tetap membutuhkan nama lengkap, nomor WhatsApp, alamat jelas, dan titik lokasi agar operator serta petugas tidak salah koordinasi.',
+  },
+  {
+    question: 'Wilayah mana yang sudah dilayani?',
+    answer:
+      'Tahap awal difokuskan pada Watang Sawitto dan Paleteang. Permintaan di luar area pilot perlu dikonsultasikan dulu agar jadwal dan kapasitas petugas tetap realistis.',
+  },
+  {
+    question: 'Bagaimana kalau alamat dari peta belum tepat?',
+    answer:
+      'Warga dapat menggeser pin lokasi dan memperbaiki alamat lengkap secara manual. Sistem memakai peta OSM dan batas lokal agar kecamatan serta kelurahan lebih akurat untuk area pilot.',
+  },
+  {
+    question: 'Apakah aplikasi ini sudah menghitung harga atau saldo?',
+    answer:
+      'Belum. MVP ini fokus pada pencatatan permintaan, verifikasi foto, penjadwalan, penugasan, dan status penjemputan. Fitur transaksi hanya ditampilkan bila sudah benar-benar siap.',
+  },
+];
+
 function SectionHeading({
   eyebrow,
   title,
@@ -134,6 +202,30 @@ function SectionHeading({
         </p>
       )}
     </div>
+  );
+}
+
+function LandingCtaLink({
+  href,
+  children,
+  className,
+}: {
+  href: string;
+  children: ReactNode;
+  className: string;
+}) {
+  if (href.startsWith('#')) {
+    return (
+      <a className={className} href={href}>
+        {children}
+      </a>
+    );
+  }
+
+  return (
+    <Link className={className} to={href}>
+      {children}
+    </Link>
   );
 }
 
@@ -180,6 +272,27 @@ function ClaimBadge({ status }: { status: 'verified' | 'needsVerification' }) {
     >
       {status === 'verified' ? 'Terverifikasi' : 'Perlu verifikasi berkala'}
     </span>
+  );
+}
+
+export function LandingBootAnimation() {
+  return (
+    <div className="landing-boot fixed inset-0 z-[80] grid place-items-center bg-white">
+      <div className="landing-boot-card mx-6 rounded-[2rem] border border-slate-100 bg-white p-7 text-center shadow-[0_24px_80px_rgb(15_23_42/0.14)]">
+        <div className="mx-auto grid h-20 w-20 place-items-center rounded-[1.5rem] bg-[#e6f7fa]">
+          <AppLogo compact />
+        </div>
+        <p className="mt-5 text-xs font-bold uppercase tracking-[0.2em] text-[#159fb3]">
+          Peduli Pinrang
+        </p>
+        <h2 className="mt-2 text-2xl font-extrabold text-slate-950">
+          Menyiapkan layanan jemput sampah warga
+        </h2>
+        <div className="mx-auto mt-6 h-1.5 w-44 overflow-hidden rounded-full bg-slate-100">
+          <span className="landing-loader block h-full w-2/3 rounded-full bg-[#159fb3]" />
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -231,21 +344,22 @@ export function HeroSection() {
     <section className="relative min-h-[520px] overflow-hidden bg-[#0f8f4a] text-white">
       <img
         alt="Bak hijau berisi plastik, kertas, dan kardus daur ulang"
-        className="absolute inset-0 h-full w-full object-cover object-bottom"
+        className="hero-kenburns absolute inset-0 h-full w-full object-cover object-bottom"
         src="/illustrations/landing-hero-recycling-bin-v2.webp"
       />
       <div className="absolute inset-0 bg-gradient-to-b from-[#07843f]/75 via-[#07843f]/35 to-[#064d2b]/15" />
       <div className="relative mx-auto flex min-h-[520px] max-w-4xl flex-col items-center px-6 pt-14 text-center">
-        <span className="inline-flex rounded-full bg-white/15 px-4 py-2 text-xs font-bold">
+        <span className="reveal-up inline-flex rounded-full bg-white/15 px-4 py-2 text-xs font-bold">
           Bank Sampah Peduli Pinrang
         </span>
-        <h1 className="mt-6 text-4xl font-extrabold leading-tight sm:text-6xl">
+        <h1 className="reveal-up reveal-delay-1 mt-6 text-4xl font-extrabold leading-tight sm:text-6xl">
           Kami Membangun Jaringan Jemput Sampah Warga
         </h1>
-        <p className="mt-4 max-w-2xl text-sm font-semibold leading-7 text-green-50 sm:text-base">
-          #UbahSampahJadiKebaikan
+        <p className="reveal-up reveal-delay-2 mt-4 max-w-2xl text-sm font-semibold leading-7 text-green-50 sm:text-base">
+          Satu alur untuk warga, operator, dan petugas: ajukan permintaan,
+          lengkapi lokasi, verifikasi foto, atur jadwal, lalu pantau status.
         </p>
-        <div className="mt-7 grid gap-3 sm:flex">
+        <div className="reveal-up reveal-delay-3 mt-7 grid gap-3 sm:flex">
           <Link
             className="flex items-center justify-center gap-2 rounded-2xl bg-white px-5 py-4 font-bold text-[#087f8c] shadow-xl"
             to="/pickup/new"
@@ -261,7 +375,68 @@ export function HeroSection() {
             Lihat Profil YMPP
           </Link>
         </div>
+        <div className="reveal-up reveal-delay-4 mt-10 grid w-full max-w-3xl gap-3 rounded-[2rem] border border-white/20 bg-white/12 p-3 text-left backdrop-blur md:grid-cols-3">
+          {[
+            ['Pilot', 'Watang Sawitto & Paleteang'],
+            ['Alur', 'Foto, lokasi, jadwal, status'],
+            ['Bantuan', 'Operator dan WhatsApp'],
+          ].map(([label, value]) => (
+            <div className="rounded-[1.4rem] bg-white/14 p-4" key={label}>
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-green-100">
+                {label}
+              </p>
+              <p className="mt-2 text-sm font-extrabold">{value}</p>
+            </div>
+          ))}
+        </div>
       </div>
+    </section>
+  );
+}
+
+export function SolutionFinderSection() {
+  return (
+    <section className="app-container relative z-10 -mt-14 pb-8">
+      <Card className="reveal-up overflow-hidden p-4 md:p-6">
+        <div className="flex flex-col justify-between gap-4 border-b border-slate-100 pb-5 md:flex-row md:items-end">
+          <SectionHeading
+            description="Pilih jalur yang paling sesuai. Ini dibuat agar halaman depan langsung terasa membantu, bukan hanya memperkenalkan aplikasi."
+            eyebrow="Mulai dari kebutuhan"
+            title="Mau dibantu sebagai warga, operator, atau petugas?"
+          />
+          <span className="w-fit rounded-full bg-[#e6f7fa] px-4 py-2 text-xs font-bold text-[#087f8c]">
+            Layanan MVP terverifikasi
+          </span>
+        </div>
+        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          {solutionTracks.map((track, index) => (
+            <div
+              className={`reveal-up reveal-delay-${Math.min(index + 1, 4)} rounded-[1.5rem] border border-slate-100 bg-slate-50/70 p-5 transition hover:-translate-y-1 hover:bg-white hover:shadow-[0_14px_40px_rgb(15_23_42/0.08)]`}
+              key={track.title}
+            >
+              <span className="grid h-11 w-11 place-items-center rounded-2xl bg-white text-[#087f8c] shadow-sm">
+                <AppIcon name={track.icon} />
+              </span>
+              <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.16em] text-[#159fb3]">
+                {track.eyebrow}
+              </p>
+              <h3 className="mt-2 font-extrabold text-slate-950">
+                {track.title}
+              </h3>
+              <p className="mt-2 text-sm leading-6 text-slate-500">
+                {track.description}
+              </p>
+              <LandingCtaLink
+                className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-[#087f8c]"
+                href={track.href}
+              >
+                {track.cta}
+                <AppIcon className="h-4 w-4" name="arrow" />
+              </LandingCtaLink>
+            </div>
+          ))}
+        </div>
+      </Card>
     </section>
   );
 }
@@ -271,7 +446,7 @@ export function QuickBenefitsSection() {
     <section className="app-container py-10">
       <div className="grid gap-4 md:grid-cols-3">
         {quickBenefits.map((item) => (
-          <Card className="p-5" key={item.title}>
+          <Card className="reveal-up p-5" key={item.title}>
             <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[#e6f7fa] text-[#087f8c]">
               <AppIcon name={item.icon} />
             </span>
@@ -290,10 +465,10 @@ export function FoundationIntroSection() {
   return (
     <section className="app-container py-16">
       <div className="grid items-center gap-10 md:grid-cols-[0.9fr_1.1fr]">
-        <div className="mx-auto grid h-64 w-64 place-items-center rounded-full bg-[#e6f7fa] text-[#087f8c] md:h-80 md:w-80">
+        <div className="reveal-up mx-auto grid h-64 w-64 place-items-center rounded-full bg-[#e6f7fa] text-[#087f8c] md:h-80 md:w-80">
           <AppIcon className="h-32 w-32 md:h-40 md:w-40" name="leaf" />
         </div>
-        <div>
+        <div className="reveal-up reveal-delay-1">
           <SectionHeading
             description={organizationProfile.headline}
             eyebrow="Misi Kami"
@@ -355,7 +530,7 @@ export function ServicesSection() {
         eyebrow="Layanan utama"
         title="Dari pengajuan warga sampai penjemputan petugas."
       />
-      <div className="mt-7 grid gap-px overflow-hidden border border-slate-200 bg-slate-200 md:grid-cols-3">
+      <div className="reveal-up mt-7 grid gap-px overflow-hidden rounded-[1.7rem] border border-slate-200 bg-slate-200 md:grid-cols-3">
         {publicServices.map((service) => (
           <div className="bg-white p-6" key={service.title}>
             <span className="grid h-10 w-10 place-items-center rounded-full bg-[#e6f7fa] text-[#087f8c]">
@@ -417,14 +592,14 @@ export function HowItWorksSection() {
         eyebrow="Cara kerja"
         title="Empat langkah dari profil sampai jemput selesai."
       />
-      <Card className="mt-6 divide-y divide-slate-100 px-5">
+      <Card className="reveal-up mt-6 grid gap-0 overflow-hidden px-0 md:grid-cols-4">
         {howItWorks.map((item) => (
-          <div className="flex gap-4 py-5" key={item.number}>
+          <div className="border-b border-slate-100 p-5 md:border-b-0 md:border-r md:last:border-r-0" key={item.number}>
             <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-green-50 text-xs font-extrabold text-green-700">
               {item.number}
             </span>
             <div>
-              <h3 className="font-bold">{item.title}</h3>
+              <h3 className="mt-4 font-bold">{item.title}</h3>
               <p className="mt-1 text-sm leading-6 text-slate-500">
                 {item.description}
               </p>
@@ -439,7 +614,7 @@ export function HowItWorksSection() {
 export function WasteTypesSection() {
   return (
     <section className="app-container py-10">
-      <Card className="grid gap-6 overflow-hidden p-6 md:grid-cols-[0.8fr_1.2fr] md:p-8">
+      <Card className="reveal-up grid gap-6 overflow-hidden p-6 md:grid-cols-[0.8fr_1.2fr] md:p-8">
         <div>
           <SectionHeading
             description="Jenis sampah berikut membantu warga memahami contoh awal. Operator tetap bisa meminta verifikasi bila foto atau volume belum jelas."
@@ -472,7 +647,7 @@ export function SolutionsSection() {
       />
       <div className="mt-7 grid gap-4 md:grid-cols-3">
         {solutionPillars.map((pillar) => (
-          <Card className="rounded-none border-slate-200 p-6 shadow-none" key={pillar.title}>
+          <Card className="reveal-up rounded-none border-slate-200 p-6 shadow-none" key={pillar.title}>
             <span className="grid h-12 w-12 place-items-center rounded-2xl bg-green-50 text-green-700">
               <AppIcon name="check" />
             </span>
@@ -497,7 +672,7 @@ export function ImpactStatsSection() {
       />
       <div className="mt-7 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {landingImpactStats.map((item) => (
-          <Card className="p-5" key={item.label}>
+          <Card className="reveal-up p-5" key={item.label}>
             <div className="flex items-start justify-between gap-3">
               <p className="text-3xl font-extrabold text-slate-950">
                 {item.value}
@@ -524,7 +699,7 @@ export function ImpactVisualSection() {
       />
       <div className="mt-7 grid gap-4 md:grid-cols-3">
         {impactTiles.map((tile) => (
-          <div className="group relative min-h-72 overflow-hidden" key={tile.title}>
+          <div className="reveal-up group relative min-h-72 overflow-hidden rounded-[1.8rem]" key={tile.title}>
             <img
               alt={tile.description}
               className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105"
@@ -548,7 +723,7 @@ export function ImpactVisualSection() {
 export function FounderStorySection() {
   return (
     <section className="app-container py-12">
-      <div className="grid items-center overflow-hidden bg-[#e4f5ee] md:grid-cols-[0.9fr_1.1fr]">
+      <div className="reveal-up grid items-center overflow-hidden rounded-[2rem] bg-[#e4f5ee] md:grid-cols-[0.9fr_1.1fr]">
         <div className="p-8 md:p-12">
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#087f8c]">
             Penggerak komunitas
@@ -589,7 +764,7 @@ export function RecognitionSection() {
           title="Dampak gerakan dicatat dengan prinsip kehati-hatian."
           description="Bagian ini menjadi ruang untuk menampilkan penghargaan, publikasi, atau capaian yang sudah diverifikasi oleh pengurus."
         />
-        <Card className="mt-7 grid items-center gap-6 rounded-none border-0 p-8 shadow-none md:grid-cols-[1fr_0.8fr]">
+        <Card className="reveal-up mt-7 grid items-center gap-6 rounded-[1.8rem] border-0 p-8 shadow-none md:grid-cols-[1fr_0.8fr]">
           <div>
             <p className="text-sm font-bold text-slate-500">
               Catatan transparansi
@@ -621,7 +796,7 @@ export function RecognitionSection() {
 
 export function MediaMentionSection() {
   return (
-    <section className="app-container py-14 text-center">
+    <section className="app-container reveal-up py-14 text-center">
       <p className="text-sm font-extrabold text-slate-950">
         Didukung Ekosistem Lokal
       </p>
@@ -637,7 +812,7 @@ export function MediaMentionSection() {
 export function ServiceAreaSection() {
   return (
     <section className="app-container py-10" id="wilayah">
-      <Card className="grid items-center gap-6 overflow-hidden p-6 md:grid-cols-[1.1fr_0.9fr] md:p-8">
+      <Card className="reveal-up grid items-center gap-6 overflow-hidden p-6 md:grid-cols-[1.1fr_0.9fr] md:p-8">
         <div>
           <SectionHeading
             description="Wilayah layanan awal dibatasi agar operator dan petugas bisa menjaga kualitas respons."
@@ -678,6 +853,47 @@ export function ServiceAreaSection() {
   );
 }
 
+export function FAQSection() {
+  return (
+    <section className="app-container py-12" id="faq">
+      <div className="grid gap-8 md:grid-cols-[0.85fr_1.15fr]">
+        <div className="reveal-up">
+          <SectionHeading
+            description="Pertanyaan disusun dari kebutuhan paling sering: akses warga, profil, alamat, area pilot, dan batas fitur MVP."
+            eyebrow="F.A.Q"
+            title="Jawaban singkat sebelum warga mengajukan permintaan."
+          />
+          <Link
+            className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-[#159fb3] px-5 py-4 font-bold text-white shadow-[0_10px_24px_rgb(21_159_179/0.24)]"
+            to="/pickup/new"
+          >
+            Ajukan Jemput
+            <AppIcon className="h-4 w-4" name="arrow" />
+          </Link>
+        </div>
+        <div className="grid gap-3">
+          {faqItems.map((item, index) => (
+            <details
+              className={`reveal-up reveal-delay-${Math.min(index + 1, 4)} group rounded-[1.3rem] border border-slate-200 bg-white p-5 shadow-[0_10px_35px_rgb(15_23_42/0.05)]`}
+              key={item.question}
+            >
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-extrabold text-slate-950">
+                {item.question}
+                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#e6f7fa] text-[#087f8c] transition group-open:rotate-90">
+                  <AppIcon className="h-4 w-4" name="arrow" />
+                </span>
+              </summary>
+              <p className="mt-4 text-sm leading-7 text-slate-600">
+                {item.answer}
+              </p>
+            </details>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export function RoleLoginSection() {
   return (
     <section className="app-container py-10" id="masuk">
@@ -688,7 +904,7 @@ export function RoleLoginSection() {
       />
       <div className="mt-6 grid gap-4 md:grid-cols-3">
         {roleLinks.map((role) => (
-          <Card className="p-5" key={role.title}>
+          <Card className="reveal-up p-5" key={role.title}>
             <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[#e6f7fa] text-[#087f8c]">
               <AppIcon name="user" />
             </span>
@@ -715,7 +931,7 @@ export function WhatsAppCTASection() {
 
   return (
     <section className="app-container py-16" id="bantuan">
-      <div className="relative overflow-hidden bg-[#e4f5ee]">
+      <div className="reveal-up relative overflow-hidden rounded-[2rem] bg-[#e4f5ee]">
         <div className="grid items-center gap-6 p-8 md:grid-cols-[0.9fr_1.1fr] md:p-12">
           <div className="flex items-start gap-4">
             <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white text-[#087f8c]">
