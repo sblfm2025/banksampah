@@ -1,5 +1,6 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../auth/auth-context';
 import {
   AppHeader,
   AppDialog,
@@ -21,12 +22,21 @@ import type {
   LocationSource,
   LocationValidationStatus,
 } from '../../shared/regions/region.types';
-import { savePublicTicket } from './public-data';
+import {
+  getPublicProfile,
+  isValidIndonesianPhoneNumber,
+  normalizeIndonesianPhoneNumber,
+  savePublicTicket,
+  updatePublicTicket,
+} from './public-data';
+import { submitPublicTicket } from './public-ticket.repository';
 import { reverseGeocode } from '../components/map/reverse-geocoding';
 import { detectServiceArea } from '../../shared/regions/service-area-boundaries';
 import { composeServiceAddress } from '../../shared/regions/location-address';
+import { compressImage } from '../driver/firestore-proof-media';
 
 type Volume = 'SMALL' | 'MEDIUM' | 'LARGE' | 'OVERSIZED';
+const WIZARD_STORAGE_KEY = 'peduli-pinrang-pickup-wizard-v4';
 
 const volumeOptions: Array<{
   value: Volume;
@@ -41,17 +51,36 @@ const volumeOptions: Array<{
 
 export function NewPickupPage() {
   const navigate = useNavigate();
+  const { authUid, user } = useAuth();
+  const savedProfile = getPublicProfile();
+  const customer = user?.role === 'CUSTOMER' ? user : null;
   const [step, setStep] = useState(1);
-  const [address, setAddress] = useState('');
-  const [district, setDistrict] = useState<ActiveDistrict | ''>('');
-  const [villageId, setVillageId] = useState('');
-  const [location, setLocation] = useState<{ lat: number; lng: number }>();
+  const [address, setAddress] = useState(
+    customer?.addressText ?? savedProfile?.address ?? '',
+  );
+  const [district, setDistrict] = useState<ActiveDistrict | ''>(
+    customer?.district ?? savedProfile?.district ?? '',
+  );
+  const [villageId, setVillageId] = useState(
+    customer?.villageId ?? savedProfile?.villageId ?? '',
+  );
+  const [location, setLocation] = useState<{ lat: number; lng: number } | undefined>(
+    customer?.location ?? savedProfile?.location,
+  );
   const [locationAccuracyMeters, setLocationAccuracyMeters] =
-    useState<number>();
+    useState<number | undefined>(
+      customer?.locationAccuracyMeters ?? savedProfile?.locationAccuracyMeters,
+    );
   const [locationSource, setLocationSource] =
-    useState<LocationSource>('MANUAL_TEXT');
+    useState<LocationSource>(
+      customer?.locationSource ?? savedProfile?.locationSource ?? 'MANUAL_TEXT',
+    );
   const [locationValidationStatus, setLocationValidationStatus] =
-    useState<LocationValidationStatus>('UNKNOWN');
+    useState<LocationValidationStatus>(
+      customer?.locationValidationStatus ??
+        savedProfile?.locationValidationStatus ??
+        'UNKNOWN',
+    );
   const [locationMessage, setLocationMessage] = useState('');
   const [isResolvingAddress, setIsResolvingAddress] = useState(false);
   const [notice, setNotice] = useState<{
@@ -62,10 +91,143 @@ export function NewPickupPage() {
   const geocodingTimer = useRef<number | undefined>(undefined);
   const geocodingAbort = useRef<AbortController | undefined>(undefined);
   const [photo, setPhoto] = useState<string>();
+  const [photoFile, setPhotoFile] = useState<File>();
+  const [wasteDescription, setWasteDescription] = useState('');
+  const [wasteTypes, setWasteTypes] = useState<string[]>([]);
+  const [serviceSource, setServiceSource] = useState('rumah_tangga');
   const [volume, setVolume] = useState<Volume>('MEDIUM');
+  const [preferredTime, setPreferredTime] = useState('');
+  const [accessNote, setAccessNote] = useState('mudah');
   const [notes, setNotes] = useState('');
+  const [customerName, setCustomerName] = useState(
+    customer ? customer.name : savedProfile?.fullName ?? '',
+  );
+  const [customerPhoneNumber, setCustomerPhoneNumber] = useState(
+    customer ? customer.phoneNumber ?? '' : savedProfile?.phoneNumber ?? '',
+  );
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [sheet, setSheet] = useState<'district' | 'volume' | null>(null);
   const [confirm, setConfirm] = useState(false);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      try {
+        const raw = localStorage.getItem(WIZARD_STORAGE_KEY);
+        if (!raw) return;
+        const draft = JSON.parse(raw) as Record<string, unknown>;
+        if (typeof draft.address === 'string') setAddress(draft.address);
+        if (
+          draft.district === 'WATANG_SAWITTO' ||
+          draft.district === 'PALETEANG'
+        ) {
+          setDistrict(draft.district);
+        }
+        if (typeof draft.villageId === 'string') setVillageId(draft.villageId);
+        if (
+          draft.location &&
+          typeof draft.location === 'object' &&
+          'lat' in draft.location &&
+          'lng' in draft.location
+        ) {
+          setLocation(draft.location as { lat: number; lng: number });
+        }
+        if (typeof draft.locationAccuracyMeters === 'number') {
+          setLocationAccuracyMeters(draft.locationAccuracyMeters);
+        }
+        if (
+          draft.locationSource === 'BROWSER_GPS' ||
+          draft.locationSource === 'MANUAL_PIN' ||
+          draft.locationSource === 'MANUAL_TEXT'
+        ) {
+          setLocationSource(draft.locationSource);
+        }
+        if (
+          draft.locationValidationStatus === 'INSIDE_SERVICE_AREA' ||
+          draft.locationValidationStatus === 'OUTSIDE_SERVICE_AREA' ||
+          draft.locationValidationStatus === 'NEEDS_OPERATOR_REVIEW' ||
+          draft.locationValidationStatus === 'UNKNOWN'
+        ) {
+          setLocationValidationStatus(draft.locationValidationStatus);
+        }
+        if (typeof draft.photo === 'string') setPhoto(draft.photo);
+        if (typeof draft.wasteDescription === 'string') {
+          setWasteDescription(draft.wasteDescription);
+        }
+        if (Array.isArray(draft.wasteTypes)) {
+          setWasteTypes(
+            draft.wasteTypes.filter(
+              (item): item is string => typeof item === 'string',
+            ),
+          );
+        }
+        if (typeof draft.serviceSource === 'string') {
+          setServiceSource(draft.serviceSource);
+        }
+        if (typeof draft.volume === 'string') setVolume(draft.volume as Volume);
+        if (typeof draft.preferredTime === 'string') {
+          setPreferredTime(draft.preferredTime);
+        }
+        if (typeof draft.accessNote === 'string') setAccessNote(draft.accessNote);
+        if (typeof draft.notes === 'string') setNotes(draft.notes);
+        if (typeof draft.customerName === 'string') {
+          setCustomerName(draft.customerName);
+        }
+        if (typeof draft.customerPhoneNumber === 'string') {
+          setCustomerPhoneNumber(draft.customerPhoneNumber);
+        }
+      } catch {
+        localStorage.removeItem(WIZARD_STORAGE_KEY);
+      }
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      localStorage.setItem(
+        WIZARD_STORAGE_KEY,
+        JSON.stringify({
+          address,
+          district,
+          villageId,
+          location,
+          locationAccuracyMeters,
+          locationSource,
+          locationValidationStatus,
+          photo,
+          wasteDescription,
+          wasteTypes,
+          serviceSource,
+          volume,
+          preferredTime,
+          accessNote,
+          notes,
+          customerName,
+          customerPhoneNumber,
+        }),
+      );
+    }, 350);
+    return () => window.clearTimeout(timer);
+  }, [
+    accessNote,
+    address,
+    customerName,
+    customerPhoneNumber,
+    district,
+    location,
+    locationAccuracyMeters,
+    locationSource,
+    locationValidationStatus,
+    notes,
+    photo,
+    preferredTime,
+    serviceSource,
+    villageId,
+    volume,
+    wasteDescription,
+    wasteTypes,
+  ]);
 
   const recommendation =
     volume === 'LARGE' || volume === 'OVERSIZED'
@@ -73,14 +235,22 @@ export function NewPickupPage() {
       : 'Jemput reguler';
   const canContinue =
     step === 1
+      ? Boolean(photo) || wasteDescription.trim().length >= 10
+      : step === 2
       ? address.trim().length >= 8 &&
         Boolean(district) &&
-        Boolean(villageId)
-      : step === 2
-        ? Boolean(photo)
-        : true;
+        Boolean(villageId) &&
+        Boolean(location) &&
+        locationValidationStatus === 'INSIDE_SERVICE_AREA'
+      : step === 3
+        ? wasteTypes.length > 0
+        : step === 5
+          ? customerName.trim().length >= 2 &&
+            isValidIndonesianPhoneNumber(customerPhoneNumber) &&
+            privacyAccepted
+          : true;
 
-  function selectPhoto(file?: File) {
+  async function selectPhoto(file?: File) {
     if (!file) return;
     if (file.size > 10_485_760) {
       setNotice({
@@ -90,9 +260,24 @@ export function NewPickupPage() {
       });
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => setPhoto(String(reader.result));
-    reader.readAsDataURL(file);
+    try {
+      const compressed = await compressImage(file);
+      setPhoto(compressed.dataUrl);
+      setPhotoFile(
+        new File([Uint8Array.from(compressed.bytes)], 'foto-sampah.jpg', {
+          type: compressed.contentType,
+        }),
+      );
+    } catch (error) {
+      setNotice({
+        title: 'Foto belum dapat dipakai',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Pilih foto JPEG, PNG, atau WebP yang lebih kecil.',
+        tone: 'warning',
+      });
+    }
   }
 
   function updateLocation(
@@ -173,9 +358,19 @@ export function NewPickupPage() {
     }, 700);
   }
 
-  function finish() {
-    if (!district || !villageId) return;
+  async function finish() {
+    if (
+      !district ||
+      !villageId ||
+      isSubmitting
+    ) {
+      return;
+    }
+    setIsSubmitting(true);
+    setConfirm(false);
     const ticket = savePublicTicket({
+      customerName,
+      customerPhoneNumber,
       address,
       district,
       villageId,
@@ -189,33 +384,75 @@ export function NewPickupPage() {
           ? 'REGULAR_HOUSEHOLD_PICKUP'
           : 'ONE_TRIP_TRICYCLE',
       notes,
+      wasteDescription,
+      wasteTypes,
+      serviceSource,
+      preferredTime,
+      accessNote,
       photo,
     });
-    navigate(`/tickets/${ticket.id}`);
+    if (!authUid || user?.role !== 'CUSTOMER' || !photoFile) {
+      navigate(`/tickets/${ticket.id}`);
+      setIsSubmitting(false);
+      return;
+    }
+    try {
+      const submitted = await submitPublicTicket(ticket, authUid, photoFile);
+      updatePublicTicket(ticket.id, {
+        code: submitted.ticketCode,
+        deliveryStatus: 'SUBMITTED',
+        remoteId: submitted.id,
+        lastSyncError: undefined,
+      });
+      localStorage.removeItem(WIZARD_STORAGE_KEY);
+      navigate(`/tickets/${ticket.id}`);
+    } catch {
+      updatePublicTicket(ticket.id, {
+        deliveryStatus: 'PENDING_SYNC',
+        lastSyncError:
+          'Belum dapat dikirim. Periksa koneksi lalu coba kembali dari detail permintaan.',
+      });
+      navigate(`/tickets/${ticket.id}`);
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
     <div className="min-h-screen bg-slate-50">
       <AppHeader
         back={
-          <Link className="text-xl text-[#087f8c]" to="/">
+          <Link
+            aria-label="Kembali ke pusat layanan"
+            className="grid min-h-12 min-w-12 place-items-center rounded-full text-xl text-[#087f8c]"
+            to="/app"
+          >
             &larr;
           </Link>
         }
-        subtitle={`Langkah ${step} dari 4`}
+        homeTo="/app"
+        subtitle={`Langkah ${step} dari 6`}
+        titleAsHeading={false}
         title="Ajukan Jemput"
+        titleLink={false}
       />
       <main className="app-container max-w-2xl py-7">
-        <div className="mb-7 grid grid-cols-4 gap-2">
-          {[1, 2, 3, 4].map((item) => (
+        <div className="mb-3 flex items-center justify-between gap-3 text-xs font-bold text-slate-500">
+          <span>Langkah {step} dari 6</span>
+          <span className="rounded-full bg-amber-50 px-3 py-1 text-amber-700">
+            Draft di perangkat
+          </span>
+        </div>
+        <div className="mb-7 grid grid-cols-6 gap-2">
+          {[1, 2, 3, 4, 5, 6].map((item) => (
             <span
-              className={`h-2 rounded-full ${item <= step ? 'bg-[#159fb3]' : 'bg-slate-200'}`}
+              className={`h-2 rounded-full ${item <= step ? 'bg-[#087f8c]' : 'bg-slate-200'}`}
               key={item}
             />
           ))}
         </div>
 
-        {step === 1 && (
+        {step === 2 && (
           <StepCard
             description="Pastikan lokasi berada di Watang Sawitto atau Paleteang."
             icon="pin"
@@ -238,7 +475,7 @@ export function NewPickupPage() {
                       : 'Belum dipilih'}
                 </span>
               </span>
-              <span aria-hidden>⌄</span>
+              <span aria-hidden>v</span>
             </button>
             <label className="mt-4 block text-sm font-bold">
               Kelurahan
@@ -334,17 +571,29 @@ export function NewPickupPage() {
           </StepCard>
         )}
 
-        {step === 2 && (
+        {step === 1 && (
           <StepCard
-            description="Foto membantu sistem dan operator memperkirakan volume."
+            description="Ambil foto sampah. Jika belum bisa, tulis deskripsi singkat."
             icon="camera"
             title="Foto Sampah"
           >
             <PhotoUploadCard
               label="Ambil atau pilih foto"
-              onChange={selectPhoto}
+              onChange={(file) => void selectPhoto(file)}
               preview={photo}
             />
+            <label className="mt-4 block text-base font-bold">
+              Deskripsi sampah
+              <textarea
+                className="mt-2 min-h-28 w-full rounded-2xl border border-[#d9e2e7] bg-white p-4 text-base font-normal outline-none focus:border-[#159fb3]"
+                onChange={(event) => setWasteDescription(event.target.value)}
+                placeholder="Contoh: tiga kantong plastik campuran dan kardus"
+                value={wasteDescription}
+              />
+            </label>
+            <p className="mt-2 text-sm text-slate-500">
+              Foto atau deskripsi minimal 10 karakter wajib diisi.
+            </p>
           </StepCard>
         )}
 
@@ -352,7 +601,7 @@ export function NewPickupPage() {
           <StepCard
             description="Pilih perkiraan terdekat. Operator tetap akan memeriksa foto."
             icon="spark"
-            title="Cek Volume Otomatis"
+            title="Detail Sampah"
           >
             <button
               className="flex w-full items-center justify-between rounded-2xl border border-[#d9e2e7] bg-white p-4 text-left"
@@ -367,8 +616,54 @@ export function NewPickupPage() {
                   {volumeOptions.find((item) => item.value === volume)?.label}
                 </span>
               </span>
-              <span aria-hidden>⌄</span>
+              <span aria-hidden>v</span>
             </button>
+            <fieldset className="mt-5">
+              <legend className="text-base font-bold">Jenis sampah</legend>
+              <div className="mt-3 grid grid-cols-2 gap-3">
+                {[
+                  ['plastik', 'Plastik/botol'],
+                  ['kertas', 'Kardus/kertas'],
+                  ['logam', 'Kaleng/logam'],
+                  ['kaca', 'Kaca'],
+                  ['organik', 'Organik'],
+                  ['campuran', 'Campuran/perlu dicek'],
+                ].map(([value, label]) => (
+                  <label
+                    className="flex min-h-12 items-center gap-3 rounded-2xl border border-slate-200 p-3 text-sm font-semibold"
+                    key={value}
+                  >
+                    <input
+                      checked={wasteTypes.includes(value)}
+                      onChange={(event) =>
+                        setWasteTypes((current) =>
+                          event.target.checked
+                            ? [...current, value]
+                            : current.filter((item) => item !== value),
+                        )
+                      }
+                      type="checkbox"
+                    />
+                    {label}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+            <label className="mt-5 block text-base font-bold">
+              Sumber layanan
+              <select
+                className="mt-2 min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-base"
+                onChange={(event) => setServiceSource(event.target.value)}
+                value={serviceSource}
+              >
+                <option value="rumah_tangga">Rumah tangga</option>
+                <option value="umkm">UMKM/toko</option>
+                <option value="kantor_sekolah">Kantor/sekolah</option>
+                <option value="event">Event/hajatan</option>
+                <option value="tps3r">TPS3R/mitra</option>
+                <option value="lainnya">Lainnya</option>
+              </select>
+            </label>
             <Card className="mt-4 border-0 bg-[#e6f7fa] p-5 shadow-none">
               <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#087f8c]">
                 Rekomendasi
@@ -385,17 +680,126 @@ export function NewPickupPage() {
 
         {step === 4 && (
           <StepCard
-            description="Tambahkan informasi yang membantu petugas menemukan dan mengangkut sampah."
-            icon="ticket"
-            title="Catatan & Konfirmasi"
+            description="Jadwal final tetap dikonfirmasi operator sesuai rute dan ketersediaan petugas."
+            icon="calendar"
+            title="Waktu & Catatan"
           >
-            <textarea
-              className="min-h-32 w-full rounded-2xl border border-[#d9e2e7] bg-white p-4 outline-none focus:border-[#159fb3]"
-              onChange={(event) => setNotes(event.target.value)}
-              placeholder="Contoh: rumah pagar hijau, ada pecahan kaca..."
-              value={notes}
-            />
-            <Card className="mt-4 p-5 shadow-none">
+            <label className="block text-base font-bold">
+              Waktu yang diharapkan
+              <input
+                className="mt-2 min-h-12 w-full rounded-2xl border border-slate-200 px-4 text-base"
+                onChange={(event) => setPreferredTime(event.target.value)}
+                type="datetime-local"
+                value={preferredTime}
+              />
+            </label>
+            <label className="mt-4 block text-base font-bold">
+              Akses lokasi
+              <select
+                className="mt-2 min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-base"
+                onChange={(event) => setAccessNote(event.target.value)}
+                value={accessNote}
+              >
+                <option value="mudah">Mudah diakses</option>
+                <option value="sempit">Jalan sempit</option>
+                <option value="sulit">Akses sulit</option>
+                <option value="konfirmasi">Perlu konfirmasi operator</option>
+              </select>
+            </label>
+            <label className="mt-4 block text-base font-bold">
+              Catatan untuk petugas
+              <textarea
+                className="mt-2 min-h-32 w-full rounded-2xl border border-[#d9e2e7] bg-white p-4 text-base font-normal outline-none focus:border-[#159fb3]"
+                onChange={(event) => setNotes(event.target.value)}
+                placeholder="Contoh: rumah pagar hijau, ada pecahan kaca..."
+                value={notes}
+              />
+            </label>
+          </StepCard>
+        )}
+
+        {step === 5 && (
+          <StepCard
+            description="Data ini baru diminta di akhir agar Anda bisa fokus menjelaskan kebutuhan jemput."
+            icon="user"
+            title="Data Penghubung"
+          >
+            <label className="block text-base font-bold">
+              Nama lengkap
+              <input
+                autoComplete="name"
+                className="mt-2 min-h-12 w-full rounded-2xl border border-[#d9e2e7] bg-white p-4 text-base font-normal outline-none focus:border-[#159fb3]"
+                maxLength={120}
+                onChange={(event) => setCustomerName(event.target.value)}
+                placeholder="Nama warga yang mengajukan"
+                readOnly={user?.role === 'CUSTOMER'}
+                required
+                value={customerName}
+              />
+            </label>
+            <label className="mt-4 block text-base font-bold">
+              Nomor WhatsApp aktif
+              <input
+                autoComplete="tel"
+                className="mt-2 min-h-12 w-full rounded-2xl border border-[#d9e2e7] bg-white p-4 text-base font-normal outline-none focus:border-[#159fb3]"
+                inputMode="tel"
+                onChange={(event) => setCustomerPhoneNumber(event.target.value)}
+                placeholder="Contoh: 0812 3456 7890"
+                readOnly={user?.role === 'CUSTOMER'}
+                required
+                type="tel"
+                value={customerPhoneNumber}
+              />
+              {customerPhoneNumber &&
+                !isValidIndonesianPhoneNumber(customerPhoneNumber) && (
+                  <span className="mt-2 block text-xs font-medium text-red-600">
+                    Masukkan nomor seluler Indonesia yang valid.
+                  </span>
+                )}
+            </label>
+            {user?.role === 'CUSTOMER' && (
+              <p className="mt-2 text-sm text-slate-500">
+                Identitas mengikuti profil akun. Perbarui melalui halaman
+                profil bila ada perubahan.
+              </p>
+            )}
+            <label className="mt-4 flex items-start gap-3 rounded-2xl border border-cyan-200 bg-cyan-50 p-4 text-sm leading-6 text-cyan-950">
+              <input
+                checked={privacyAccepted}
+                className="mt-1 h-4 w-4 accent-[#087f8c]"
+                onChange={(event) => setPrivacyAccepted(event.target.checked)}
+                type="checkbox"
+              />
+              <span>
+                Saya setuju nama, nomor WhatsApp, alamat, titik lokasi, dan foto
+                digunakan hanya untuk memproses penjemputan sampah.
+              </span>
+            </label>
+            {!user && (
+              <p className="mt-4 rounded-2xl bg-slate-50 p-4 text-sm leading-6 text-slate-600">
+                Sudah punya akun? <Link className="font-bold text-[#087f8c]" to="/auth?next=/pickup/new">Masuk</Link>.
+                Anda tetap dapat melanjutkan tanpa akun.
+              </p>
+            )}
+          </StepCard>
+        )}
+
+        {step === 6 && (
+          <StepCard
+            description="Periksa kembali sebelum menyimpan atau mengirim permintaan."
+            icon="ticket"
+            title="Konfirmasi"
+          >
+            <Card className="p-5 shadow-none">
+              <Summary label="Nama" value={customerName || '-'} />
+              <Summary
+                label="WhatsApp"
+                value={
+                  customerPhoneNumber
+                    ? `+${normalizeIndonesianPhoneNumber(customerPhoneNumber)}`
+                    : '-'
+                }
+              />
               <Summary
                 label="Kecamatan"
                 value={
@@ -420,8 +824,15 @@ export function NewPickupPage() {
                 }
               />
               <Summary label="Volume" value={volumeOptions.find((item) => item.value === volume)!.label} />
+              <Summary label="Jenis sampah" value={wasteTypes.join(', ')} />
+              <Summary label="Waktu harapan" value={preferredTime || 'Fleksibel'} />
               <Summary label="Layanan" value={recommendation} />
             </Card>
+            <p className="mt-4 rounded-2xl bg-amber-50 p-4 text-sm leading-6 text-amber-900">
+              {!authUid || user?.role !== 'CUSTOMER' || !photoFile
+                ? 'Permintaan akan disimpan sebagai draft perangkat. Kirim melalui WhatsApp agar operator menerimanya.'
+                : 'Permintaan akan dikirim ke sistem dan menunggu verifikasi operator.'}
+            </p>
           </StepCard>
         )}
 
@@ -433,19 +844,23 @@ export function NewPickupPage() {
           ) : (
             <Link
               className="rounded-2xl border border-[#159fb3] bg-white px-5 py-3.5 text-center font-bold text-[#087f8c]"
-              to="/"
+              to="/app"
             >
               Batal
             </Link>
           )}
           <PrimaryButton
-            disabled={!canContinue}
+            disabled={!canContinue || isSubmitting}
             onClick={() => {
-              if (step < 4) setStep((current) => current + 1);
+              if (step < 6) setStep((current) => current + 1);
               else setConfirm(true);
             }}
           >
-            {step === 4 ? 'Buat Tiket' : 'Lanjut'}
+            {step === 6
+              ? isSubmitting
+                ? 'Mengirim...'
+                : 'Kirim Permintaan'
+              : 'Lanjut'}
           </PrimaryButton>
         </div>
       </main>
@@ -504,11 +919,15 @@ export function NewPickupPage() {
       </BottomSheet>
 
       <ConfirmModal
-        description="Periksa kembali alamat dan patokan agar petugas mudah menemukan lokasi."
+        description={
+          authUid && user?.role === 'CUSTOMER'
+            ? 'Permintaan akan dikirim ke operator. Jika koneksi terputus, data disimpan sebagai antrean dan dapat dikirim ulang.'
+            : 'Draft akan disimpan di perangkat. Setelah itu, kirim detailnya melalui WhatsApp agar operator dapat memproses permintaan.'
+        }
         onCancel={() => setConfirm(false)}
-        onConfirm={finish}
+        onConfirm={() => void finish()}
         open={confirm}
-        title="Apakah lokasi jemput sudah benar?"
+        title="Kirim permintaan jemput?"
       />
       <AppDialog
         confirmLabel="Mengerti"
@@ -531,7 +950,7 @@ function StepCard({
 }: {
   title: string;
   description: string;
-  icon: 'pin' | 'camera' | 'spark' | 'ticket';
+  icon: 'pin' | 'camera' | 'spark' | 'ticket' | 'calendar' | 'user';
   children: React.ReactNode;
 }) {
   return (

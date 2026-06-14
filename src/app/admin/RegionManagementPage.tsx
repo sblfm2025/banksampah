@@ -5,7 +5,7 @@ export function RegionManagementPage() {
   return (
     <div className="space-y-6">
       <div>
-        <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#159fb3]">
+        <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#087f8c]">
           Wilayah Layanan
         </p>
         <h1 className="mt-2 text-3xl font-bold">Master wilayah pilot</h1>

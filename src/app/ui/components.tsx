@@ -3,7 +3,7 @@ import type {
   HTMLAttributes,
   ReactNode,
 } from 'react';
-import { NavLink } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 import {
   PICKUP_STATUS_LABELS,
   type PickupStatus,
@@ -44,24 +44,51 @@ export function AppHeader({
   subtitle,
   action,
   back,
+  homeTo = '/',
+  titleAsHeading = true,
+  titleLink = true,
 }: {
   title: string;
   subtitle?: string;
   action?: ReactNode;
   back?: ReactNode;
+  homeTo?: string;
+  titleAsHeading?: boolean;
+  titleLink?: boolean;
 }) {
+  const titleNode = titleAsHeading ? (
+    <h1 className="truncate text-base font-bold">{title}</h1>
+  ) : (
+    <p className="truncate text-base font-bold">{title}</p>
+  );
+  const titleContent = (
+    <>
+      {titleNode}
+      {subtitle && (
+        <p className="truncate text-xs text-slate-500">{subtitle}</p>
+      )}
+    </>
+  );
+
   return (
     <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/95 backdrop-blur">
       <div className="app-container flex min-h-20 items-center justify-between gap-4">
         <div className="flex min-w-0 items-center gap-3">
           {back}
-          <AppLogo compact />
-          <div className="min-w-0">
-            <h1 className="truncate text-base font-bold">{title}</h1>
-            {subtitle && (
-              <p className="truncate text-xs text-slate-500">{subtitle}</p>
-            )}
-          </div>
+          <Link
+            aria-label="Ke beranda"
+            className="grid min-h-12 min-w-12 shrink-0 place-items-center rounded-full"
+            to={homeTo}
+          >
+            <AppLogo compact />
+          </Link>
+          {titleLink ? (
+            <Link className="min-w-0 py-2" to={homeTo}>
+              {titleContent}
+            </Link>
+          ) : (
+            <div className="min-w-0 py-2">{titleContent}</div>
+          )}
         </div>
         {action}
       </div>
@@ -70,15 +97,15 @@ export function AppHeader({
 }
 
 const navItems = [
-  { to: '/', label: 'Home', icon: 'home' },
+  { to: '/app', label: 'Home', icon: 'home' },
   { to: '/sampahku', label: 'Sampahku', icon: 'leaf' },
-  { to: '/tickets', label: 'Tiket', icon: 'ticket' },
+  { to: '/tickets', label: 'Permintaan', icon: 'ticket' },
   { to: '/profile', label: 'Profil', icon: 'user' },
 ] as const;
 
 export function BottomNav() {
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_30px_rgb(15_23_42/0.08)] backdrop-blur">
+    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_30px_rgb(15_23_42/0.08)] backdrop-blur lg:hidden">
       <div className="mx-auto grid max-w-lg grid-cols-4">
         {navItems.map((item) => (
           <NavLink
@@ -87,7 +114,7 @@ export function BottomNav() {
                 isActive ? 'text-[#087f8c]' : 'text-slate-400'
               }`
             }
-            end={item.to === '/'}
+            end={item.to === '/app'}
             key={item.to}
             to={item.to}
           >
@@ -106,7 +133,7 @@ export function PrimaryButton({
 }: ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
     <button
-      className={`rounded-2xl bg-[#159fb3] px-5 py-3.5 font-bold text-white shadow-[0_10px_24px_rgb(21_159_179/0.24)] transition hover:bg-[#087f8c] disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+      className={`rounded-2xl bg-[#087f8c] px-5 py-3.5 font-bold text-white shadow-[0_10px_24px_rgb(21_159_179/0.24)] transition hover:bg-[#087f8c] disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
       {...props}
     />
   );
@@ -242,22 +269,32 @@ export function TicketCard({
   status,
   address,
   schedule,
+  draft = false,
   children,
 }: {
   code: string;
   status: PickupStatus;
   address: string;
   schedule?: string;
+  draft?: boolean;
   children?: ReactNode;
 }) {
   return (
     <Card className="p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold text-slate-400">Nomor tiket</p>
+          <p className="text-xs font-semibold text-slate-400">
+            Nomor permintaan
+          </p>
           <h3 className="mt-1 font-extrabold">{code}</h3>
         </div>
-        <StatusBadge status={status} />
+          {draft ? (
+            <span className="inline-flex rounded-full bg-amber-50 px-3 py-1 text-[11px] font-bold text-amber-700">
+              Menunggu dikirim
+            </span>
+        ) : (
+          <StatusBadge status={status} />
+        )}
       </div>
       <div className="mt-4 space-y-2 text-sm text-slate-600">
         <p className="flex gap-2">
@@ -472,7 +509,7 @@ export function LoadingState({ label = 'Memuat data...' }: { label?: string }) {
   return (
     <div className="grid min-h-40 place-items-center text-sm font-medium text-slate-500">
       <div className="text-center">
-        <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-[#bde7ec] border-t-[#159fb3]" />
+        <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-[#bde7ec] border-t-[#087f8c]" />
         <p className="mt-3">{label}</p>
       </div>
     </div>
@@ -487,7 +524,7 @@ export function ErrorState({ message }: { message: string }) {
   );
 }
 
-type IconName =
+export type IconName =
   | 'home'
   | 'leaf'
   | 'ticket'

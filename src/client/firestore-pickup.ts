@@ -19,7 +19,7 @@ function toIso(value: unknown): string | undefined {
 export function parsePickupSnapshot(
   snapshot: DocumentSnapshot<DocumentData>,
 ): PickupRequest {
-  if (!snapshot.exists()) throw new Error('Tiket tidak ditemukan.');
+  if (!snapshot.exists()) throw new Error('Permintaan tidak ditemukan.');
   const data = snapshot.data();
   return pickupRequestSchema.parse({
     ...data,

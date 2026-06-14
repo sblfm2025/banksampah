@@ -13,11 +13,11 @@ export async function stableIdentifier(
 
 export function formatTicketCode(dateSegment: string, sequence: number): string {
   if (!/^\d{8}$/.test(dateSegment)) {
-    throw new Error('Ticket date segment harus berformat YYYYMMDD.');
+    throw new Error('Segmen tanggal permintaan harus berformat YYYYMMDD.');
   }
 
   if (!Number.isInteger(sequence) || sequence < 1 || sequence > 9999) {
-    throw new Error('Nomor urut tiket harus berada pada rentang 1-9999.');
+    throw new Error('Nomor urut permintaan harus berada pada rentang 1-9999.');
   }
 
   return `JSP-${dateSegment}-${sequence.toString().padStart(4, '0')}`;

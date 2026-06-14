@@ -87,6 +87,238 @@ afterAll(async () => {
 });
 
 describe('Firestore role access', () => {
+  const customerProfile = {
+    name: 'Andi Saputra',
+    email: 'andi@example.com',
+    phoneNumber: '6281234567890',
+    role: 'CUSTOMER',
+    isActive: true,
+    addressText: 'Jalan Bulu Manarang dekat masjid',
+    district: 'PALETEANG',
+    villageId: 'temmassarangnge',
+    location: { lat: -3.78, lng: 119.65 },
+    locationSource: 'MANUAL_PIN',
+    locationValidationStatus: 'INSIDE_SERVICE_AREA',
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  };
+  const officialPickup = {
+    ticketCode: 'JSP-20260614-0001',
+    source: 'PWA',
+    customerId: 'customer-google',
+    ownerUid: 'customer-google',
+    customerPhoneNumber: '6281234567890',
+    customerName: 'Andi Saputra',
+    district: 'PALETEANG',
+    villageId: 'temmassarangnge',
+    addressText: 'Jalan Bulu Manarang dekat masjid',
+    location: { lat: -3.78, lng: 119.65 },
+    locationSource: 'MANUAL_PIN',
+    locationValidationStatus: 'INSIDE_SERVICE_AREA',
+    serviceType: 'REGULAR_HOUSEHOLD_PICKUP',
+    serviceCategory: 'warga',
+    serviceModel: 'gratis',
+    volumeLevel: 'MEDIUM',
+    tricycleLoadEstimate: 'HALF',
+    wasteTypes: [],
+    dataQuality: 'estimated_by_user',
+    paymentStatus: 'gratis',
+    impactTags: ['pengurangan_sampah'],
+    photoUrls: [],
+    intakePhotoMediaIds: ['ticket-public_intake'],
+    status: 'NEW',
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  };
+  const intakeMedia = {
+    pickupRequestId: 'ticket-public',
+    ownerUid: 'customer-google',
+    contentType: 'image/jpeg',
+    byteSize: 12,
+    width: 100,
+    height: 80,
+    dataUrl: 'data:image/jpeg;base64,AAA=',
+    originalName: 'foto.jpg',
+    createdAt: serverTimestamp(),
+  };
+
+  it('warga Google dapat membuat profil lengkap miliknya sendiri', async () => {
+    const db = environment
+      .authenticatedContext('customer-google', {
+        email: 'andi@example.com',
+      })
+      .firestore();
+
+    await assertSucceeds(
+      setDoc(doc(db, 'users/customer-google'), customerProfile),
+    );
+    await assertSucceeds(getDoc(doc(db, 'users/customer-google')));
+  });
+
+  it('warga tidak dapat menaikkan role atau menulis profil akun lain', async () => {
+    const db = environment
+      .authenticatedContext('customer-google', {
+        email: 'andi@example.com',
+      })
+      .firestore();
+
+    await assertFails(
+      setDoc(doc(db, 'users/customer-google'), {
+        ...customerProfile,
+        role: 'SUPER_ADMIN',
+      }),
+    );
+    await assertFails(
+      setDoc(doc(db, 'users/customer-lain'), customerProfile),
+    );
+  });
+
+  it('warga wajib menyimpan kontak, alamat, dan titik terverifikasi', async () => {
+    const db = environment
+      .authenticatedContext('customer-google', {
+        email: 'andi@example.com',
+      })
+      .firestore();
+    const withoutPhone = { ...customerProfile } as Partial<
+      typeof customerProfile
+    >;
+    delete withoutPhone.phoneNumber;
+
+    await assertFails(
+      setDoc(doc(db, 'users/customer-google'), withoutPhone),
+    );
+    await assertFails(
+      setDoc(doc(db, 'users/customer-google'), {
+        ...customerProfile,
+        locationValidationStatus: 'UNKNOWN',
+      }),
+    );
+  });
+
+  it('warga dengan profil lengkap dapat mengirim permintaan resmi dan foto intake', async () => {
+    const db = environment
+      .authenticatedContext('customer-google', {
+        email: 'andi@example.com',
+      })
+      .firestore();
+
+    await environment.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), 'users/customer-google'), {
+        ...customerProfile,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+    });
+
+    const batch = writeBatch(db);
+    batch.set(doc(db, 'pickupRequests/ticket-public'), officialPickup);
+    batch.set(doc(db, 'customerWasteMedia/ticket-public_intake'), intakeMedia);
+    await assertSucceeds(batch.commit());
+    await assertSucceeds(getDoc(doc(db, 'pickupRequests/ticket-public')));
+    await assertSucceeds(
+      getDoc(doc(db, 'customerWasteMedia/ticket-public_intake')),
+    );
+  });
+
+  it('warga tidak dapat mengirim atau membaca permintaan milik akun lain', async () => {
+    const ownerDb = environment
+      .authenticatedContext('customer-google', {
+        email: 'andi@example.com',
+      })
+      .firestore();
+    const otherDb = environment
+      .authenticatedContext('customer-other', {
+        email: 'other@example.com',
+      })
+      .firestore();
+
+    await environment.withSecurityRulesDisabled(async (context) => {
+      const db = context.firestore();
+      await Promise.all([
+        setDoc(doc(db, 'users/customer-google'), {
+          ...customerProfile,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        }),
+        setDoc(doc(db, 'users/customer-other'), {
+          ...customerProfile,
+          email: 'other@example.com',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        }),
+        setDoc(doc(db, 'pickupRequests/other-ticket'), {
+          ...officialPickup,
+          customerId: 'customer-other',
+          ownerUid: 'customer-other',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        }),
+      ]);
+    });
+
+    await assertFails(
+      setDoc(doc(ownerDb, 'pickupRequests/wrong-owner'), {
+        ...officialPickup,
+        customerId: 'customer-other',
+        ownerUid: 'customer-other',
+      }),
+    );
+    await assertFails(getDoc(doc(ownerDb, 'pickupRequests/other-ticket')));
+    await assertSucceeds(getDoc(doc(otherDb, 'pickupRequests/other-ticket')));
+  });
+
+  it('foto intake warga hanya terbaca backoffice, pemilik, dan driver yang ditugaskan', async () => {
+    const ownerDb = environment
+      .authenticatedContext('customer-google', {
+        email: 'andi@example.com',
+      })
+      .firestore();
+    const assignedDriverDb = environment
+      .authenticatedContext('driver-1')
+      .firestore();
+    const otherDriverDb = environment
+      .authenticatedContext('driver-2')
+      .firestore();
+    const operatorDb = environment
+      .authenticatedContext('operator-1')
+      .firestore();
+
+    await environment.withSecurityRulesDisabled(async (context) => {
+      const db = context.firestore();
+      await Promise.all([
+        setDoc(doc(db, 'users/customer-google'), {
+          ...customerProfile,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        }),
+        setDoc(doc(db, 'pickupRequests/ticket-public'), {
+          ...officialPickup,
+          assignedDriverId: 'driver-1',
+          status: 'ASSIGNED',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        }),
+        setDoc(doc(db, 'customerWasteMedia/ticket-public_intake'), {
+          ...intakeMedia,
+          createdAt: new Date(),
+        }),
+      ]);
+    });
+
+    await assertSucceeds(
+      getDoc(doc(ownerDb, 'customerWasteMedia/ticket-public_intake')),
+    );
+    await assertSucceeds(
+      getDoc(doc(operatorDb, 'customerWasteMedia/ticket-public_intake')),
+    );
+    await assertSucceeds(
+      getDoc(doc(assignedDriverDb, 'customerWasteMedia/ticket-public_intake')),
+    );
+    await assertFails(
+      getDoc(doc(otherDriverDb, 'customerWasteMedia/ticket-public_intake')),
+    );
+  });
+
   it('operator dapat membaca tiket dan customer', async () => {
     const db = environment
       .authenticatedContext('operator-1')
@@ -94,6 +326,63 @@ describe('Firestore role access', () => {
 
     await assertSucceeds(getDoc(doc(db, 'pickupRequests/ticket-1')));
     await assertSucceeds(getDoc(doc(db, 'customers/customer-1')));
+  });
+
+  it('operator dapat membuat permintaan WhatsApp dengan customer dan audit', async () => {
+    const db = environment.authenticatedContext('operator-1').firestore();
+    const batch = writeBatch(db);
+    batch.set(doc(db, 'customers/manual-customer'), {
+      id: 'manual-customer',
+      phoneNumber: '6281234567890',
+      fullName: 'Ibu Rahma',
+      district: 'PALETEANG',
+      village: 'temmassarangnge',
+      addressText: 'Jalan Bulu Manarang dekat masjid',
+      createdFrom: 'ADMIN',
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+    batch.set(doc(db, 'pickupRequests/manual-ticket'), {
+      ticketCode: 'JSP-20260614-0099',
+      source: 'WHATSAPP',
+      customerId: 'manual-customer',
+      customerPhoneNumber: '6281234567890',
+      customerName: 'Ibu Rahma',
+      district: 'PALETEANG',
+      villageId: 'temmassarangnge',
+      addressText: 'Jalan Bulu Manarang dekat masjid',
+      locationSource: 'MANUAL_TEXT',
+      locationValidationStatus: 'UNKNOWN',
+      serviceType: 'REGULAR_HOUSEHOLD_PICKUP',
+      serviceCategory: 'warga',
+      serviceModel: 'gratis',
+      volumeLevel: 'MEDIUM',
+      tricycleLoadEstimate: 'HALF',
+      wasteTypes: ['plastik'],
+      dataQuality: 'estimated_by_operator',
+      paymentStatus: 'gratis',
+      impactTags: ['pengurangan_sampah'],
+      photoUrls: [],
+      status: 'NEEDS_OPERATOR_REVIEW',
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      lastAuditId: 'manual-created',
+    });
+    batch.set(doc(db, 'auditLogs/manual-created'), {
+      actorId: 'operator-1',
+      actorRole: 'OPERATOR',
+      action: 'PICKUP_REQUEST_CREATED',
+      entityType: 'PICKUP_REQUEST',
+      entityId: 'manual-ticket',
+      before: {},
+      after: {
+        status: 'NEEDS_OPERATOR_REVIEW',
+        source: 'WHATSAPP',
+      },
+      createdAt: serverTimestamp(),
+    });
+
+    await assertSucceeds(batch.commit());
   });
 
   it('hanya super admin yang dapat mengelola profil petugas', async () => {
@@ -181,6 +470,47 @@ describe('Firestore role access', () => {
     );
   });
 
+  it('operator dapat memperbarui klasifikasi dampak hanya bersama audit', async () => {
+    const db = environment.authenticatedContext('operator-1').firestore();
+
+    await assertFails(
+      updateDoc(doc(db, 'pickupRequests/ticket-1'), {
+        serviceCategory: 'event',
+        serviceModel: 'berbayar',
+        updatedAt: serverTimestamp(),
+      }),
+    );
+
+    const batch = writeBatch(db);
+    batch.update(doc(db, 'pickupRequests/ticket-1'), {
+      serviceCategory: 'event',
+      serviceModel: 'berbayar',
+      wasteTypes: ['plastik', 'kardus'],
+      estimatedWeightKg: 25,
+      dataQuality: 'estimated_by_operator',
+      partnerDestination: 'tps3r_paleteang_bersinar',
+      serviceFee: 500000,
+      operationalCost: 225000,
+      paidAmount: 250000,
+      paymentStatus: 'dp',
+      impactTags: ['layanan_profesional', 'pengurangan_sampah'],
+      updatedAt: serverTimestamp(),
+      lastAuditId: 'operator-impact',
+    });
+    batch.set(doc(db, 'auditLogs/operator-impact'), {
+      actorId: 'operator-1',
+      actorRole: 'OPERATOR',
+      action: 'PICKUP_IMPACT_UPDATED',
+      entityType: 'PICKUP_REQUEST',
+      entityId: 'ticket-1',
+      before: { status: 'ASSIGNED' },
+      after: { status: 'ASSIGNED' },
+      createdAt: serverTimestamp(),
+    });
+
+    await assertSucceeds(batch.commit());
+  });
+
   it('driver dapat memulai tiket miliknya dengan field terbatas', async () => {
     const db = environment.authenticatedContext('driver-1').firestore();
 
@@ -232,10 +562,15 @@ describe('Firestore role access', () => {
       afterPhotoUrls: [],
       actualTripResult: 'COMPLETED_ONE_TRIP',
       driverNotes: null,
+      finalWeightKg: 18.5,
+      partnerDestination: 'tps3r_paleteang_bersinar',
       createdAt: serverTimestamp(),
     });
     batch.update(doc(db, 'pickupRequests/ticket-1'), {
       status: 'COMPLETED',
+      finalWeightKg: 18.5,
+      dataQuality: 'confirmed_by_driver',
+      partnerDestination: 'tps3r_paleteang_bersinar',
       completedAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
       lastAuditId: 'driver-completed',
@@ -278,6 +613,57 @@ describe('Firestore role access', () => {
         driverId: 'driver-2',
       }),
     );
+  });
+
+  it('driver hanya dapat menyimpan reason code resmi dengan catatan wajib', async () => {
+    const db = environment.authenticatedContext('driver-1').firestore();
+    const baseProof = {
+      pickupRequestId: 'ticket-1',
+      driverId: 'driver-1',
+      beforePhotoUrls: ['https://example.com/before.jpg'],
+      afterPhotoUrls: [],
+      createdAt: serverTimestamp(),
+    };
+
+    await assertFails(
+      setDoc(doc(db, 'pickupProofs/ticket-1'), {
+        ...baseProof,
+        actualTripResult: 'UNKNOWN_RESULT',
+        driverNotes: 'Nilai ini tidak resmi.',
+      }),
+    );
+    await assertFails(
+      setDoc(doc(db, 'pickupProofs/ticket-1'), {
+        ...baseProof,
+        actualTripResult: 'HAZARDOUS_WASTE_FOUND',
+        driverNotes: null,
+      }),
+    );
+
+    const batch = writeBatch(db);
+    batch.set(doc(db, 'pickupProofs/ticket-1'), {
+      ...baseProof,
+      actualTripResult: 'HAZARDOUS_WASTE_FOUND',
+      driverNotes: 'Terlihat kemasan bahan kimia, perlu pemeriksaan operator.',
+    });
+    batch.update(doc(db, 'pickupRequests/ticket-1'), {
+      status: 'NEEDS_OPERATOR_REVIEW',
+      driverNotes: 'Terlihat kemasan bahan kimia, perlu pemeriksaan operator.',
+      updatedAt: serverTimestamp(),
+      lastAuditId: 'driver-hazardous-review',
+    });
+    batch.set(
+      doc(db, 'auditLogs/driver-hazardous-review'),
+      pickupAudit(
+        'driver-1',
+        'DRIVER',
+        'PICKUP_RESULT_RECORDED',
+        'ASSIGNED',
+        'NEEDS_OPERATOR_REVIEW',
+      ),
+    );
+
+    await assertSucceeds(batch.commit());
   });
 
   it('media bukti Firestore hanya dapat diakses pihak berhak', async () => {

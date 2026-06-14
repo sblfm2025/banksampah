@@ -191,7 +191,7 @@ class FakeSender implements WhatsAppSender {
 }
 
 describe('WhatsAppIntakeService', () => {
-  it('membuat tiket dan balasan saat data lengkap', async () => {
+  it('membuat permintaan dan balasan saat data lengkap', async () => {
     const messages = new FakeMessages();
     const tickets = new FakeTickets();
     const sender = new FakeSender();
@@ -216,7 +216,7 @@ describe('WhatsAppIntakeService', () => {
     expect(messages.processedTicketId).toBe('ticket-1');
   });
 
-  it('tidak membuat tiket aktif untuk luar wilayah', async () => {
+  it('tidak membuat permintaan aktif untuk luar wilayah', async () => {
     const messages = new FakeMessages();
     const tickets = new FakeTickets();
     const sender = new FakeSender();

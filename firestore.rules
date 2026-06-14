@@ -32,6 +32,79 @@ service cloud.firestore {
       return isAdmin() || isOperator();
     }
 
+    function isCompleteCustomer() {
+      return hasRole('CUSTOMER')
+        && currentUser().data.name is string
+        && currentUser().data.phoneNumber is string
+        && currentUser().data.addressText is string
+        && currentUser().data.location is map
+        && currentUser().data.locationValidationStatus
+          == 'INSIDE_SERVICE_AREA';
+    }
+
+    function validCustomerProfile() {
+      return request.resource.data.keys().hasOnly([
+          'name',
+          'email',
+          'phoneNumber',
+          'role',
+          'isActive',
+          'addressText',
+          'district',
+          'villageId',
+          'location',
+          'locationAccuracyMeters',
+          'locationSource',
+          'locationValidationStatus',
+          'createdAt',
+          'updatedAt'
+        ])
+        && request.resource.data.keys().hasAll([
+          'name',
+          'email',
+          'phoneNumber',
+          'role',
+          'isActive',
+          'addressText',
+          'district',
+          'villageId',
+          'location',
+          'locationSource',
+          'locationValidationStatus',
+          'createdAt',
+          'updatedAt'
+        ])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() >= 2
+        && request.resource.data.name.size() <= 120
+        && request.resource.data.email is string
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.phoneNumber is string
+        && request.resource.data.phoneNumber.matches('^628[0-9]{7,12}$')
+        && request.resource.data.role == 'CUSTOMER'
+        && request.resource.data.isActive == true
+        && request.resource.data.addressText is string
+        && request.resource.data.addressText.size() >= 8
+        && request.resource.data.addressText.size() <= 500
+        && request.resource.data.district in [
+          'WATANG_SAWITTO',
+          'PALETEANG'
+        ]
+        && request.resource.data.villageId is string
+        && request.resource.data.villageId.size() > 0
+        && request.resource.data.location is map
+        && request.resource.data.location.keys().hasOnly(['lat', 'lng'])
+        && request.resource.data.location.lat is number
+        && request.resource.data.location.lng is number
+        && request.resource.data.locationSource in [
+          'BROWSER_GPS',
+          'MANUAL_PIN'
+        ]
+        && request.resource.data.locationValidationStatus
+          == 'INSIDE_SERVICE_AREA'
+        && request.resource.data.updatedAt == request.time;
+    }
+
     function isAssignedDriver() {
       return isDriver() && resource.data.assignedDriverId == request.auth.uid;
     }
@@ -71,11 +144,13 @@ service cloud.firestore {
         || (from == 'SCHEDULED' && to in ['ASSIGNED', 'CANCELLED'])
         || (from == 'ASSIGNED' && to in [
           'IN_PROGRESS',
+          'NEEDS_OPERATOR_REVIEW',
           'SCHEDULED',
           'CANCELLED'
         ])
         || (from == 'IN_PROGRESS' && to in [
           'ASSIGNED',
+          'NEEDS_OPERATOR_REVIEW',
           'COMPLETED',
           'EXTRA_TRIP_REQUIRED',
           'CANCELLED'
@@ -148,6 +223,28 @@ service cloud.firestore {
       && operatorAuditMatches(ticketId);
     }
 
+    function operatorUpdatesImpactFields(ticketId) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+        'serviceCategory',
+        'serviceModel',
+        'wasteTypes',
+        'estimatedWeightKg',
+        'finalWeightKg',
+        'dataQuality',
+        'partnerDestination',
+        'serviceFee',
+        'operationalCost',
+        'paidAmount',
+        'paymentStatus',
+        'impactTags',
+        'updatedAt',
+        'lastAuditId'
+      ])
+      && request.resource.data.status == resource.data.status
+      && request.resource.data.updatedAt == request.time
+      && validPickupAudit(ticketId, 'PICKUP_IMPACT_UPDATED');
+    }
+
     function driverStartsPickup(ticketId) {
       return resource.data.status == 'ASSIGNED'
         && request.resource.data.status == 'IN_PROGRESS'
@@ -166,6 +263,7 @@ service cloud.firestore {
       return resource.data.status in ['ASSIGNED', 'IN_PROGRESS']
         && request.resource.data.status in [
           'ASSIGNED',
+          'NEEDS_OPERATOR_REVIEW',
           'COMPLETED',
           'EXTRA_TRIP_REQUIRED',
           'CANCELLED'
@@ -173,6 +271,9 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'status',
           'driverNotes',
+          'finalWeightKg',
+          'dataQuality',
+          'partnerDestination',
           'completedAt',
           'cancelledAt',
           'updatedAt',
@@ -191,7 +292,42 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if (signedIn() && request.auth.uid == userId)
         || isBackOffice();
-      allow create, update: if isAdmin()
+      allow create: if (
+          signedIn()
+          && request.auth.uid == userId
+          && validCustomerProfile()
+          && request.resource.data.createdAt == request.time
+        )
+        || (
+          isAdmin()
+          && request.resource.data.keys().hasOnly([
+            'name',
+            'email',
+            'phoneNumber',
+            'role',
+            'isActive'
+          ])
+          && request.resource.data.name is string
+          && request.resource.data.email is string
+          && request.resource.data.role in [
+            'SUPER_ADMIN',
+            'OPERATOR',
+            'DRIVER',
+            'CUSTOMER'
+          ]
+          && request.resource.data.isActive is bool
+        );
+      allow update: if (
+          signedIn()
+          && request.auth.uid == userId
+          && resource.data.role == 'CUSTOMER'
+          && request.resource.data.role == resource.data.role
+          && request.resource.data.isActive == resource.data.isActive
+          && request.resource.data.email == resource.data.email
+          && request.resource.data.createdAt == resource.data.createdAt
+          && validCustomerProfile()
+        )
+        || (isAdmin()
         && request.resource.data.keys().hasOnly([
           'name',
           'email',
@@ -207,7 +343,7 @@ service cloud.firestore {
           'DRIVER',
           'CUSTOMER'
         ]
-        && request.resource.data.isActive is bool;
+        && request.resource.data.isActive is bool);
       allow delete: if false;
     }
 
@@ -217,11 +353,141 @@ service cloud.firestore {
     }
 
     match /pickupRequests/{ticketId} {
-      allow read: if isBackOffice() || isAssignedDriver();
-      allow create: if isBackOffice();
+      allow read: if isBackOffice()
+        || isAssignedDriver()
+        || (
+          signedIn()
+          && resource.data.ownerUid == request.auth.uid
+        );
+      allow create: if isBackOffice()
+        || (
+          isCompleteCustomer()
+          && request.resource.data.keys().hasOnly([
+            'ticketCode',
+            'source',
+            'customerId',
+            'ownerUid',
+            'customerPhoneNumber',
+            'customerName',
+            'district',
+            'villageId',
+            'addressText',
+            'location',
+            'locationAccuracyMeters',
+            'locationSource',
+            'locationValidationStatus',
+            'serviceType',
+            'serviceCategory',
+            'serviceModel',
+            'volumeLevel',
+            'tricycleLoadEstimate',
+            'wasteDescription',
+            'wasteTypes',
+            'dataQuality',
+            'paymentStatus',
+            'impactTags',
+            'photoUrls',
+            'intakePhotoMediaIds',
+            'status',
+            'createdAt',
+            'updatedAt'
+          ])
+          && request.resource.data.keys().hasAll([
+            'ticketCode',
+            'source',
+            'customerId',
+            'ownerUid',
+            'customerPhoneNumber',
+            'customerName',
+            'district',
+            'villageId',
+            'addressText',
+            'location',
+            'locationSource',
+            'locationValidationStatus',
+            'serviceType',
+            'serviceCategory',
+            'serviceModel',
+            'volumeLevel',
+            'tricycleLoadEstimate',
+            'wasteTypes',
+            'dataQuality',
+            'paymentStatus',
+            'impactTags',
+            'photoUrls',
+            'intakePhotoMediaIds',
+            'status',
+            'createdAt',
+            'updatedAt'
+          ])
+          && request.resource.data.ticketCode.matches(
+            '^JSP-[0-9]{8}-[0-9]{4}$'
+          )
+          && request.resource.data.source == 'PWA'
+          && request.resource.data.customerId == request.auth.uid
+          && request.resource.data.ownerUid == request.auth.uid
+          && request.resource.data.customerPhoneNumber
+            == currentUser().data.phoneNumber
+          && request.resource.data.customerName == currentUser().data.name
+          && request.resource.data.district in [
+            'WATANG_SAWITTO',
+            'PALETEANG'
+          ]
+          && request.resource.data.villageId is string
+          && request.resource.data.villageId.size() > 0
+          && request.resource.data.addressText is string
+          && request.resource.data.addressText.size() >= 8
+          && request.resource.data.addressText.size() <= 500
+          && request.resource.data.location is map
+          && request.resource.data.location.keys().hasOnly(['lat', 'lng'])
+          && request.resource.data.locationSource in [
+            'BROWSER_GPS',
+            'MANUAL_PIN'
+          ]
+          && request.resource.data.locationValidationStatus
+            == 'INSIDE_SERVICE_AREA'
+          && request.resource.data.serviceType in [
+            'REGULAR_HOUSEHOLD_PICKUP',
+            'ONE_TRIP_TRICYCLE'
+          ]
+          && request.resource.data.serviceCategory == 'warga'
+          && request.resource.data.serviceModel == 'gratis'
+          && request.resource.data.volumeLevel in [
+            'SMALL',
+            'MEDIUM',
+            'LARGE',
+            'OVERSIZED'
+          ]
+          && request.resource.data.tricycleLoadEstimate in [
+            'QUARTER',
+            'HALF',
+            'FULL',
+            'OVER_CAPACITY'
+          ]
+          && request.resource.data.wasteTypes is list
+          && request.resource.data.dataQuality == 'estimated_by_user'
+          && request.resource.data.paymentStatus == 'gratis'
+          && request.resource.data.impactTags is list
+          && request.resource.data.photoUrls is list
+          && request.resource.data.photoUrls.size() == 0
+          && request.resource.data.intakePhotoMediaIds is list
+          && request.resource.data.intakePhotoMediaIds.size() == 1
+          && existsAfter(
+            /databases/$(database)/documents/customerWasteMedia/$(request.resource.data.intakePhotoMediaIds[0])
+          )
+          && getAfter(
+            /databases/$(database)/documents/customerWasteMedia/$(request.resource.data.intakePhotoMediaIds[0])
+          ).data.ownerUid == request.auth.uid
+          && request.resource.data.status == 'NEW'
+          && request.resource.data.createdAt == request.time
+          && request.resource.data.updatedAt == request.time
+        );
       allow update: if (
           isBackOffice()
-          && operatorUpdatesOperationalFields(ticketId)
+          && (
+            operatorUpdatesOperationalFields(ticketId)
+            || operatorUpdatesImpactFields(ticketId)
+          )
         )
         || (
           isAssignedDriver()
@@ -255,13 +521,53 @@ service cloud.firestore {
           'afterPhotoUrls',
           'actualTripResult',
           'driverNotes',
+          'finalWeightKg',
+          'partnerDestination',
           'createdAt'
         ])
         && request.resource.data.beforePhotoUrls is list
+        && request.resource.data.beforePhotoUrls.size() <= 5
         && request.resource.data.afterPhotoUrls is list
+        && request.resource.data.afterPhotoUrls.size() <= 5
         && (
           request.resource.data.beforePhotoUrls.size() > 0
           || request.resource.data.afterPhotoUrls.size() > 0
+        )
+        && request.resource.data.actualTripResult in [
+          'COMPLETED_ONE_TRIP',
+          'PARTIAL_PICKUP',
+          'EXTRA_TRIP_REQUIRED',
+          'CUSTOMER_NOT_AVAILABLE',
+          'WASTE_NOT_READY',
+          'LOCATION_NOT_FOUND',
+          'ACCESS_BLOCKED',
+          'HAZARDOUS_WASTE_FOUND',
+          'CANCELLED_ON_SITE'
+        ]
+        && (
+          !request.resource.data.keys().hasAny(['finalWeightKg'])
+          || request.resource.data.finalWeightKg == null
+          || request.resource.data.finalWeightKg is number
+        )
+        && (
+          !request.resource.data.keys().hasAny(['partnerDestination'])
+          || request.resource.data.partnerDestination == null
+          || request.resource.data.partnerDestination in [
+            'bank_sampah_peduli_pinrang',
+            'tps3r_paleteang_bersinar',
+            'tps3r_lain',
+            'pengepul',
+            'kompos_maggot',
+            'residu'
+          ]
+        )
+        && (
+          request.resource.data.actualTripResult == 'COMPLETED_ONE_TRIP'
+          || (
+            request.resource.data.driverNotes is string
+            && request.resource.data.driverNotes.size() > 0
+            && request.resource.data.driverNotes.size() <= 1000
+          )
         )
         && request.resource.data.createdAt == request.time;
       allow update: if false;
@@ -296,6 +602,52 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    match /customerWasteMedia/{mediaId} {
+      allow read: if isBackOffice()
+        || (
+          signedIn()
+          && resource.data.ownerUid == request.auth.uid
+        )
+        || (
+          isDriver()
+          && driverOwnsPickup(resource.data.pickupRequestId)
+        );
+      allow create: if isCompleteCustomer()
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.keys().hasOnly([
+          'pickupRequestId',
+          'ownerUid',
+          'contentType',
+          'byteSize',
+          'width',
+          'height',
+          'dataUrl',
+          'originalName',
+          'createdAt'
+        ])
+        && request.resource.data.pickupRequestId is string
+        && existsAfter(
+          /databases/$(database)/documents/pickupRequests/$(request.resource.data.pickupRequestId)
+        )
+        && getAfter(
+          /databases/$(database)/documents/pickupRequests/$(request.resource.data.pickupRequestId)
+        ).data.ownerUid == request.auth.uid
+        && getAfter(
+          /databases/$(database)/documents/pickupRequests/$(request.resource.data.pickupRequestId)
+        ).data.intakePhotoMediaIds.hasAny([mediaId])
+        && request.resource.data.contentType == 'image/jpeg'
+        && request.resource.data.byteSize > 0
+        && request.resource.data.byteSize <= 300000
+        && request.resource.data.width is int
+        && request.resource.data.height is int
+        && request.resource.data.dataUrl is string
+        && request.resource.data.dataUrl.size() <= 410000
+        && request.resource.data.originalName is string
+        && request.resource.data.originalName.size() <= 120
+        && request.resource.data.createdAt == request.time;
+      allow update, delete: if false;
+    }
+
     match /whatsappMessages/{messageId} {
       allow read: if isBackOffice();
       allow write: if false;
@@ -322,7 +674,9 @@ service cloud.firestore {
         && request.resource.data.actorId == request.auth.uid
         && request.resource.data.actorRole == currentUser().data.role
         && request.resource.data.action in [
+          'PICKUP_REQUEST_CREATED',
           'PICKUP_STATUS_CHANGED',
+          'PICKUP_IMPACT_UPDATED',
           'PICKUP_SCHEDULED',
           'PICKUP_DRIVER_ASSIGNED',
           'PICKUP_STARTED',

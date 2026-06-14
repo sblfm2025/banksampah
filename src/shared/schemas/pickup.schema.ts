@@ -2,6 +2,14 @@ import { z } from 'zod';
 import { DISTRICTS } from '../constants/districts';
 import { SERVICE_TYPES } from '../constants/services';
 import { PICKUP_STATUSES } from '../constants/statuses';
+import {
+  DATA_QUALITY_LEVELS,
+  IMPACT_TAGS,
+  PARTNER_DESTINATIONS,
+  PAYMENT_STATUSES,
+  SERVICE_CATEGORIES,
+  SERVICE_MODELS,
+} from '../constants/service-impact';
 import { wasteAiAnalysisSchema } from './ai.schema';
 
 const locationSchema = z.object({
@@ -29,6 +37,7 @@ export const pickupRequestSchema = z.object({
   ticketCode: z.string().regex(/^JSP-\d{8}-\d{4}$/),
   source: z.enum(['WHATSAPP', 'ADMIN', 'PWA']),
   customerId: z.string().min(1),
+  ownerUid: z.string().min(1).optional(),
   customerPhoneNumber: z.string().regex(/^\d{8,16}$/),
   customerName: z.string().trim().min(1).optional(),
   district: z.enum(DISTRICTS),
@@ -42,6 +51,8 @@ export const pickupRequestSchema = z.object({
   locationSource: locationSourceSchema.optional(),
   locationValidationStatus: locationValidationStatusSchema.optional(),
   serviceType: z.enum(SERVICE_TYPES),
+  serviceCategory: z.enum(SERVICE_CATEGORIES).optional(),
+  serviceModel: z.enum(SERVICE_MODELS).optional(),
   volumeLevel: z.enum([
     'SMALL',
     'MEDIUM',
@@ -59,7 +70,18 @@ export const pickupRequestSchema = z.object({
     'UNKNOWN',
   ]),
   wasteDescription: z.string().trim().min(1).optional(),
+  wasteTypes: z.array(z.string().trim().min(1)).optional(),
+  estimatedWeightKg: z.number().nonnegative().optional(),
+  finalWeightKg: z.number().nonnegative().optional(),
+  dataQuality: z.enum(DATA_QUALITY_LEVELS).optional(),
+  partnerDestination: z.enum(PARTNER_DESTINATIONS).optional(),
+  serviceFee: z.number().nonnegative().optional(),
+  operationalCost: z.number().nonnegative().optional(),
+  paidAmount: z.number().nonnegative().optional(),
+  paymentStatus: z.enum(PAYMENT_STATUSES).optional(),
+  impactTags: z.array(z.enum(IMPACT_TAGS)).optional(),
   photoUrls: z.array(z.url()),
+  intakePhotoMediaIds: z.array(z.string().min(1)).max(3).optional(),
   aiAnalysis: wasteAiAnalysisSchema.optional(),
   status: z.enum(PICKUP_STATUSES),
   scheduledDate: z.iso.date().optional(),

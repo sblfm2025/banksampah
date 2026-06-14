@@ -15,20 +15,20 @@ export function AdminMapPage() {
   return (
     <div className="space-y-6">
       <div>
-        <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#159fb3]">
+        <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#087f8c]">
           Peta Operasional
         </p>
         <h1 className="mt-2 text-3xl font-bold">Titik jemput aktif</h1>
         <p className="mt-2 text-sm text-slate-500">
-          Peta dasar berasal dari OpenStreetMap. Marker menampilkan data tiket
-          aplikasi, bukan kondisi lalu lintas realtime.
+          Peta dasar berasal dari OpenStreetMap. Marker menampilkan data
+          permintaan aplikasi, bukan kondisi lalu lintas realtime.
         </p>
       </div>
 
       {tickets.isLoading ? (
         <LoadingState label="Memuat titik jemput..." />
       ) : tickets.isError ? (
-        <ErrorState message="Peta tiket tidak dapat dimuat." />
+        <ErrorState message="Peta permintaan tidak dapat dimuat." />
       ) : (
         <>
           <OpenStreetMapView className="h-[65vh] min-h-[28rem]">
@@ -43,10 +43,10 @@ export function AdminMapPage() {
             ))}
           </OpenStreetMapView>
           <div className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
-            {mapped.length} dari {tickets.data?.length ?? 0} tiket memiliki
-            koordinat.{' '}
+            {mapped.length} dari {tickets.data?.length ?? 0} permintaan
+            memiliki koordinat.{' '}
             <Link className="font-bold text-[#087f8c]" to="/admin/tickets">
-              Buka daftar tiket
+              Buka daftar permintaan
             </Link>
           </div>
         </>

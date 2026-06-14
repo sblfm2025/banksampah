@@ -1,6 +1,7 @@
 import { Timestamp, type Firestore } from 'firebase-admin/firestore';
 import {
   completePickupInputSchema,
+  mapActualTripResultToStatus,
   type CompletePickupInput,
 } from '../../shared/schemas/pickup-proof.schema';
 import type { PickupRequest } from '../../shared/schemas/pickup.schema';
@@ -38,7 +39,7 @@ export class DriverPickupService {
     if (ticket.assignedDriverId !== driverId) {
       throw new ServiceError(
         'VALIDATION_ERROR',
-        'Tiket bukan tugas petugas ini.',
+        'Permintaan bukan tugas petugas ini.',
       );
     }
     return ticket;
@@ -54,12 +55,12 @@ export class DriverPickupService {
     await this.db.runTransaction(async (transaction) => {
       const snapshot = await transaction.get(reference);
       if (!snapshot.exists) {
-        throw new ServiceError('NOT_FOUND', 'Tiket tidak ditemukan.');
+        throw new ServiceError('NOT_FOUND', 'Permintaan tidak ditemukan.');
       }
       if (snapshot.get('assignedDriverId') !== driverId) {
         throw new ServiceError(
           'VALIDATION_ERROR',
-          'Tiket bukan tugas petugas ini.',
+          'Permintaan bukan tugas petugas ini.',
         );
       }
       if (snapshot.get('status') !== 'ASSIGNED') {
@@ -103,12 +104,12 @@ export class DriverPickupService {
     await this.db.runTransaction(async (transaction) => {
       const snapshot = await transaction.get(reference);
       if (!snapshot.exists) {
-        throw new ServiceError('NOT_FOUND', 'Tiket tidak ditemukan.');
+        throw new ServiceError('NOT_FOUND', 'Permintaan tidak ditemukan.');
       }
       if (snapshot.get('assignedDriverId') !== driverId) {
         throw new ServiceError(
           'VALIDATION_ERROR',
-          'Tiket bukan tugas petugas ini.',
+          'Permintaan bukan tugas petugas ini.',
         );
       }
 
@@ -123,7 +124,7 @@ export class DriverPickupService {
       const timestamp = Timestamp.fromDate(now);
       const proofReference = this.db.collection(COLLECTIONS.pickupProofs).doc();
       const auditReference = this.db.collection(COLLECTIONS.auditLogs).doc();
-      const nextStatus = this.mapResultToStatus(input.actualTripResult);
+      const nextStatus = mapActualTripResultToStatus(input.actualTripResult);
 
       transaction.set(proofReference, {
         pickupRequestId: id,
@@ -132,19 +133,29 @@ export class DriverPickupService {
         afterPhotoUrls: input.afterPhotoUrls,
         actualTripResult: input.actualTripResult,
         driverNotes: input.driverNotes,
+        finalWeightKg: input.finalWeightKg,
+        partnerDestination: input.partnerDestination,
         completedAt:
           nextStatus === 'COMPLETED' || nextStatus === 'CANCELLED'
             ? timestamp
             : undefined,
         createdAt: timestamp,
       });
-      transaction.update(reference, {
+      const ticketUpdate: Record<string, unknown> = {
         status: nextStatus,
         driverNotes: input.driverNotes,
         completedAt: nextStatus === 'COMPLETED' ? timestamp : undefined,
         cancelledAt: nextStatus === 'CANCELLED' ? timestamp : undefined,
         updatedAt: timestamp,
-      });
+      };
+      if (input.finalWeightKg !== undefined) {
+        ticketUpdate.finalWeightKg = input.finalWeightKg;
+        ticketUpdate.dataQuality = 'confirmed_by_driver';
+      }
+      if (input.partnerDestination) {
+        ticketUpdate.partnerDestination = input.partnerDestination;
+      }
+      transaction.update(reference, ticketUpdate);
       transaction.set(auditReference, {
         actorId: driverId,
         actorRole: 'DRIVER',
@@ -155,27 +166,13 @@ export class DriverPickupService {
         after: {
           status: nextStatus,
           actualTripResult: input.actualTripResult,
+          finalWeightKg: input.finalWeightKg,
+          partnerDestination: input.partnerDestination,
         },
         createdAt: timestamp,
       });
     });
 
     return this.getAssigned(id, driverId);
-  }
-
-  private mapResultToStatus(
-    result: CompletePickupInput['actualTripResult'],
-  ): PickupRequest['status'] {
-    switch (result) {
-      case 'COMPLETED_ONE_TRIP':
-        return 'COMPLETED';
-      case 'PARTIAL_PICKUP':
-      case 'EXTRA_TRIP_REQUIRED':
-        return 'EXTRA_TRIP_REQUIRED';
-      case 'CUSTOMER_NOT_AVAILABLE':
-        return 'ASSIGNED';
-      case 'CANCELLED_ON_SITE':
-        return 'CANCELLED';
-    }
   }
 }

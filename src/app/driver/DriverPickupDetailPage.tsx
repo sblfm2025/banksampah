@@ -5,6 +5,10 @@ import {
   ACTUAL_TRIP_RESULTS,
   type CompletePickupInput,
 } from '../../shared/schemas/pickup-proof.schema';
+import {
+  PARTNER_DESTINATIONS,
+  PARTNER_DESTINATION_LABELS,
+} from '../../shared/constants/service-impact';
 import { useAuth } from '../auth/auth-context';
 import { getVillage } from '../../shared/regions/service-areas';
 import { StatusBadge } from '../admin/StatusBadge';
@@ -19,6 +23,7 @@ import {
   ProofStorageUnavailableError,
 } from './driver.repository';
 import { AppDialog } from '../ui/components';
+import { loadCustomerWasteMedia } from '../../client/customer-waste-media';
 
 const resultLabels: Record<
   CompletePickupInput['actualTripResult'],
@@ -28,6 +33,10 @@ const resultLabels: Record<
   PARTIAL_PICKUP: 'Sebagian Terangkut',
   EXTRA_TRIP_REQUIRED: 'Butuh Extra Trip',
   CUSTOMER_NOT_AVAILABLE: 'Customer Tidak Ada',
+  WASTE_NOT_READY: 'Sampah Belum Siap',
+  LOCATION_NOT_FOUND: 'Lokasi Tidak Ditemukan',
+  ACCESS_BLOCKED: 'Akses Terhalang',
+  HAZARDOUS_WASTE_FOUND: 'Ditemukan Limbah B3/Berbahaya',
   CANCELLED_ON_SITE: 'Batal di Lokasi',
 };
 
@@ -75,6 +84,8 @@ export function DriverPickupDetailPage() {
     mutationFn: async (input: {
       result: CompletePickupInput['actualTripResult'];
       notes?: string;
+      finalWeightKg?: number;
+      partnerDestination?: CompletePickupInput['partnerDestination'];
     }) => {
       if (beforeFiles.length === 0 && afterFiles.length === 0) {
         throw new Error('Minimal satu bukti foto wajib dipilih.');
@@ -94,6 +105,8 @@ export function DriverPickupDetailPage() {
           actualTripResult: input.result,
           beforePhotoUrls,
           afterPhotoUrls,
+          finalWeightKg: input.finalWeightKg,
+          partnerDestination: input.partnerDestination,
           driverNotes: input.notes,
         });
       } catch (error) {
@@ -104,6 +117,8 @@ export function DriverPickupDetailPage() {
           driverId: user!.id,
           actualTripResult: input.result,
           driverNotes: input.notes,
+          finalWeightKg: input.finalWeightKg,
+          partnerDestination: input.partnerDestination,
           beforeFiles,
           afterFiles,
           lastError: error instanceof Error ? error.message : undefined,
@@ -128,6 +143,16 @@ export function DriverPickupDetailPage() {
       setFormMessage('Hasil pickup berhasil disimpan.');
     },
   });
+  const currentTicket = pickup.data?.data;
+  const intakePhotos = useQuery({
+    queryKey: [
+      'driver-customer-waste-media',
+      id,
+      currentTicket?.intakePhotoMediaIds,
+    ],
+    queryFn: () => loadCustomerWasteMedia(currentTicket?.intakePhotoMediaIds),
+    enabled: Boolean(currentTicket?.intakePhotoMediaIds?.length),
+  });
 
   if (pickup.isLoading) return <p>Memuat pickup...</p>;
   if (pickup.isError || !pickup.data) {
@@ -144,9 +169,15 @@ export function DriverPickupDetailPage() {
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
+    const finalWeight = Number(data.get('finalWeightKg') || 0);
+    const partnerDestination = String(data.get('partnerDestination') || '');
     complete.mutate({
       result: String(data.get('result')) as CompletePickupInput['actualTripResult'],
       notes: String(data.get('notes') || '') || undefined,
+      finalWeightKg: finalWeight > 0 ? finalWeight : undefined,
+      partnerDestination: partnerDestination
+        ? (partnerDestination as CompletePickupInput['partnerDestination'])
+        : undefined,
     });
   }
 
@@ -191,9 +222,9 @@ export function DriverPickupDetailPage() {
             </span>
           )}
         </p>
-        <div className="mt-4 grid grid-cols-2 gap-3">
+        <div className="mt-4 grid grid-cols-3 gap-3">
           <a
-            className="rounded-xl bg-[#159fb3] px-3 py-3 text-center font-bold text-white"
+            className="rounded-xl bg-[#087f8c] px-3 py-3 text-center font-bold text-white"
             href={mapsUrl(ticket)}
             rel="noreferrer"
             target="_blank"
@@ -207,6 +238,12 @@ export function DriverPickupDetailPage() {
             target="_blank"
           >
             Chat WA
+          </a>
+          <a
+            className="rounded-xl border border-[#159fb3] px-3 py-3 text-center font-bold text-[#087f8c]"
+            href={`tel:+${ticket.customerPhoneNumber}`}
+          >
+            Telepon
           </a>
         </div>
       </section>
@@ -231,10 +268,19 @@ export function DriverPickupDetailPage() {
         </dl>
       </section>
 
-      {ticket.photoUrls.length > 0 && (
+      {((intakePhotos.data?.length ?? 0) > 0 || ticket.photoUrls.length > 0) && (
         <section className="rounded-2xl bg-white p-5 shadow-sm">
           <h2 className="font-bold">Foto Sampah dari Customer</h2>
           <div className="mt-4 grid grid-cols-2 gap-3">
+            {intakePhotos.data?.map((url, index) => (
+              <img
+                alt={`Foto sampah warga ${index + 1}`}
+                className="aspect-square w-full rounded-xl object-cover"
+                key={`intake-${index}`}
+                loading="lazy"
+                src={url}
+              />
+            ))}
             {ticket.photoUrls.map((url, index) => (
               <a href={url} key={url} rel="noreferrer" target="_blank">
                 <img
@@ -248,10 +294,16 @@ export function DriverPickupDetailPage() {
           </div>
         </section>
       )}
+      {intakePhotos.isError && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+          Foto sampah warga belum dapat dimuat. Lanjutkan dengan alamat dan
+          catatan operator.
+        </div>
+      )}
 
       {ticket.status === 'ASSIGNED' && (
         <button
-          className="w-full rounded-2xl bg-[#159fb3] px-5 py-4 text-lg font-bold text-white disabled:opacity-50"
+          className="w-full rounded-2xl bg-[#087f8c] px-5 py-4 text-lg font-bold text-white disabled:opacity-50"
           disabled={start.isPending}
           onClick={() => setConfirmStart(true)}
           type="button"
@@ -313,11 +365,38 @@ export function DriverPickupDetailPage() {
             <textarea
               className="mt-2 min-h-28 w-full rounded-xl border border-slate-300 p-3 text-base"
               name="notes"
-              placeholder="Wajib untuk extra trip, customer tidak ada, atau batal"
+              placeholder="Wajib untuk semua hasil selain selesai satu trip"
             />
           </label>
+          <div className="grid gap-4 md:grid-cols-2">
+            <label className="block text-sm font-bold">
+              Berat akhir/estimasi lapangan (kg)
+              <input
+                className="mt-2 w-full rounded-xl border border-slate-300 p-3 text-base"
+                min="0"
+                name="finalWeightKg"
+                placeholder="Opsional"
+                step="0.1"
+                type="number"
+              />
+            </label>
+            <label className="block text-sm font-bold">
+              Tujuan sampah
+              <select
+                className="mt-2 w-full rounded-xl border border-slate-300 p-3 text-base"
+                name="partnerDestination"
+              >
+                <option value="">Belum dicatat</option>
+                {PARTNER_DESTINATIONS.map((destination) => (
+                  <option key={destination} value={destination}>
+                    {PARTNER_DESTINATION_LABELS[destination]}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
           <button
-            className="w-full rounded-xl bg-[#159fb3] px-4 py-4 text-lg font-bold text-white disabled:opacity-50"
+            className="w-full rounded-xl bg-[#087f8c] px-4 py-4 text-lg font-bold text-white disabled:opacity-50"
             disabled={complete.isPending || !proofStorageEnabled}
             type="submit"
           >
@@ -329,7 +408,7 @@ export function DriverPickupDetailPage() {
         busy={start.isPending}
         cancelLabel="Batal"
         confirmLabel="Mulai sekarang"
-        description="Status tiket akan berubah menjadi sedang dijemput. Pastikan Anda sudah menuju atau berada di lokasi customer."
+        description="Status permintaan akan berubah menjadi sedang dijemput. Pastikan Anda sudah menuju atau berada di lokasi warga."
         icon="truck"
         onCancel={() => setConfirmStart(false)}
         onConfirm={() =>

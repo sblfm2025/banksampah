@@ -6,6 +6,7 @@ import {
 } from 'react';
 import type { AppUser } from '../../shared/schemas/user.schema';
 import { AuthContext, type AuthState } from './auth-context';
+import { useDemoData } from '../runtime-config';
 
 function getDemoUser(): AppUser {
   const role =
@@ -28,14 +29,21 @@ function getDemoUser(): AppUser {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const demoMode = import.meta.env.VITE_USE_DEMO_DATA !== 'false';
+  const demoMode = useDemoData;
   const [state, setState] = useState<AuthState>({
     user: demoMode ? getDemoUser() : null,
     loading: !demoMode,
     authenticated: demoMode,
     profileMissing: false,
     authUid: demoMode ? getDemoUser().id : null,
+    authEmail: demoMode ? getDemoUser().email ?? null : null,
+    authDisplayName: demoMode ? getDemoUser().name : null,
+    isGoogleUser: false,
     login: async () => {},
+    loginWithWhatsApp: async () => {},
+    registerWithEmail: async () => {},
+    loginWithGoogle: async () => {},
+    refreshProfile: async () => {},
     logout: async () => {},
   });
 
@@ -57,6 +65,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               authenticated: false,
               profileMissing: false,
               authUid: null,
+              authEmail: null,
+              authDisplayName: null,
+              isGoogleUser: false,
             }));
             return;
           }
@@ -70,6 +81,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 authenticated: true,
                 profileMissing: !user,
                 authUid: firebaseUser.uid,
+                authEmail: firebaseUser.email,
+                authDisplayName: firebaseUser.displayName,
+                isGoogleUser: firebaseUser.providerData.some(
+                  (provider) => provider.providerId === 'google.com',
+                ),
               }));
             }
           } catch {
@@ -81,6 +97,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 authenticated: true,
                 profileMissing: true,
                 authUid: firebaseUser.uid,
+                authEmail: firebaseUser.email,
+                authDisplayName: firebaseUser.displayName,
+                isGoogleUser: firebaseUser.providerData.some(
+                  (provider) => provider.providerId === 'google.com',
+                ),
               }));
             }
           }
@@ -107,6 +128,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setState((current) => ({ ...current, loading: false }));
           throw error;
         }
+      },
+      loginWithWhatsApp: async (phoneNumber, password) => {
+        if (demoMode) return;
+        const { loginWithWhatsAppNumber } = await import('../../client/firebase');
+        setState((current) => ({ ...current, loading: true }));
+        try {
+          await loginWithWhatsAppNumber(phoneNumber, password);
+        } catch (error) {
+          setState((current) => ({ ...current, loading: false }));
+          throw error;
+        }
+      },
+      registerWithEmail: async (email, password) => {
+        if (demoMode) return;
+        const { registerWithEmail } = await import('../../client/firebase');
+        setState((current) => ({ ...current, loading: true }));
+        try {
+          await registerWithEmail(email, password);
+        } catch (error) {
+          setState((current) => ({ ...current, loading: false }));
+          throw error;
+        }
+      },
+      loginWithGoogle: async () => {
+        if (demoMode) return;
+        const { loginWithGoogle } = await import('../../client/firebase');
+        setState((current) => ({ ...current, loading: true }));
+        try {
+          await loginWithGoogle();
+        } catch (error) {
+          setState((current) => ({ ...current, loading: false }));
+          throw error;
+        }
+      },
+      refreshProfile: async () => {
+        if (demoMode || !state.authUid) return;
+        const { getAppUser } = await import('../../client/firebase');
+        const user = await getAppUser(state.authUid);
+        setState((current) => ({
+          ...current,
+          user,
+          profileMissing: !user,
+        }));
       },
       logout: async () => {
         if (demoMode) return;

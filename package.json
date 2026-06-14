@@ -3,23 +3,27 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "engines": {
+    "node": ">=22.0.0",
+    "npm": ">=10.0.0"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:firebase": "firebase emulators:exec --only firestore \"npm exec -- vitest run --config vitest.rules.config.ts\"",
-    "test:e2e": "firebase emulators:exec --only firestore \"npm exec -- vitest run --config vitest.rules.config.ts -t \\\"alur utama dari WhatsApp hingga laporan selesai\\\"\"",
+    "test:firebase": "npx firebase-tools emulators:exec --only firestore \"npm exec -- vitest run --config vitest.rules.config.ts\"",
+    "test:e2e": "npx firebase-tools emulators:exec --only firestore \"npm exec -- vitest run --config vitest.rules.config.ts -t \\\"alur utama dari WhatsApp hingga laporan selesai\\\"\"",
     "test:all": "npm test && npm run test:firebase",
     "bootstrap:user": "node scripts/bootstrap-user.mjs",
     "check:production": "node scripts/production-readiness.mjs",
-    "emulators": "firebase emulators:start",
-    "emulators:export": "firebase emulators:export .firebase-data",
-    "deploy:hosting": "npm run build && firebase deploy --only hosting --project production",
-    "deploy:rules": "firebase deploy --only firestore:rules,firestore:indexes --project production",
-    "deploy:storage": "firebase deploy --only storage --project production",
-    "deploy:production": "npm run build && firebase deploy --only hosting,firestore:rules,firestore:indexes --project production"
+    "emulators": "npx firebase-tools emulators:start",
+    "emulators:export": "npx firebase-tools emulators:export .firebase-data",
+    "deploy:hosting": "npm run check:production && npm run build && npx firebase-tools deploy --only hosting --project production",
+    "deploy:rules": "npx firebase-tools deploy --only firestore:rules,firestore:indexes --project production",
+    "deploy:storage": "npx firebase-tools deploy --only storage --project production",
+    "deploy:production": "npm run check:production && npm run build && npx firebase-tools deploy --only hosting,firestore:rules,firestore:indexes --project production"
   },
   "dependencies": {
     "@google/genai": "^2.8.0",

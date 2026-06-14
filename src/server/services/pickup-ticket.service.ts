@@ -10,11 +10,13 @@ import {
   createPickupRequestInputSchema,
   schedulePickupInputSchema,
   updatePickupIntakeInputSchema,
+  updatePickupImpactInputSchema,
   updatePickupStatusInputSchema,
   type AssignDriverInput,
   type CreatePickupRequestInput,
   type SchedulePickupInput,
   type UpdatePickupIntakeInput,
+  type UpdatePickupImpactInput,
   type UpdatePickupStatusInput,
 } from '../../shared/schemas/pickup-input.schema';
 import type { PickupRequest } from '../../shared/schemas/pickup.schema';
@@ -55,7 +57,7 @@ export class PickupTicketService {
     if (!isActiveDistrict(input.district)) {
       throw new ServiceError(
         'VALIDATION_ERROR',
-        'Tiket aktif hanya dapat dibuat untuk kecamatan pilot.',
+        'Permintaan aktif hanya dapat dibuat untuk kecamatan pilot.',
       );
     }
 
@@ -148,9 +150,21 @@ export class PickupTicketService {
           locationSource: input.locationSource,
           locationValidationStatus: input.locationValidationStatus,
           serviceType: input.serviceType,
+          serviceCategory: input.serviceCategory ?? 'warga',
+          serviceModel: input.serviceModel ?? 'gratis',
           volumeLevel: input.volumeLevel,
           tricycleLoadEstimate: input.tricycleLoadEstimate,
           wasteDescription: input.wasteDescription,
+          wasteTypes: input.wasteTypes ?? [],
+          estimatedWeightKg: input.estimatedWeightKg,
+          finalWeightKg: input.finalWeightKg,
+          dataQuality: input.dataQuality ?? 'estimated_by_user',
+          partnerDestination: input.partnerDestination,
+          serviceFee: input.serviceFee,
+          operationalCost: input.operationalCost,
+          paidAmount: input.paidAmount,
+          paymentStatus: input.paymentStatus ?? 'gratis',
+          impactTags: input.impactTags ?? ['pengurangan_sampah'],
           photoUrls: input.photoUrls,
           aiAnalysis: input.aiAnalysis,
           aiAnalysisId: analysisReference?.id,
@@ -197,7 +211,7 @@ export class PickupTicketService {
     const pickup = snapshot.data();
 
     if (!pickup) {
-      throw new ServiceError('NOT_FOUND', 'Tiket tidak ditemukan.');
+      throw new ServiceError('NOT_FOUND', 'Permintaan tidak ditemukan.');
     }
 
     return pickup;
@@ -291,14 +305,14 @@ export class PickupTicketService {
     await this.db.runTransaction(async (transaction) => {
       const snapshot = await transaction.get(reference);
       if (!snapshot.exists) {
-        throw new ServiceError('NOT_FOUND', 'Tiket tidak ditemukan.');
+        throw new ServiceError('NOT_FOUND', 'Permintaan tidak ditemukan.');
       }
 
       const currentStatus = snapshot.get('status') as PickupStatus;
       if (!['NEW', 'NEEDS_INFO', 'NEEDS_OPERATOR_REVIEW'].includes(currentStatus)) {
         throw new ServiceError(
           'CONFLICT',
-          'Tiket tidak lagi menerima pembaruan intake.',
+          'Permintaan tidak lagi menerima pembaruan data masuk.',
         );
       }
 
@@ -320,9 +334,28 @@ export class PickupTicketService {
         locationSource: input.locationSource,
         locationValidationStatus: input.locationValidationStatus,
         serviceType: input.serviceType,
+        serviceCategory: input.serviceCategory ?? snapshot.get('serviceCategory') ?? 'warga',
+        serviceModel: input.serviceModel ?? snapshot.get('serviceModel') ?? 'gratis',
         volumeLevel: input.volumeLevel,
         tricycleLoadEstimate: input.tricycleLoadEstimate,
         wasteDescription: input.wasteDescription,
+        wasteTypes: input.wasteTypes ?? snapshot.get('wasteTypes') ?? [],
+        estimatedWeightKg: input.estimatedWeightKg,
+        finalWeightKg: input.finalWeightKg,
+        dataQuality:
+          input.dataQuality ??
+          snapshot.get('dataQuality') ??
+          'estimated_by_operator',
+        partnerDestination: input.partnerDestination,
+        serviceFee: input.serviceFee,
+        operationalCost: input.operationalCost,
+        paidAmount: input.paidAmount,
+        paymentStatus:
+          input.paymentStatus ?? snapshot.get('paymentStatus') ?? 'gratis',
+        impactTags:
+          input.impactTags ??
+          snapshot.get('impactTags') ??
+          ['pengurangan_sampah'],
         photoUrls: input.photoUrls,
         aiAnalysis: input.aiAnalysis,
         aiAnalysisId: analysisReference.id,
@@ -357,7 +390,7 @@ export class PickupTicketService {
     await this.db.runTransaction(async (transaction) => {
       const snapshot = await transaction.get(ticketReference);
       if (!snapshot.exists) {
-        throw new ServiceError('NOT_FOUND', 'Tiket tidak ditemukan.');
+        throw new ServiceError('NOT_FOUND', 'Permintaan tidak ditemukan.');
       }
 
       const currentStatus = snapshot.get('status') as PickupStatus;
@@ -414,6 +447,74 @@ export class PickupTicketService {
     return this.getById(id);
   }
 
+  async updateImpact(
+    id: string,
+    rawInput: UpdatePickupImpactInput,
+    actor: AuditActor,
+    now = new Date(),
+  ): Promise<PickupRequest> {
+    const input = updatePickupImpactInputSchema.parse(rawInput);
+    const reference = this.db.collection(COLLECTIONS.pickupRequests).doc(id);
+
+    await this.db.runTransaction(async (transaction) => {
+      const snapshot = await transaction.get(reference);
+      if (!snapshot.exists) {
+        throw new ServiceError('NOT_FOUND', 'Permintaan tidak ditemukan.');
+      }
+
+      const timestamp = Timestamp.fromDate(now);
+      const auditReference = this.db.collection(COLLECTIONS.auditLogs).doc();
+      const updates: DocumentData = {
+        ...input,
+        updatedAt: timestamp,
+      };
+      for (const field of [
+        'estimatedWeightKg',
+        'finalWeightKg',
+        'partnerDestination',
+        'serviceFee',
+        'operationalCost',
+        'paidAmount',
+      ] as const) {
+        if (input[field] === undefined) {
+          updates[field] = FieldValue.delete();
+        }
+      }
+      const trackedFields = [
+        'serviceCategory',
+        'serviceModel',
+        'wasteTypes',
+        'estimatedWeightKg',
+        'finalWeightKg',
+        'dataQuality',
+        'partnerDestination',
+        'serviceFee',
+        'operationalCost',
+        'paidAmount',
+        'paymentStatus',
+        'impactTags',
+      ];
+      const before = Object.fromEntries(
+        trackedFields.map((field) => [field, snapshot.get(field)]),
+      );
+      before.status = snapshot.get('status');
+
+      transaction.update(reference, updates);
+      transaction.set(auditReference, {
+        actorId: actor.id,
+        actorRole: actor.role,
+        action: 'PICKUP_IMPACT_UPDATED',
+        entityType: 'PICKUP_REQUEST',
+        entityId: id,
+        before,
+        after: { ...input, status: snapshot.get('status') },
+        createdAt: timestamp,
+      });
+    });
+
+    return this.getById(id);
+  }
+
   async schedule(
     id: string,
     rawInput: SchedulePickupInput,
@@ -426,14 +527,14 @@ export class PickupTicketService {
     await this.db.runTransaction(async (transaction) => {
       const snapshot = await transaction.get(reference);
       if (!snapshot.exists) {
-        throw new ServiceError('NOT_FOUND', 'Tiket tidak ditemukan.');
+        throw new ServiceError('NOT_FOUND', 'Permintaan tidak ditemukan.');
       }
 
       const currentStatus = snapshot.get('status') as PickupStatus;
       if (currentStatus !== 'CONFIRMED') {
         throw new ServiceError(
           'INVALID_STATUS_TRANSITION',
-          'Hanya tiket yang sudah dikonfirmasi dapat dijadwalkan.',
+          'Hanya permintaan yang sudah dikonfirmasi dapat dijadwalkan.',
         );
       }
 
@@ -477,14 +578,14 @@ export class PickupTicketService {
     await this.db.runTransaction(async (transaction) => {
       const snapshot = await transaction.get(reference);
       if (!snapshot.exists) {
-        throw new ServiceError('NOT_FOUND', 'Tiket tidak ditemukan.');
+        throw new ServiceError('NOT_FOUND', 'Permintaan tidak ditemukan.');
       }
 
       const currentStatus = snapshot.get('status') as PickupStatus;
       if (currentStatus !== 'SCHEDULED') {
         throw new ServiceError(
           'INVALID_STATUS_TRANSITION',
-          'Hanya tiket terjadwal yang dapat ditugaskan.',
+          'Hanya permintaan terjadwal yang dapat ditugaskan.',
         );
       }
 

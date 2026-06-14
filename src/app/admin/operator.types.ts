@@ -2,8 +2,10 @@ import type { District } from '../../shared/constants/districts';
 import type { PickupStatus } from '../../shared/constants/statuses';
 import type {
   AssignDriverInput,
+  CreateManualPickupInput,
   SchedulePickupInput,
   UpdatePickupStatusInput,
+  UpdatePickupImpactInput,
 } from '../../shared/schemas/pickup-input.schema';
 import type { PickupRequest } from '../../shared/schemas/pickup.schema';
 import type {
@@ -19,6 +21,7 @@ export interface TicketFilters {
   volumeLevel?: PickupRequest['volumeLevel'];
   query?: string;
   scheduledDate?: string;
+  assignedDriverId?: string;
 }
 
 export interface DashboardSummary {
@@ -43,9 +46,14 @@ export interface OperatorRepository {
   getOperationalReport(period: ReportPeriod): Promise<OperationalReport>;
   listTickets(filters?: TicketFilters): Promise<PickupRequest[]>;
   getTicket(id: string): Promise<PickupRequest>;
+  createManual(input: CreateManualPickupInput): Promise<PickupRequest>;
   updateStatus(
     id: string,
     input: UpdatePickupStatusInput,
+  ): Promise<PickupRequest>;
+  updateImpact(
+    id: string,
+    input: UpdatePickupImpactInput,
   ): Promise<PickupRequest>;
   schedule(id: string, input: SchedulePickupInput): Promise<PickupRequest>;
   assignDriver(

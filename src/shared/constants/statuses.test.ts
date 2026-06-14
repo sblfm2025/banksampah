@@ -15,7 +15,7 @@ describe('canTransitionPickupStatus', () => {
     expect(canTransitionPickupStatus('CANCELLED', 'NEW')).toBe(false);
   });
 
-  it('melarang tiket baru langsung selesai', () => {
+  it('melarang permintaan baru langsung selesai', () => {
     expect(canTransitionPickupStatus('NEW', 'COMPLETED')).toBe(false);
   });
 });

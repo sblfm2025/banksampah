@@ -14,7 +14,7 @@ describe('ReportsPage', () => {
       </QueryClientProvider>,
     );
 
-    expect(await screen.findByText('Tiket Masuk')).toBeInTheDocument();
+    expect(await screen.findByText('Permintaan Masuk')).toBeInTheDocument();
     expect(screen.getByText('Tren Harian')).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: 'Export CSV' }),

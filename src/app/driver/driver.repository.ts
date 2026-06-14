@@ -1,5 +1,6 @@
 import {
   completePickupInputSchema,
+  mapActualTripResultToStatus,
   type CompletePickupInput,
 } from '../../shared/schemas/pickup-proof.schema';
 import type { PickupRequest } from '../../shared/schemas/pickup.schema';
@@ -86,19 +87,18 @@ export class DemoDriverRepository implements DriverRepository {
     if (!['ASSIGNED', 'IN_PROGRESS'].includes(ticket.status)) {
       throw new Error('Pickup tidak dapat diselesaikan.');
     }
-    const status =
-      input.actualTripResult === 'COMPLETED_ONE_TRIP'
-        ? 'COMPLETED'
-        : input.actualTripResult === 'CANCELLED_ON_SITE'
-          ? 'CANCELLED'
-          : input.actualTripResult === 'CUSTOMER_NOT_AVAILABLE'
-            ? 'ASSIGNED'
-            : 'EXTRA_TRIP_REQUIRED';
+    const status = mapActualTripResultToStatus(input.actualTripResult);
 
     return this.replace(id, {
       ...ticket,
       status,
       driverNotes: input.driverNotes,
+      finalWeightKg: input.finalWeightKg,
+      dataQuality:
+        input.finalWeightKg === undefined
+          ? ticket.dataQuality
+          : 'confirmed_by_driver',
+      partnerDestination: input.partnerDestination,
       completedAt:
         status === 'COMPLETED' ? new Date().toISOString() : undefined,
       cancelledAt:
@@ -285,14 +285,7 @@ export class FirestoreDriverRepository implements DriverRepository {
       import('firebase/firestore'),
       import('../../client/firebase'),
     ]);
-    const status =
-      input.actualTripResult === 'COMPLETED_ONE_TRIP'
-        ? 'COMPLETED'
-        : input.actualTripResult === 'CANCELLED_ON_SITE'
-          ? 'CANCELLED'
-          : input.actualTripResult === 'CUSTOMER_NOT_AVAILABLE'
-            ? 'ASSIGNED'
-            : 'EXTRA_TRIP_REQUIRED';
+    const status = mapActualTripResultToStatus(input.actualTripResult);
     const timestamp = serverTimestamp();
     const batch = writeBatch(db);
     const auditReference = doc(collection(db, 'auditLogs'));
@@ -303,6 +296,8 @@ export class FirestoreDriverRepository implements DriverRepository {
       afterPhotoUrls: input.afterPhotoUrls,
       actualTripResult: input.actualTripResult,
       driverNotes: input.driverNotes ?? null,
+      finalWeightKg: input.finalWeightKg ?? null,
+      partnerDestination: input.partnerDestination ?? null,
       createdAt: timestamp,
     });
     const ticketUpdate: Record<string, unknown> = {
@@ -311,6 +306,13 @@ export class FirestoreDriverRepository implements DriverRepository {
       lastAuditId: auditReference.id,
     };
     if (input.driverNotes) ticketUpdate.driverNotes = input.driverNotes;
+    if (input.finalWeightKg !== undefined) {
+      ticketUpdate.finalWeightKg = input.finalWeightKg;
+      ticketUpdate.dataQuality = 'confirmed_by_driver';
+    }
+    if (input.partnerDestination) {
+      ticketUpdate.partnerDestination = input.partnerDestination;
+    }
     if (status === 'COMPLETED') ticketUpdate.completedAt = timestamp;
     if (status === 'CANCELLED') ticketUpdate.cancelledAt = timestamp;
     batch.update(doc(db, 'pickupRequests', id), ticketUpdate);
@@ -324,6 +326,8 @@ export class FirestoreDriverRepository implements DriverRepository {
         {
           status,
           actualTripResult: input.actualTripResult,
+          finalWeightKg: input.finalWeightKg,
+          partnerDestination: input.partnerDestination,
         },
         timestamp,
       ),

@@ -16,7 +16,7 @@ export interface MapPoint {
 
 const pickupIcon = L.divIcon({
   className: '',
-  html: '<span class="block h-6 w-6 rounded-full border-4 border-white bg-[#159fb3] shadow-lg"></span>',
+  html: '<span class="block h-6 w-6 rounded-full border-4 border-white bg-[#087f8c] shadow-lg"></span>',
   iconAnchor: [12, 12],
   iconSize: [24, 24],
 });

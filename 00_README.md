@@ -46,6 +46,10 @@ Model layanan tahap awal belum masuk ke detail harga per kilogram. Fokusnya adal
 | `20_STAGE_6_OBSERVABILITY.md` | Health checks dan structured operational logs |
 | `21_PRODUCTION_FIREBASE_SETUP.md` | Aktivasi IAM, Firebase services, dan deployment |
 | `22_AUTH_BOOTSTRAP.md` | Aktivasi Email/Password serta bootstrap akun dan role |
+| `docs/PILOT_READINESS_AUDIT_LOG.md` | Hasil audit teknis aktual dan blocker menuju pilot |
+| `docs/PILOT_LAPANGAN_CHECKLIST.md` | Checklist staging, simulasi, dan pilot satu kelurahan |
+| `docs/PILOT_ACCOUNT_PROVISIONING_RUNBOOK.md` | Langkah singkat membuat akun Operator/Driver dan membuka gate produksi |
+| `banksampah_arahan_developer_md/` | Paket arahan upgrade dan QA yang menjadi dasar hardening |
 
 ## Prinsip Utama
 

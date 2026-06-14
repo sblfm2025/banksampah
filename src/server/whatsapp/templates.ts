@@ -22,7 +22,7 @@ export function ticketCreatedTemplate(
 ): string {
   return [
     'Siap, permintaan jemput sampah sudah kami terima.',
-    `Nomor tiket: ${ticketCode}`,
+    `Nomor permintaan: ${ticketCode}`,
     summary?.trim(),
     'Operator akan mengonfirmasi jadwal penjemputan.',
   ]

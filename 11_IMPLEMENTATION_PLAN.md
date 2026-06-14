@@ -308,8 +308,12 @@ Status: selesai dan tervalidasi pada build produksi.
   komponen loading, error, empty state, badge, modal, dan bottom sheet bersama.
 - Halaman warga tersedia pada `/`, `/sampahku`, `/tickets`, `/tickets/:id`,
   `/profile`, dan wizard empat langkah `/pickup/new`.
-- Draft pengajuan warga disimpan lokal di browser. Ini bukan tiket produksi;
-  WhatsApp tetap menjadi kanal masuk resmi sampai integrasi API publik tersedia.
+- Warga dapat mendaftar atau masuk dengan Google. Akun baru wajib melengkapi
+  nama, nomor WhatsApp, alamat, serta titik peta terverifikasi sebelum membuat
+  permintaan; profil disimpan sebagai role `CUSTOMER` milik UID tersebut.
+- Pengajuan warga dari web dikirim sebagai dokumen resmi `pickupRequests`
+  setelah login Google dan profil lengkap. Jika koneksi gagal, data disimpan
+  sebagai antrean lokal dengan label "Menunggu dikirim" dan dapat dicoba ulang.
 - Dashboard operator, login, dan PWA petugas telah diselaraskan dengan identitas
   visual baru tanpa mengubah kontrak Firebase maupun aturan bisnis.
 - Logo memakai nama aset stabil
@@ -340,3 +344,64 @@ Implementasi fase ini tidak boleh menambahkan:
 - e-wallet,
 - optimasi rute kompleks,
 - ekspansi wilayah di luar dua kecamatan pilot.
+
+## 7. Implementasi Arah Produk V3
+
+Status: fondasi data, laporan, halaman publik, dan kendali operator selesai.
+
+- Permintaan memiliki klasifikasi kategori dan model layanan, status
+  pembayaran, biaya manual, kualitas data, tag dampak, serta tujuan mitra.
+- Operator dapat memperbarui klasifikasi sosial/profesional dan data ekonomi
+  dari halaman detail permintaan; perubahan dicatat pada audit log.
+- Petugas dapat mencatat berat akhir dan tujuan material saat menyelesaikan
+  penjemputan, termasuk pada antrean offline.
+- Dashboard dan CSV memisahkan layanan sosial/profesional, pendapatan tercatat,
+  biaya operasional, berat sampah, status pembayaran, dan mitra tujuan.
+- Halaman publik menjelaskan layanan warga, layanan profesional, jejaring
+  Bank Sampah/TPS3R, dampak terukur, dan jalur WhatsApp-first.
+- Operator dapat membuat permintaan manual dari WhatsApp. Warga cukup
+  memberikan nama, nomor WA, alamat, kelurahan, serta lokasi bila tersedia;
+  data masuk sebagai `NEEDS_OPERATOR_REVIEW`.
+- `serviceFee` adalah nilai penawaran manual per permintaan, bukan harga publik.
+  MVP tidak memiliki payment gateway, saldo, maupun tarif otomatis.
+
+## 8. Restrukturisasi UX Warga V4
+
+Status: implementasi P0 dan QA teknis selesai.
+
+- `/` tetap menjadi website publik, sedangkan `/app` menjadi pusat aksi cepat.
+- Halaman publik pendukung tersedia untuk layanan, program, wilayah, dampak,
+  mitra, dan bantuan.
+- `/auth` menjadi alamat utama login dengan kompatibilitas `/login`.
+- `/pickup/new` dapat dibuka tanpa login.
+- Pengajuan tamu disimpan jujur sebagai draft perangkat dan harus dikirim
+  melalui WhatsApp atau setelah pengguna masuk; pengajuan pengguna terdaftar
+  tetap dikirim ke backend resmi.
+- Auth memakai satu identifier email/WhatsApp, pendaftaran warga email, dan
+  redirect role otomatis. Lookup publik tidak membocorkan keberadaan akun;
+  opsi daftar atau lanjut tanpa akun ditampilkan pada alur warga.
+- Wizard memakai enam langkah, autosave lokal, kompresi foto, data pribadi di
+  akhir, dan ringkasan konfirmasi terpisah.
+- `/tickets/check` memverifikasi kode dan nomor WhatsApp untuk draft pada
+  perangkat. Status backend tetap membutuhkan login agar data warga tidak
+  dapat dienumerasi publik.
+- Homepage memakai animasi ringan dengan reduced-motion, FAQ keyboard
+  accessible, floating WhatsApp, dan chunk terpisah dari dashboard.
+- QA tervalidasi melalui lint, unit/component tests, Firestore Rules, alur E2E,
+  production build, serta pengukuran overflow pada viewport 390 dan 1366 px.
+
+Gate deployment yang masih membutuhkan data operasional:
+
+- `check:production` telah memvalidasi project `peduli-pinrang`, provider
+  Firestore, media Firestore, dan mode production.
+- Environment baru memiliki 1 dari 3 UID pilot. UID Super Admin, Operator, dan
+  Driver harus diisi menggunakan akun nyata; saat ini yang kurang adalah
+  Operator dan Driver.
+- Verifikasi profil role membutuhkan `FIREBASE_CLIENT_EMAIL` dan
+  `FIREBASE_PRIVATE_KEY`, atau `GOOGLE_APPLICATION_CREDENTIALS`, milik service
+  account deployment.
+- PWA membuka `/app`; route admin/driver dimuat sebagai chunk terpisah. Bundel
+  utama production turun di bawah ambang warning 500 kB.
+- `deploy:hosting` dan `deploy:production` sekarang menjalankan
+  `check:production` lebih dulu agar pilot tidak terbuka sebelum role akun
+  produksi lengkap.

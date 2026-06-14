@@ -2,6 +2,12 @@ import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { DISTRICT_LABELS } from '../../shared/constants/districts';
 import { SERVICE_TYPE_LABELS } from '../../shared/constants/services';
+import {
+  PARTNER_DESTINATION_LABELS,
+  PAYMENT_STATUS_LABELS,
+  SERVICE_CATEGORY_LABELS,
+  SERVICE_MODEL_LABELS,
+} from '../../shared/constants/service-impact';
 import { getOperationalDate } from '../../shared/utils/date';
 import { downloadOperationalReport } from './report-csv';
 import { operatorRepository } from './operator.repository';
@@ -13,6 +19,14 @@ function dateDaysAgo(days: number): string {
   return new Date(Date.parse(`${today}T00:00:00Z`) - days * DAY_MS)
     .toISOString()
     .slice(0, 10);
+}
+
+function formatCurrency(value: number): string {
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    maximumFractionDigits: 0,
+  }).format(value);
 }
 
 export function ReportsPage() {
@@ -32,12 +46,12 @@ export function ReportsPage() {
   return (
     <div className="space-y-8">
       <section>
-        <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#159fb3]">
+        <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#087f8c]">
           Laporan Operasional
         </p>
         <h1 className="mt-2 text-3xl font-bold">Kinerja layanan pickup</h1>
         <p className="mt-2 text-slate-600">
-          Pantau volume tiket, penyelesaian, dan kebutuhan extra trip.
+          Pantau volume permintaan, penyelesaian, dan kebutuhan extra trip.
         </p>
       </section>
 
@@ -53,7 +67,7 @@ export function ReportsPage() {
           onChange={setEndDate}
         />
         <button
-          className="rounded-xl bg-[#159fb3] px-5 py-3 font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-xl bg-[#087f8c] px-5 py-3 font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
           disabled={!report.data}
           onClick={() => report.data && downloadOperationalReport(report.data)}
           type="button"
@@ -76,8 +90,11 @@ export function ReportsPage() {
 
       {report.data && (
         <>
-          <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
-            <Metric label="Tiket Masuk" value={report.data.totals.created} />
+          <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+            <Metric
+              label="Permintaan Masuk"
+              value={report.data.totals.created}
+            />
             <Metric label="Terjadwal" value={report.data.totals.scheduled} />
             <Metric label="Selesai" value={report.data.totals.completed} />
             <Metric label="Extra Trip" value={report.data.totals.extraTrip} />
@@ -86,11 +103,31 @@ export function ReportsPage() {
               label="Completion Rate"
               value={`${report.data.totals.completionRate}%`}
             />
+            <Metric
+              label="Layanan Sosial"
+              value={report.data.totals.socialServices}
+            />
+            <Metric
+              label="Layanan Profesional"
+              value={report.data.totals.professionalServices}
+            />
+            <Metric
+              label="Sampah Tercatat"
+              value={`${report.data.totals.totalWasteKg.toLocaleString('id-ID')} kg`}
+            />
+            <Metric
+              label="Pendapatan Tercatat"
+              value={formatCurrency(report.data.totals.professionalRevenue)}
+            />
+            <Metric
+              label="Biaya Operasional"
+              value={formatCurrency(report.data.totals.operationalCost)}
+            />
           </section>
 
           <section className="grid gap-6 lg:grid-cols-2">
             <Breakdown
-              title="Tiket Masuk per Kecamatan"
+              title="Permintaan Masuk per Kecamatan"
               values={Object.entries(report.data.byDistrict).map(
                 ([key, value]) => ({
                   label:
@@ -100,12 +137,63 @@ export function ReportsPage() {
               )}
             />
             <Breakdown
-              title="Tiket Masuk per Layanan"
+              title="Permintaan Masuk per Layanan"
               values={Object.entries(report.data.byServiceType).map(
                 ([key, value]) => ({
                   label:
                     SERVICE_TYPE_LABELS[
                       key as keyof typeof SERVICE_TYPE_LABELS
+                    ],
+                  value,
+                }),
+              )}
+            />
+          </section>
+
+          <section className="grid gap-6 lg:grid-cols-2">
+            <Breakdown
+              title="Aktivitas per Kategori Layanan"
+              values={Object.entries(report.data.byServiceCategory).map(
+                ([key, value]) => ({
+                  label:
+                    SERVICE_CATEGORY_LABELS[
+                      key as keyof typeof SERVICE_CATEGORY_LABELS
+                    ],
+                  value,
+                }),
+              )}
+            />
+            <Breakdown
+              title="Aktivitas per Model Layanan"
+              values={Object.entries(report.data.byServiceModel).map(
+                ([key, value]) => ({
+                  label:
+                    SERVICE_MODEL_LABELS[
+                      key as keyof typeof SERVICE_MODEL_LABELS
+                    ],
+                  value,
+                }),
+              )}
+            />
+            <Breakdown
+              title="Status Pembayaran"
+              values={Object.entries(report.data.byPaymentStatus).map(
+                ([key, value]) => ({
+                  label:
+                    PAYMENT_STATUS_LABELS[
+                      key as keyof typeof PAYMENT_STATUS_LABELS
+                    ],
+                  value,
+                }),
+              )}
+            />
+            <Breakdown
+              title="Tujuan Sampah Selesai Dijemput"
+              values={Object.entries(report.data.byPartnerDestination).map(
+                ([key, value]) => ({
+                  label:
+                    PARTNER_DESTINATION_LABELS[
+                      key as keyof typeof PARTNER_DESTINATION_LABELS
                     ],
                   value,
                 }),

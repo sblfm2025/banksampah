@@ -7,7 +7,7 @@ import {
 } from './operator.repository';
 
 describe('operator repository', () => {
-  it('memfilter tiket berdasarkan query dan kecamatan', () => {
+  it('memfilter permintaan berdasarkan query dan kecamatan', () => {
     const results = filterTickets(DEMO_TICKETS, {
       query: 'ibu sari',
       district: 'PALETEANG',
@@ -39,5 +39,50 @@ describe('operator repository', () => {
 
     expect(assigned.status).toBe('ASSIGNED');
     expect(assigned.assignedDriverName).toBe('Pak Amir');
+  });
+
+  it('menyimpan klasifikasi layanan profesional dan dampaknya', async () => {
+    const repository = new DemoOperatorRepository();
+    const updated = await repository.updateImpact('ticket-demo-1', {
+      serviceCategory: 'event',
+      serviceModel: 'berbayar',
+      wasteTypes: ['plastik', 'kardus'],
+      estimatedWeightKg: 25,
+      dataQuality: 'estimated_by_operator',
+      partnerDestination: 'tps3r_paleteang_bersinar',
+      serviceFee: 500000,
+      operationalCost: 225000,
+      paidAmount: 250000,
+      paymentStatus: 'dp',
+      impactTags: ['layanan_profesional', 'pengurangan_sampah'],
+    });
+
+    expect(updated.serviceCategory).toBe('event');
+    expect(updated.paymentStatus).toBe('dp');
+    expect(updated.partnerDestination).toBe(
+      'tps3r_paleteang_bersinar',
+    );
+  });
+
+  it('membuat permintaan manual dari percakapan WhatsApp', async () => {
+    const repository = new DemoOperatorRepository();
+    const ticket = await repository.createManual({
+      customerName: 'Ibu Rahma',
+      customerPhoneNumber: '6281234567890',
+      district: 'PALETEANG',
+      villageId: 'temmassarangnge',
+      addressText: 'Jalan Bulu Manarang, rumah hijau dekat masjid',
+      serviceType: 'REGULAR_HOUSEHOLD_PICKUP',
+      serviceCategory: 'warga',
+      serviceModel: 'gratis',
+      volumeLevel: 'MEDIUM',
+      wasteTypes: ['plastik', 'kardus'],
+      paymentStatus: 'gratis',
+      impactTags: ['pengurangan_sampah'],
+    });
+
+    expect(ticket.source).toBe('WHATSAPP');
+    expect(ticket.status).toBe('NEEDS_OPERATOR_REVIEW');
+    expect(ticket.customerName).toBe('Ibu Rahma');
   });
 });

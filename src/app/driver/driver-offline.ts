@@ -114,6 +114,8 @@ export async function syncPendingCompletions(
         actualTripResult: item.actualTripResult,
         beforePhotoUrls,
         afterPhotoUrls,
+        finalWeightKg: item.finalWeightKg,
+        partnerDestination: item.partnerDestination,
         driverNotes: item.driverNotes,
       });
       await db.delete('queue', item.id);

@@ -28,7 +28,7 @@ describe('schedule view', () => {
     ]);
   });
 
-  it('menempatkan tiket tanpa petugas pada kelompok pertama', () => {
+  it('menempatkan permintaan tanpa petugas pada kelompok pertama', () => {
     const source = DEMO_TICKETS[2];
     const groups = buildScheduleGroups(
       [

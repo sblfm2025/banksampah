@@ -18,6 +18,10 @@ import {
 
 export function TicketsPage() {
   const [filters, setFilters] = useState<TicketFilters>({});
+  const drivers = useQuery({
+    queryKey: ['drivers', 'ticket-filter'],
+    queryFn: () => operatorRepository.listDrivers(),
+  });
   const tickets = useQuery({
     queryKey: ['tickets', filters],
     queryFn: () => operatorRepository.listTickets(filters),
@@ -32,16 +36,24 @@ export function TicketsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#159fb3]">
-          Tiket Masuk
-        </p>
-        <h1 className="mt-2 text-3xl font-bold">Kelola permintaan pickup</h1>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#087f8c]">
+            Permintaan Masuk
+          </p>
+          <h1 className="mt-2 text-3xl font-bold">Kelola permintaan pickup</h1>
+        </div>
+        <Link
+          className="inline-flex justify-center rounded-xl bg-[#087f8c] px-5 py-3 font-bold text-white"
+          to="/admin/tickets/new"
+        >
+          Buat dari WhatsApp
+        </Link>
       </div>
 
-      <section className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-6">
+      <section className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-4 xl:grid-cols-8">
         <input
-          aria-label="Cari tiket"
+          aria-label="Cari permintaan"
           className="rounded-xl border border-slate-300 px-3 py-2 text-sm md:col-span-2"
           onChange={(event) => updateFilter('query', event.target.value)}
           placeholder="Cari kode, nama, atau nomor WA"
@@ -59,6 +71,50 @@ export function TicketsPage() {
           {PICKUP_STATUSES.map((status) => (
             <option key={status} value={status}>
               {PICKUP_STATUS_LABELS[status]}
+            </option>
+          ))}
+        </select>
+        <input
+          aria-label="Filter tanggal jadwal"
+          className="rounded-xl border border-slate-300 px-3 py-2 text-sm"
+          onChange={(event) =>
+            updateFilter('scheduledDate', event.target.value)
+          }
+          type="date"
+          value={filters.scheduledDate ?? ''}
+        />
+        <select
+          aria-label="Filter driver"
+          className="rounded-xl border border-slate-300 px-3 py-2 text-sm"
+          onChange={(event) =>
+            updateFilter('assignedDriverId', event.target.value)
+          }
+          value={filters.assignedDriverId ?? ''}
+        >
+          <option value="">Semua driver</option>
+          {(drivers.data ?? [])
+            .filter((driver) => driver.isActive)
+            .map((driver) => (
+              <option key={driver.id} value={driver.id}>
+                {driver.name}
+              </option>
+            ))}
+        </select>
+        <select
+          aria-label="Filter layanan"
+          className="rounded-xl border border-slate-300 px-3 py-2 text-sm"
+          onChange={(event) =>
+            updateFilter(
+              'serviceType',
+              event.target.value as TicketFilters['serviceType'],
+            )
+          }
+          value={filters.serviceType ?? ''}
+        >
+          <option value="">Semua layanan</option>
+          {Object.entries(SERVICE_TYPE_LABELS).map(([value, label]) => (
+            <option key={value} value={value}>
+              {label}
             </option>
           ))}
         </select>
@@ -119,7 +175,7 @@ export function TicketsPage() {
           <table className="w-full min-w-[900px] text-left text-sm">
             <thead className="bg-slate-100 text-xs uppercase tracking-wide text-slate-600">
               <tr>
-                <th className="px-4 py-3">Tiket</th>
+                <th className="px-4 py-3">Permintaan</th>
                 <th className="px-4 py-3">Customer</th>
                 <th className="px-4 py-3">Kecamatan</th>
                 <th className="px-4 py-3">Kelurahan</th>
@@ -170,11 +226,19 @@ export function TicketsPage() {
           </table>
         </div>
         {tickets.isLoading && (
-          <p className="p-6 text-center text-slate-500">Memuat tiket...</p>
+          <p className="p-6 text-center text-slate-500">
+            Memuat permintaan...
+          </p>
+        )}
+        {tickets.isError && (
+          <p className="p-6 text-center text-red-700">
+            Permintaan gagal dimuat. Periksa koneksi atau index Firestore
+            untuk kombinasi filter ini.
+          </p>
         )}
         {tickets.data?.length === 0 && (
           <p className="p-6 text-center text-slate-500">
-            Tidak ada tiket yang cocok dengan filter.
+            Tidak ada permintaan yang cocok dengan filter.
           </p>
         )}
       </section>

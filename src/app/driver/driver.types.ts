@@ -26,6 +26,8 @@ export interface PendingDriverCompletion {
   driverId: string;
   actualTripResult: CompletePickupInput['actualTripResult'];
   driverNotes?: string;
+  finalWeightKg?: number;
+  partnerDestination?: CompletePickupInput['partnerDestination'];
   beforeFiles: File[];
   afterFiles: File[];
   createdAt: string;
