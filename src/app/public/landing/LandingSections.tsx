@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import {
   AppIcon,
@@ -276,6 +276,35 @@ function ClaimBadge({ status }: { status: 'verified' | 'needsVerification' }) {
 }
 
 export function LandingBootAnimation() {
+  const [shouldShow, setShouldShow] = useState(() => {
+    try {
+      return sessionStorage.getItem('peduliLandingBootSeen') !== '1';
+    } catch {
+      return true;
+    }
+  });
+
+  useEffect(() => {
+    if (!shouldShow) {
+      return undefined;
+    }
+
+    const timer = window.setTimeout(() => {
+      try {
+        sessionStorage.setItem('peduliLandingBootSeen', '1');
+      } catch {
+        // Session storage can be unavailable in strict private contexts.
+      }
+      setShouldShow(false);
+    }, 1900);
+
+    return () => window.clearTimeout(timer);
+  }, [shouldShow]);
+
+  if (!shouldShow) {
+    return null;
+  }
+
   return (
     <div className="landing-boot fixed inset-0 z-[80] grid place-items-center bg-white">
       <div className="landing-boot-card mx-6 rounded-[2rem] border border-slate-100 bg-white p-7 text-center shadow-[0_24px_80px_rgb(15_23_42/0.14)]">
@@ -315,6 +344,9 @@ export function LandingHeader() {
           </Link>
           <a className="hover:text-[#087f8c]" href="#wilayah">
             Wilayah
+          </a>
+          <a className="hover:text-[#087f8c]" href="#faq">
+            FAQ
           </a>
           <a className="hover:text-[#087f8c]" href="#masuk">
             Masuk
